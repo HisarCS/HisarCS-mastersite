@@ -35,6 +35,7 @@ Browser (GitHub Pages, static)                Supabase (cloud or local Docker)
 | `member.html` | Signed-in area: GitHub sign-in → org check → onboarding → dashboard (edit profile, tags, projects, delete account). |
 | `project.html` | Project page — loads a project by `?id=` (its `public_id`) from Supabase (members, tags, description, files, links). Editor-mode mutations are still prototype stubs (see §9). |
 | `config.js` | Picks local vs production Supabase by hostname; falls back to mock data if the backend is unreachable. |
+| `vendor/supabase.js` | Vendored supabase-js v2 (UMD build), served same-origin from Pages — no third-party CDN dependency, so the site works on networks that filter CDNs. To update: re-download the UMD build from npm/jsdelivr into this file. |
 | `serve.json` | Config for the local dev server (`npm run dev`) so it serves `.html` paths with query strings intact, like GitHub Pages. |
 | `supabase/` | **Backend + local dev.** `migrations/20260711000001_schema.sql` is the whole database (tables, RLS, triggers, the directory view, storage buckets, starter tags — the single source of truth); `seed.sql` is local-only mock data replayed on each local reset (**never** touches production); `config.toml` holds local CLI settings. |
 | `tests/` | **Testing.** `playwright.config.js` + `e2e.spec.js` — end-to-end tests (DB-backed rendering, the RLS contract, graceful fallback). Run with `npm test`. |

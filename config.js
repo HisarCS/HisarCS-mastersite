@@ -31,15 +31,21 @@ const IDEALAB_ENVIRONMENTS = {
 window.IDEALAB_ENV =
   ['localhost', '127.0.0.1'].includes(location.hostname) ? 'local' : 'production';
 window.IDEALAB_CONFIG = IDEALAB_ENVIRONMENTS[window.IDEALAB_ENV];
+console.log(`ideaLab: ${window.IDEALAB_ENV} environment`);
 
 /* Shared helper: returns a Supabase client, or null → pages use mock data. */
 window.idealabClient = function () {
   try {
     const { SUPABASE_URL, SUPABASE_ANON_KEY } = window.IDEALAB_CONFIG || {};
-    if (window.supabase && SUPABASE_URL && SUPABASE_ANON_KEY) {
-      return window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    if (!window.supabase) {
+      console.warn('ideaLab: vendor/supabase.js did not load — using mock data');
+      return null;
     }
-    console.warn(`ideaLab: no ${window.IDEALAB_ENV} Supabase configured — using mock data (config.js)`);
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+      console.warn(`ideaLab: no ${window.IDEALAB_ENV} Supabase configured — using mock data (config.js)`);
+      return null;
+    }
+    return window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   } catch (e) { console.warn('ideaLab: Supabase client init failed', e); }
   return null;
 };
