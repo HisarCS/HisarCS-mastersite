@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ideaLab — profile</title>
+<style>
+  :root {
+    --bg: #f6f4ef; --ink: #141414; --muted: #8a8578; --card: #ffffff;
+    --accent: #e8542f; --line: rgba(0,0,0,.09); --ok: #28a06d;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased; min-height: 100vh;
+  }
+  a { color: inherit; }
+  header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 24px 36px; max-width: 980px; margin: 0 auto;
+  }
+  .wordmark { font-size: 20px; font-weight: 700; letter-spacing: -.02em; text-decoration: none; }
+  .wordmark span { color: var(--accent); }
+  .back { font-size: 13px; color: var(--muted); text-decoration: none; }
+  .back:hover { color: var(--ink); }
+
+  main { max-width: 640px; margin: 0 auto; padding: 24px 24px 80px; }
+
+  .hero { display: flex; gap: 24px; align-items: center; margin-bottom: 28px; }
+  .avatar {
+    width: 108px; height: 108px; border-radius: 28px; overflow: hidden; flex-shrink: 0;
+    background: var(--fallback, #2f6fe8); color: #fff; display: flex;
+    align-items: center; justify-content: center; font-size: 38px; font-weight: 700;
+  }
+  .avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  h1 { font-size: 30px; letter-spacing: -.02em; }
+  .meta { font-size: 14px; color: var(--muted); margin-top: 5px; }
+  .badge {
+    display: inline-block; font-size: 10.5px; font-weight: 700; letter-spacing: .07em;
+    text-transform: uppercase; padding: 4px 10px; border-radius: 99px; margin-left: 8px;
+    vertical-align: 2px; background: rgba(40,160,109,.13); color: var(--ok);
+  }
+  .badge.alumni { background: rgba(232,84,47,.12); color: var(--accent); }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 26px; }
+  .chip { font-size: 12.5px; font-weight: 600; padding: 6px 12px; border-radius: 99px;
+    background: var(--ink); color: var(--bg); }
+
+  .bio { font-size: 15.5px; line-height: 1.65; margin-bottom: 26px; }
+
+  .actions { display: flex; gap: 10px; margin-bottom: 40px; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600;
+    padding: 10px 18px; border-radius: 11px; text-decoration: none;
+    background: var(--ink); color: var(--bg); transition: background .15s ease;
+  }
+  .btn:hover { background: var(--accent); }
+  .btn.ghost { background: none; border: 1.5px solid var(--line); color: var(--ink); }
+  .btn.ghost:hover { border-color: var(--ink); background: none; }
+
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .09em;
+       color: var(--muted); margin-bottom: 14px; font-weight: 600; }
+  .proj {
+    display: flex; align-items: center; gap: 14px; padding: 14px 16px; margin-bottom: 10px;
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    text-decoration: none;
+  }
+  .proj .pav { width: 44px; height: 44px; border-radius: 12px; background: var(--ink); color: var(--bg);
+    display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; }
+  .proj .pt { font-weight: 700; font-size: 15px; }
+  .proj .pm { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+  .empty { font-size: 14px; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="wordmark" href="index.html">idea<span>Lab</span></a>
+  <a class="back" href="index.html">← back to the mark</a>
+</header>
+
+<main>
+  <div class="hero">
+    <div class="avatar" id="avatar"></div>
+    <div>
+      <h1 id="name"></h1>
+      <div class="meta" id="meta"></div>
+    </div>
+  </div>
+
+  <div class="chips" id="chips"></div>
+  <p class="bio" id="bio"></p>
+
+  <div class="actions" id="actions"></div>
+
+  <section>
+    <h2>Projects</h2>
+    <div id="projects"></div>
+  </section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script type="module">
+/* =========================================================================
+   Public person profile. Reads ?id= (the person's public_id) and runs ONE
+   embedded query; falls back to a preview derived from the id if the backend
+   is unreachable. RLS already hides unpublished people/projects.
+   ========================================================================= */
+const disciplines = ['Robotics', 'Electronics', 'Woodworking', 'Textiles',
+  'Game Design', 'Ceramics', 'Biodesign', 'CS & AI', 'Product Design', '3D Printing'];
+const FALLBACK_COLORS = ['#e8542f', '#2f6fe8', '#28a06d', '#c4a11f', '#9048c8', '#d2447e'];
+
+// Graceful fallback ONLY (Supabase unreachable). Builds a placeholder derived
+// from the requested id, so the page always matches its URL — never a
+// hard-coded person. Real profiles come from the query above.
+function titleize(s) {
+  return s.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()).trim();
+}
+function hashStr(s) {
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+function mockPerson(id) {
+  id = String(id || '').replace(/^p\d+$/i, '');   // ignore any legacy ?id=pN link
+  const name = id ? titleize(id) : 'ideaLab Maker';
+  const seed = hashStr(id || name);
+  const alumni = seed % 3 === 0;
+  return {
+    name,
+    cohort: alumni ? 'alumni' : 'student',
+    grad_year: alumni ? 2020 + (seed % 6) : 2027 + (seed % 3),
+    fields: [disciplines[seed % 10], disciplines[(seed + 3) % 10]],
+    bio: 'Preview — connect the site to Supabase to load this profile.',
+    avatar_url: null,
+    avatar_color: null,
+    resume_url: null,
+    github_username: null,
+    projects: [],
+  };
+}
+
+async function loadPerson() {
+  const qs = new URLSearchParams(location.search);
+  const id = qs.get('id');
+  const sb = window.idealabClient();
+  if (sb && id) {
+    const { data, error } = await sb
+      .from('people')
+      .select(`public_id, full_name, graduation_year, bio, avatar_url, avatar_color,
+               resume_url, github_username, fields!person_fields(name),
+               project_members(role, projects(public_id, title, is_published))`)
+      .eq('public_id', id)
+      .single();
+    if (!error && data) {
+      const academic = window.idealabAcademicYear();
+      return {
+        name: data.full_name,
+        cohort: data.graduation_year >= academic ? 'student' : 'alumni',
+        grad_year: data.graduation_year,
+        fields: (data.fields || []).map(f => f.name),
+        bio: data.bio || '',
+        avatar_url: data.avatar_url,
+        avatar_color: data.avatar_color,
+        resume_url: data.resume_url,
+        github_username: data.github_username,
+        projects: (data.project_members || [])
+          .map(pm => pm.projects)
+          .filter(pr => pr && pr.is_published) // RLS hides drafts anyway; belt & suspenders
+          .map(pr => ({ public_id: pr.public_id, title: pr.title, meta: 'ideaLab project' })),
+      };
+    }
+    console.warn('ideaLab: person not found in Supabase — falling back to mock.', error || '');
+  }
+  return mockPerson(id);
+}
+
+const p = await loadPerson();
+const initials = p.name.split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
+const color = p.avatar_color || FALLBACK_COLORS[p.name.length % FALLBACK_COLORS.length];
+
+document.title = `${p.name} — ideaLab`;
+const av = document.getElementById('avatar');
+av.style.setProperty('--fallback', color);
+av.textContent = initials;
+if (p.avatar_url) {
+  const img = new Image();
+  img.alt = '';
+  img.onload = () => { av.textContent = ''; av.appendChild(img); };
+  img.src = p.avatar_url;
+}
+document.getElementById('name').innerHTML =
+  `${p.name}<span class="badge ${p.cohort}">${p.cohort === 'alumni' ? 'Alumni' : 'Current student'}</span>`;
+document.getElementById('meta').textContent = `Class of ${p.grad_year}`;
+document.getElementById('chips').innerHTML =
+  p.fields.map(f => `<span class="chip">${f}</span>`).join('');
+document.getElementById('bio').textContent = p.bio;
+
+const actions = [];
+if (p.resume_url) actions.push(`<a class="btn" href="${p.resume_url}">Resume ↗</a>`);
+if (p.github_username) actions.push(`<a class="btn ghost" href="https://github.com/${p.github_username}">GitHub ↗</a>`);
+document.getElementById('actions').innerHTML = actions.join('');
+
+document.getElementById('projects').innerHTML = p.projects.length
+  ? p.projects.map(pr => `
+      <a class="proj" href="project.html?id=${pr.public_id}">
+        <div class="pav">${pr.title.split(/\s+/).map(w => w[0]).slice(0, 2).join('')}</div>
+        <div><div class="pt">${pr.title}</div><div class="pm">${pr.meta}</div></div>
+      </a>`).join('')
+  : '<div class="empty">No published projects yet.</div>';
+</script>
+</body>
+</html>

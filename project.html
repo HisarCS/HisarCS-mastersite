@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pixel Wall — ideaLab</title>
+<style>
+  :root {
+    --bg: #f6f4ef; --ink: #141414; --muted: #8a8578; --card: #ffffff;
+    --accent: #e8542f; --line: rgba(0,0,0,.09); --ok: #28a06d; --danger: #c0392b;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased; min-height: 100vh;
+  }
+  a { color: inherit; }
+  header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 24px 36px; max-width: 1060px; margin: 0 auto;
+  }
+  .wordmark { font-size: 20px; font-weight: 700; letter-spacing: -.02em; text-decoration: none; }
+  .wordmark span { color: var(--accent); }
+  .session { font-size: 13px; color: var(--muted); }
+  .session a { font-weight: 600; }
+
+  main { max-width: 860px; margin: 0 auto; padding: 12px 24px 96px; }
+
+  .hero { display: flex; gap: 26px; align-items: flex-start; margin-bottom: 30px; }
+  .pav {
+    width: 120px; height: 120px; border-radius: 28px; background: var(--ink); color: var(--bg);
+    display: flex; align-items: center; justify-content: center; font-size: 42px; font-weight: 700;
+    flex-shrink: 0; overflow: hidden; position: relative;
+  }
+  .pav .re { position: absolute; inset: auto 0 0 0; background: rgba(20,20,20,.75); color: #fff;
+    font-size: 11px; font-weight: 600; text-align: center; padding: 5px 0; cursor: pointer; display: none; }
+  body.editing .pav .re { display: block; }
+
+  h1.title { font-size: 34px; letter-spacing: -.02em; }
+  h1.title[contenteditable=true] { outline: 1.5px dashed var(--line); border-radius: 8px; padding: 0 6px; }
+  .badge {
+    display: inline-block; font-size: 10.5px; font-weight: 700; letter-spacing: .07em;
+    text-transform: uppercase; padding: 4px 10px; border-radius: 99px; vertical-align: middle;
+  }
+  .badge.draft { background: rgba(196,161,31,.15); color: #8a7414; }
+  .badge.live  { background: rgba(40,160,109,.13); color: var(--ok); }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .chip {
+    font-size: 12.5px; font-weight: 600; padding: 6px 12px; border-radius: 99px;
+    background: var(--ink); color: var(--bg); border: none;
+  }
+  .chip .x { margin-left: 7px; cursor: pointer; opacity: .6; display: none; }
+  body.editing .chip .x { display: inline; }
+  .chip.add { background: none; border: 1.5px dashed var(--muted); color: var(--muted); cursor: pointer; display: none; }
+  body.editing .chip.add { display: inline-block; }
+
+  section { margin-bottom: 34px; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .09em; color: var(--muted);
+       margin-bottom: 14px; font-weight: 600; }
+
+  /* members */
+  .members { display: flex; flex-wrap: wrap; gap: 14px; }
+  .member { display: flex; align-items: center; gap: 10px; background: var(--card);
+    border: 1px solid var(--line); border-radius: 99px; padding: 6px 16px 6px 6px; text-decoration: none; }
+  .member .ma { width: 34px; height: 34px; border-radius: 50%; color: #fff; font-size: 13px;
+    font-weight: 700; display: flex; align-items: center; justify-content: center; }
+  .member .mn { font-size: 13.5px; font-weight: 600; }
+  .member .mr { font-size: 11.5px; color: var(--muted); }
+  .member .x { display: none; margin-left: 4px; cursor: pointer; color: var(--muted); font-weight: 700; }
+  body.editing .member .x { display: inline; }
+  .member.add { border-style: dashed; color: var(--muted); cursor: pointer; padding: 6px 16px; display: none; }
+  body.editing .member.add { display: flex; }
+
+  .desc { font-size: 15.5px; line-height: 1.65; max-width: 640px; white-space: pre-wrap; }
+  textarea.desc-edit { width: 100%; max-width: 640px; min-height: 130px; font: inherit; font-size: 15px;
+    padding: 12px; border: 1.5px dashed var(--line); border-radius: 12px; background: #fbfaf7; display: none; }
+  body.editing .desc { display: none; }
+  body.editing textarea.desc-edit { display: block; }
+
+  /* files */
+  .files { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; }
+  .file { border-radius: 14px; overflow: hidden; background: var(--card); border: 1px solid var(--line);
+    text-decoration: none; position: relative; }
+  .file .thumb { aspect-ratio: 4/3; display: flex; align-items: center; justify-content: center;
+    font-size: 30px; color: var(--bg); }
+  .file .cap { font-size: 12px; padding: 8px 10px; color: var(--muted); }
+  .file .x { position: absolute; top: 6px; right: 6px; background: rgba(20,20,20,.7); color: #fff;
+    border-radius: 99px; width: 22px; height: 22px; display: none; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 12px; }
+  body.editing .file .x { display: flex; }
+  .file.add { border-style: dashed; display: none; align-items: center; justify-content: center;
+    aspect-ratio: auto; min-height: 120px; color: var(--muted); cursor: pointer; font-size: 13.5px; font-weight: 600; }
+  body.editing .file.add { display: flex; }
+
+  /* links */
+  .links { display: flex; flex-direction: column; gap: 10px; max-width: 560px; }
+  .link { display: flex; align-items: center; gap: 12px; background: var(--card);
+    border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; text-decoration: none; }
+  .link .arrow { color: var(--accent); font-weight: 700; }
+  .link .ll { font-weight: 600; font-size: 14px; }
+  .link .lu { font-size: 12px; color: var(--muted); }
+  .link .x { display: none; margin-left: auto; cursor: pointer; color: var(--muted); font-weight: 700; }
+  body.editing .link .x { display: inline; }
+  .link.add { border-style: dashed; color: var(--muted); cursor: pointer; display: none; font-weight: 600; font-size: 13.5px; }
+  body.editing .link.add { display: flex; }
+
+  /* editor bar */
+  #editor-bar {
+    position: sticky; bottom: 0; margin-top: 40px; display: none; gap: 10px; align-items: center;
+    background: var(--ink); color: var(--bg); border-radius: 16px; padding: 14px 18px;
+  }
+  body.editing #editor-bar { display: flex; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px; font: inherit; font-size: 14px; font-weight: 600;
+    padding: 10px 18px; border-radius: 10px; cursor: pointer; border: none;
+    background: var(--bg); color: var(--ink); text-decoration: none;
+  }
+  .btn:hover { background: var(--accent); color: #fff; }
+  .btn.danger { background: none; border: 1.5px solid rgba(255,255,255,.4); color: #ffb3a6; }
+  .btn.danger:hover { border-color: var(--danger); background: var(--danger); color: #fff; }
+  .spacer { flex: 1; }
+
+  /* publish switch */
+  .switch { display: flex; align-items: center; gap: 10px; font-size: 13.5px; font-weight: 600; }
+  .track { width: 44px; height: 25px; border-radius: 99px; background: rgba(255,255,255,.25); cursor: pointer; position: relative; transition: background .15s; }
+  .track.on { background: var(--ok); }
+  .track .knob { position: absolute; top: 3px; left: 3px; width: 19px; height: 19px; border-radius: 50%; background: #fff; transition: left .15s; }
+  .track.on .knob { left: 22px; }
+
+  /* modal */
+  .overlay { position: fixed; inset: 0; background: rgba(20,20,20,.45); display: none;
+    align-items: center; justify-content: center; z-index: 50; padding: 20px; }
+  .overlay.show { display: flex; }
+  .modal { background: var(--card); border-radius: 18px; padding: 28px; max-width: 440px; width: 100%; }
+  .modal h3 { font-size: 19px; margin-bottom: 10px; }
+  .modal .sub { color: var(--muted); font-size: 14px; line-height: 1.55; }
+  .modal .actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 22px; }
+  .modal .btn { background: var(--ink); color: var(--bg); }
+  .modal .btn.ghost { background: none; border: 1.5px solid var(--line); color: var(--ink); }
+  .modal .btn.dng { background: var(--danger); color: #fff; }
+
+  #proto {
+    position: fixed; bottom: 16px; left: 16px; z-index: 99; background: var(--ink); color: var(--bg);
+    border-radius: 12px; padding: 10px 12px; font-size: 12px; display: flex; gap: 8px; align-items: center; opacity: .92;
+  }
+  #proto select { font: inherit; border-radius: 6px; border: none; padding: 3px 6px; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+</head>
+<body>
+
+<header>
+  <a class="wordmark" href="index.html">idea<span>Lab</span></a>
+  <div class="session"><span id="session-user"></span><a href="member.html">my page →</a></div>
+</header>
+
+<main>
+  <div class="hero">
+    <div class="pav" id="pav"><span id="pav-txt">·)</span>
+      <!-- real: upload to project-files/{project_id}/avatar.png; storage policy
+           allows any project member -->
+      <div class="re">replace</div>
+    </div>
+    <div>
+      <h1 class="title" id="title">Project <span class="badge live" id="pub-badge">Published</span></h1>
+      <!-- fields from the project_fields junction; editors manage (RLS) -->
+      <div class="chips" id="chips">
+        <button class="chip add">+ field</button>
+      </div>
+    </div>
+  </div>
+
+  <section>
+    <h2>Members</h2>
+    <!-- project_members joined to people; each member can edit or delete this
+         project (is_project_editor). "+ add member" searches people_directory. -->
+    <div class="members" id="members">
+      <button class="member add">+ add member</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>About</h2>
+    <div class="desc" id="desc"></div>
+    <textarea class="desc-edit" id="desc-edit"></textarea>
+  </section>
+
+  <section>
+    <h2>Files</h2>
+    <!-- project_files rows → public URLs in the project-files bucket -->
+    <div class="files" id="files">
+      <button class="file add" onclick="document.getElementById('pfile-input').click()">+ upload image or PDF</button>
+      <input type="file" id="pfile-input" hidden multiple
+        accept="image/jpeg,image/png,image/webp,application/pdf"
+        onchange="uploadProjectFiles(this.files); this.value=''">
+    </div>
+    <div id="files-hint" style="font-size:12.5px; color:var(--muted); margin-top:10px">Images:
+      JPEG/PNG/WebP up to 15 MB, auto-optimized to 1600px · PDFs up to 10 MB.</div>
+  </section>
+
+  <section>
+    <h2>Links</h2>
+    <!-- project_links rows; editors manage -->
+    <div class="links" id="links">
+      <button class="link add">+ add link</button>
+    </div>
+  </section>
+
+  <!-- editor bar: visible only to people on the member list -->
+  <div id="editor-bar">
+    <div class="switch">
+      <!-- real: UPDATE projects SET is_published = ... (member publish toggle) -->
+      <div class="track on" id="pub-track" onclick="togglePublish()"><div class="knob"></div></div>
+      <span id="pub-label">Published</span>
+    </div>
+    <div class="spacer"></div>
+    <button class="btn" onclick="this.textContent='Saved ✓';setTimeout(()=>this.textContent='Save changes',1200)">Save changes</button>
+    <button class="btn danger" onclick="document.getElementById('delp-overlay').classList.add('show')">Delete project</button>
+  </div>
+</main>
+
+<!-- delete-project modal -->
+<div class="overlay" id="delp-overlay">
+  <div class="modal">
+    <h3 id="delp-title">Delete this project?</h3>
+    <p class="sub">The project, its files, and its links are permanently removed for
+    every member. Any member of a project can do this — make sure your team agrees.</p>
+    <div class="actions">
+      <button class="btn ghost" onclick="document.getElementById('delp-overlay').classList.remove('show')">Cancel</button>
+      <!-- real: DELETE from projects (RLS: is_project_editor) → cascades -->
+      <button class="btn dng" onclick="document.getElementById('delp-overlay').classList.remove('show'); document.getElementById('proto-select').value='public'; setMode('public')">Delete project</button>
+    </div>
+  </div>
+</div>
+
+<!-- prototype-only state switcher -->
+<div id="proto">
+  prototype state
+  <select id="proto-select" onchange="setMode(this.value)">
+    <option value="public">public visitor</option>
+    <option value="editor" selected>project member (editor)</option>
+  </select>
+</div>
+
+<script>
+/* The public/read view is wired to Supabase: it loads the project named by
+   ?id= (the project's public_id) and renders its real title, members, tags,
+   description, files and links. Editor-mode MUTATIONS are still prototype stubs
+   — each maps to the Supabase call in the adjacent HTML comment (roadmap). */
+const $ = id => document.getElementById(id);
+const COLORS = ['#e8542f', '#2f6fe8', '#28a06d', '#c4a11f', '#9048c8', '#d2447e'];
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const initials = s => (s || '?').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
+const colorFor = s => COLORS[[...String(s)].reduce((a, c) => a + c.charCodeAt(0), 0) % COLORS.length];
+
+let published = true;
+let SB = null, PROJECT = null, IS_EDITOR = false;
+
+async function loadProject() {
+  const id = new URLSearchParams(location.search).get('id');
+  if (SB && id) {
+    const { data, error } = await SB.from('projects')
+      .select(`id, public_id, title, description, avatar_url, is_published,
+               project_fields(fields(name)),
+               project_members(role, people(public_id, full_name, avatar_color)),
+               project_links(label, url, sort_order),
+               project_files(id, storage_path, kind, caption, sort_order)`)
+      .eq('public_id', id).single();
+    if (!error && data) return {
+      dbId: data.id,
+      title: data.title,
+      published: data.is_published,
+      avatar_url: data.avatar_url,
+      fields: (data.project_fields || []).map(f => f.fields && f.fields.name).filter(Boolean),
+      members: (data.project_members || []).filter(m => m.people).map(m => ({
+        public_id: m.people.public_id, name: m.people.full_name,
+        role: m.role || 'Member', color: m.people.avatar_color,
+      })),
+      description: data.description || '',
+      links: (data.project_links || []).slice().sort((a, b) => a.sort_order - b.sort_order),
+      files: (data.project_files || []).slice().sort((a, b) => a.sort_order - b.sort_order),
+    };
+    console.warn('ideaLab: project not found in Supabase — showing preview.', error || '');
+  }
+  return mockProject(id);
+}
+
+// graceful fallback only — derived from the id, never a hard-coded project/person
+function mockProject(id) {
+  const title = id ? id.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'Untitled Project';
+  return { title, published: true, avatar_url: null, fields: [], members: [],
+    description: 'Preview — connect the site to Supabase to load this project.',
+    links: [], files: [] };
+}
+
+function render(p) {
+  document.title = `${p.title} — ideaLab`;
+  $('pav-txt').textContent = initials(p.title);
+  if (p.avatar_url) {
+    const img = new Image(); img.alt = '';
+    img.onload = () => { $('pav-txt').textContent = ''; img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover'; $('pav').insertBefore(img, $('pav').firstChild); };
+    img.src = p.avatar_url;
+  }
+  $('title').childNodes[0].nodeValue = p.title + ' ';
+  togglePublishUI(p.published);
+
+  $('chips').insertAdjacentHTML('afterbegin', p.fields.map(f =>
+    `<span class="chip">${esc(f)}<span class="x" title="remove">×</span></span>`).join(''));
+
+  $('members').insertAdjacentHTML('afterbegin', p.members.map(m => `
+    <a class="member" href="person.html?id=${encodeURIComponent(m.public_id)}">
+      <span class="ma" style="background:${esc(m.color || colorFor(m.name))}">${esc(initials(m.name))}</span>
+      <span><span class="mn">${esc(m.name)}</span><br><span class="mr">${esc(m.role)}</span></span>
+      <span class="x" title="remove from project">×</span>
+    </a>`).join(''));
+
+  $('desc').textContent = p.description;
+  $('desc-edit').value = p.description;
+  $('delp-title').textContent = `Delete “${p.title}”?`;
+
+  renderFiles(p.files);
+
+  $('links').insertAdjacentHTML('afterbegin', p.links.map(l => `
+    <a class="link" href="${esc(l.url)}"><span class="arrow">↗</span>
+      <span><span class="ll">${esc(l.label)}</span><br><span class="lu">${esc(String(l.url).replace(/^https?:\/\//, ''))}</span></span>
+      <span class="x">×</span></a>`).join(''));
+}
+
+/* ---- files: render / upload / delete (wired to Supabase Storage) ---- */
+function fileUrl(path) {
+  return SB ? SB.storage.from('project-files').getPublicUrl(path).data.publicUrl : '#';
+}
+
+function renderFiles(files) {
+  const box = $('files');
+  box.querySelectorAll('.file:not(.add)').forEach(el => el.remove());
+  const add = box.querySelector('.file.add');
+  (files || []).forEach(f => {
+    const label = f.caption || String(f.storage_path).split('/').pop();
+    const url = fileUrl(f.storage_path);
+    const a = document.createElement('a');
+    a.className = 'file'; a.href = url; a.target = '_blank'; a.rel = 'noopener';
+    a.innerHTML = (f.kind === 'image'
+      ? `<div class="thumb"><img src="${esc(url)}" alt="" loading="lazy" decoding="async"
+           style="width:100%;height:100%;object-fit:cover"></div>`
+      : `<div class="thumb" style="background:${esc(colorFor(label))}">${f.kind === 'pdf' ? 'PDF' : '📄'}</div>`)
+      + `<div class="cap">${esc(label)}</div><span class="x" title="delete">×</span>`;
+    a.querySelector('.x').onclick = ev => { ev.preventDefault(); ev.stopPropagation(); deleteProjectFile(f); };
+    box.insertBefore(a, add);
+  });
+}
+
+async function uploadProjectFiles(fileList) {
+  const hint = $('files-hint');
+  const files = [...(fileList || [])];
+  if (!files.length) return;
+  if (!SB || !PROJECT?.dbId) { hint.textContent = '✕ demo mode — connect Supabase to upload'; return; }
+  if (!IS_EDITOR) { hint.textContent = '✕ only project members can upload'; return; }
+  for (const f of files) {
+    const isImage = f.type.startsWith('image/');
+    const spec = isImage ? IDEALAB_UPLOADS.projectImage : IDEALAB_UPLOADS.projectPdf;
+    const bad = idealabCheckFile(f, spec);
+    if (bad) { hint.textContent = `✕ ${f.name}: ${bad}`; continue; }
+    try {
+      hint.textContent = isImage ? `optimizing ${f.name}…` : `uploading ${f.name}…`;
+      const blob = isImage ? await idealabOptimizeImage(f, spec.maxDim) : f;
+      const safe = f.name.toLowerCase().replace(/\.[^.]+$/, '')
+        .replace(/[^a-z0-9-_]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'file';
+      // unique, timestamped path → safe to CDN-cache for a year
+      const path = `${PROJECT.dbId}/${Date.now()}-${safe}.${isImage ? 'jpg' : 'pdf'}`;
+      hint.textContent = `uploading ${f.name}…`;
+      const { error: upErr } = await SB.storage.from('project-files')
+        .upload(path, blob, { cacheControl: '31536000', contentType: isImage ? 'image/jpeg' : 'application/pdf' });
+      if (upErr) throw upErr;
+      const { data: row, error } = await SB.from('project_files')
+        .insert({ project_id: PROJECT.dbId, storage_path: path,
+                  kind: isImage ? 'image' : 'pdf', caption: f.name,
+                  sort_order: PROJECT.files.length })
+        .select('id, storage_path, kind, caption, sort_order').single();
+      if (error) throw error;
+      PROJECT.files.push(row);
+      renderFiles(PROJECT.files);
+      hint.textContent = `✓ ${f.name} uploaded` +
+        (isImage ? ` (${Math.max(1, Math.round(blob.size / 1024))} KB after optimization)` : '');
+    } catch (e) {
+      hint.textContent = `✕ ${f.name}: ${e.message || e}`;
+    }
+  }
+}
+
+async function deleteProjectFile(f) {
+  if (!SB || !IS_EDITOR || !f.id) return;
+  if (!confirm(`Delete “${f.caption || f.storage_path}”?`)) return;
+  const hint = $('files-hint');
+  const { error } = await SB.from('project_files').delete().eq('id', f.id);
+  if (error) { hint.textContent = `✕ ${error.message}`; return; }
+  await SB.storage.from('project-files').remove([f.storage_path]);
+  PROJECT.files = PROJECT.files.filter(x => x.id !== f.id);
+  renderFiles(PROJECT.files);
+  hint.textContent = '✓ file deleted';
+}
+
+/* ---- prototype editor chrome ---- */
+function setMode(m) {
+  document.body.classList.toggle('editing', m === 'editor');
+  $('title').contentEditable = (m === 'editor');
+  document.querySelector('.session').style.visibility = m === 'editor' ? 'visible' : 'hidden';
+}
+function togglePublishUI(on) {
+  published = on;
+  $('pub-track').classList.toggle('on', on);
+  $('pub-label').textContent = on ? 'Published' : 'Draft — members only';
+  const b = $('pub-badge');
+  b.textContent = on ? 'Published' : 'Draft';
+  b.className = 'badge ' + (on ? 'live' : 'draft');
+}
+function togglePublish() { togglePublishUI(!published); }
+
+(async () => {
+  SB = window.idealabClient();
+  let session = null;
+  if (SB) {
+    ({ data: { session } } = await SB.auth.getSession());
+    const u = session?.user?.user_metadata?.user_name;
+    if (u) $('session-user').textContent = `signed in as @${u} · `;
+  }
+  PROJECT = await loadProject();
+  render(PROJECT);
+  if (SB && PROJECT.dbId) {
+    // live data: editor rights = actually on the member list (same DB function
+    // RLS uses), and the prototype state switcher goes away
+    $('proto').hidden = true;
+    if (session) {
+      const { data } = await SB.rpc('is_project_editor', { pid: PROJECT.dbId });
+      IS_EDITOR = !!data;
+    }
+    setMode(IS_EDITOR ? 'editor' : 'public');
+  } else {
+    IS_EDITOR = true;   // prototype playground (no backend)
+    setMode('editor');
+  }
+})();
+</script>
+</body>
+</html>

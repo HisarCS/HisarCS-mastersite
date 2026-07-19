@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ideaLab — people of the lab</title>
+<style>
+  :root {
+    --bg: #f6f4ef;
+    --ink: #141414;
+    --muted: #8a8578;
+    --card-bg: #ffffff;
+    --accent: #e8542f;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body { height: 100%; }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---------- chrome (wordmark / footer) ---------- */
+  header {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 28px 36px;
+    z-index: 20;
+    pointer-events: none;
+  }
+  header .wordmark {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    pointer-events: auto;
+  }
+  header .wordmark span { color: var(--accent); }
+  header .tagline {
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: 0.02em;
+  }
+  header .join {
+    display: inline-block;
+    margin-top: 10px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--ink);
+    text-decoration: none;
+    padding: 6px 14px;
+    border: 1.5px solid var(--ink);
+    border-radius: 99px;
+    pointer-events: auto;
+    transition: all .15s ease;
+  }
+  header .join:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--bg);
+  }
+
+  footer {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    display: flex;
+    justify-content: flex-end;
+    padding: 24px 36px;
+    font-size: 12px;
+    color: var(--muted);
+    z-index: 20;
+    pointer-events: none;
+  }
+
+  /* ---------- stage ---------- */
+  #stage { position: fixed; inset: 0; }
+
+  /* ---------- pixels ---------- */
+  .pixel {
+    position: absolute;
+    display: block;
+    /* left/top/width/height set inline by JS */
+  }
+  .pixel.filler {
+    background: var(--ink);
+    border-radius: 10%;
+  }
+  .pixel.person {
+    text-decoration: none;
+    z-index: 5;
+    overflow: visible;
+  }
+  .pixel.person .cell {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: var(--fallback-bg, #999);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform .18s cubic-bezier(.34,1.56,.64,1), box-shadow .18s ease;
+  }
+  /* pixel shape variants — everything still fits its grid cell */
+  .pixel.person.v-sq  .cell { border-radius: 10%; }
+  .pixel.person.v-cir .cell { border-radius: 50%; }
+  .pixel.person.v-c0  .cell { border-radius: 50% 10% 10% 10%; }
+  .pixel.person.v-c1  .cell { border-radius: 10% 50% 10% 10%; }
+  .pixel.person.v-c2  .cell { border-radius: 10% 10% 50% 10%; }
+  .pixel.person.v-c3  .cell { border-radius: 10% 10% 10% 50%; }
+
+  .pixel.person .cell img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .pixel.person .cell .initials {
+    font-size: calc(var(--cell) * .38);
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: .02em;
+    user-select: none;
+  }
+  .pixel.person:hover, .pixel.person:focus-visible { z-index: 15; outline: none; }
+  .pixel.person:hover .cell, .pixel.person:focus-visible .cell {
+    transform: scale(1.4);
+    box-shadow: 0 0 0 3px var(--accent), 0 6px 18px rgba(0,0,0,.35);
+  }
+
+  /* ---------- hover card ---------- */
+  #card {
+    position: fixed;
+    z-index: 30;
+    width: 236px;
+    background: var(--card-bg);
+    border: 1px solid rgba(0,0,0,.08);
+    border-radius: 14px;
+    box-shadow: 0 10px 30px rgba(20,20,20,.14);
+    padding: 14px;
+    opacity: 0;
+    transform: translateY(6px) scale(.97);
+    transition: opacity .16s ease, transform .16s ease;
+    pointer-events: none;
+    visibility: hidden;
+  }
+  #card.show {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+    visibility: visible;
+  }
+  #card .row { display: flex; gap: 10px; align-items: center; }
+  #card .card-avatar {
+    width: 46px; height: 46px;
+    border-radius: 12px;
+    overflow: hidden;
+    flex-shrink: 0;
+    background: #ddd;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; color: #fff; font-size: 17px;
+  }
+  #card .card-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  #card .name { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
+  #card .role { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  #card .badge {
+    display: inline-block;
+    margin-top: 10px;
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 99px;
+    background: rgba(20,20,20,.06);
+    color: var(--ink);
+  }
+  #card .badge.alumni { background: rgba(232,84,47,.12); color: var(--accent); }
+  #card .profile-link {
+    display: block;
+    margin-top: 12px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--bg);
+    background: var(--ink);
+    border-radius: 9px;
+    padding: 8px 0;
+    text-decoration: none;
+    transition: background .15s ease;
+  }
+  #card .profile-link:hover { background: var(--accent); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pixel.person .cell, #card { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wordmark">idea<span>Lab</span></div>
+  <div style="text-align: right">
+    <div class="tagline">makers, in all disciplines</div>
+    <!-- member entry point — students & alumni today; Hisar Coding Summit,
+         FabLab and other programs can join via the same door later -->
+    <a class="join" href="member.html">One of us? →</a>
+  </div>
+</header>
+
+<div id="stage">
+  <!-- pixels injected here -->
+</div>
+
+<div id="card" role="dialog" aria-hidden="true"></div>
+
+<footer>
+  <div>Hisar School · ideaLab</div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script>
+/* =========================================================================
+   CONFIG — everything tweakable lives here
+   ========================================================================= */
+const CONFIG = {
+  markHeightFrac: 0.70,    // mark height as fraction of viewport height
+  markWidthFrac: 0.85,     // max mark width as fraction of viewport width
+  cellGapFrac: 0.10,       // gap between pixels, as fraction of cell size
+  maxCellPx: 72,
+  seed: 1337,              // global seed → same people land on same pixels
+};
+
+/* =========================================================================
+   THE MARK — hand-drawn pixel art, edited as plain text.
+   '#' = a pixel (person or ink filler), '.' = empty.
+   Proportions follow running text: the parenthesis spans the full line and
+   dips 2 rows below the baseline; the period is a small 3×3 dot sitting ON
+   the baseline (row 15), just like ".)" typeset in a paragraph.
+   If the lab outgrows the pixels, redraw at a finer resolution (e.g. double
+   rows/cols) — nothing else in the code needs to change.
+   ========================================================================= */
+const PIXEL_MAP = [
+  '.....##....',
+  '......##...',
+  '.......##..',
+  '.......##..',
+  '........##.',
+  '........##.',
+  '.........##',
+  '.........##',
+  '.........##',
+  '.........##',
+  '.........##',
+  '.........##',
+  '........##.',
+  '###.....##.',
+  '###....##..',
+  '###....##..',
+  '......##...',
+  '.....##....',
+];
+
+/* =========================================================================
+   DATA LAYER
+   -------------------------------------------------------------------------
+   The page only ever calls fetchPeople(). Right now it returns mock data.
+   When the Supabase `people` table exists, replace the body with:
+
+     const { data, error } = await supabase
+       .from('people')
+       .select('id, name, role, discipline, cohort, avatar_url, profile_url');
+     if (error) throw error;
+     return data;
+
+   (and add <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"><\/script>
+    plus `const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)`.)
+   Expected schema per person:
+     id: string | number      — stable unique id (drives pixel position)
+     name: string
+     role: string             — e.g. "Student", "Lab Mentor"
+     discipline: string       — e.g. "Robotics"
+     cohort: 'student' | 'alumni'
+     avatar_url: string       — public image URL
+     profile_url: string      — link to their profile page
+   ========================================================================= */
+async function fetchPeople() {
+  const sb = window.idealabClient();
+  if (sb) {
+    const { data, error } = await sb
+      .from('people_directory')
+      .select('id, public_id, full_name, cohort, avatar_url, avatar_color, fields');
+    if (!error && data && data.length) {
+      console.log(`ideaLab: loaded ${data.length} people from Supabase`);
+      return data.map(p => ({
+        id: p.id,
+        name: p.full_name,
+        cohort: p.cohort,
+        role: p.cohort === 'alumni' ? 'Alumni' : 'Student',
+        discipline: (p.fields && p.fields[0]) || 'Maker',
+        avatar_url: p.avatar_url,
+        avatar_color: p.avatar_color,
+        profile_url: `person.html?id=${encodeURIComponent(p.public_id)}`,
+      }));
+    }
+    console.warn('ideaLab: Supabase unreachable or empty — using mock people.', error || '');
+  }
+  return mockPeople();
+}
+
+// slugify a mock name the same way the DB does (Turkish-aware), so mock-mode
+// pixel links resolve on person.html instead of pointing at opaque ids
+function mockSlug(s) {
+  return s.toLowerCase()
+    .replace(/[ıİ]/g, 'i').replace(/ş/g, 's').replace(/ğ/g, 'g')
+    .replace(/ü/g, 'u').replace(/ö/g, 'o').replace(/ç/g, 'c')
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
+function mockPeople() {
+  const disciplines = ['Robotics', 'Electronics', 'Woodworking', 'Textiles',
+    'Game Design', 'Ceramics', 'Biodesign', 'CS & AI', 'Product Design', '3D Printing'];
+  const names = [
+    'Mert Karakaş', 'Elif Demir', 'Kaan Yıldız', 'Zeynep Aksoy', 'Deniz Çelik',
+    'Selin Arslan', 'Emre Koç', 'Aylin Şahin', 'Baran Öztürk', 'Ceren Kaya',
+    'Mehmet Aydın', 'İpek Doğan', 'Arda Güneş', 'Naz Erdem', 'Cem Yılmaz',
+    'Lara Polat', 'Umut Kara', 'Defne Ateş', 'Ege Turan', 'Melis Ünal',
+    'Yiğit Sönmez', 'Ada Korkmaz', 'Ozan Tekin', 'Sude Bilgin', 'Alp Erten', 'Mina Sezer'
+  ];
+  return names.map((name, i) => ({
+    id: `p${i + 1}`,
+    name,
+    role: i % 7 === 0 ? 'Lab Mentor' : (i % 3 === 0 ? 'Alumni' : 'Student'),
+    discipline: disciplines[i % disciplines.length],
+    cohort: i % 3 === 0 ? 'alumni' : 'student',
+    avatar_url: `https://i.pravatar.cc/120?img=${(i % 70) + 1}`,
+    avatar_color: null, // member-picked initials-tile color (people.avatar_color)
+    profile_url: `person.html?id=${mockSlug(name)}`, // same URL shape as real data
+  }));
+}
+
+/* =========================================================================
+   SEEDED RANDOMNESS — layout is deterministic, not random-per-reload
+   ========================================================================= */
+function hashStr(s) {
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/* =========================================================================
+   GRID — parse the ASCII pixel map into cells
+   ========================================================================= */
+function buildGrid() {
+  const rows = PIXEL_MAP.length;
+  const cols = Math.max(...PIXEL_MAP.map(l => l.length));
+  const cells = [];
+  PIXEL_MAP.forEach((line, r) => {
+    [...line].forEach((ch, c) => { if (ch === '#') cells.push({ c, r }); });
+  });
+  return { cols, rows, cells };
+}
+
+/* =========================================================================
+   RENDER — people occupy a seeded selection of pixels; the rest are ink
+   ========================================================================= */
+const stage = document.getElementById('stage');
+const card = document.getElementById('card');
+
+const FALLBACK_COLORS = ['#e8542f', '#2f6fe8', '#28a06d', '#c4a11f', '#9048c8', '#d2447e'];
+const SHAPES = ['v-sq', 'v-cir', 'v-c0', 'v-c1', 'v-c2', 'v-c3'];
+const initialsOf = (name) => name.split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
+
+function render(people, grid) {
+  stage.querySelectorAll('.pixel').forEach(el => el.remove());
+
+  // scale glyph-space grid to the viewport
+  const W = window.innerWidth, H = window.innerHeight;
+  const cell = Math.min(
+    (H * CONFIG.markHeightFrac) / grid.rows,
+    (W * CONFIG.markWidthFrac) / grid.cols,
+    CONFIG.maxCellPx
+  );
+  const gap = cell * CONFIG.cellGapFrac;
+  const originX = (W - grid.cols * cell) / 2;
+  const originY = (H - grid.rows * cell) / 2;
+
+  // seeded shuffle of cells → which pixels get a person (stable per dataset)
+  const rnd = mulberry32(CONFIG.seed);
+  const order = grid.cells.map((cellRef, i) => ({ cellRef, k: rnd() }))
+    .sort((a, b) => a.k - b.k)
+    .map(o => o.cellRef);
+
+  const assignments = new Map(); // "c,r" -> person
+  people.forEach((p, i) => { if (i < order.length) assignments.set(`${order[i].c},${order[i].r}`, p); });
+
+  for (const { c, r } of grid.cells) {
+    const person = assignments.get(`${c},${r}`);
+    const x = originX + c * cell + gap / 2;
+    const y = originY + r * cell + gap / 2;
+    const size = cell - gap;
+    const posCss = `left:${x.toFixed(1)}px; top:${y.toFixed(1)}px; width:${size.toFixed(1)}px; height:${size.toFixed(1)}px;`;
+
+    if (!person) {
+      const d = document.createElement('div');
+      d.className = 'pixel filler';
+      d.style.cssText = posCss;
+      stage.appendChild(d);
+      continue;
+    }
+
+    const seed = hashStr(person.id);
+    const a = document.createElement('a');
+    a.className = `pixel person ${SHAPES[seed % SHAPES.length]}`;
+    a.href = person.profile_url;
+    a.setAttribute('aria-label', `${person.name} — view profile`);
+    a.style.cssText = posCss + `--cell:${size.toFixed(1)}px;` +
+      `--fallback-bg:${person.avatar_color || FALLBACK_COLORS[seed % FALLBACK_COLORS.length]};`;
+
+    const cellEl = document.createElement('div');
+    cellEl.className = 'cell';
+    const span = document.createElement('span');
+    span.className = 'initials';
+    span.textContent = initialsOf(person.name);
+    cellEl.appendChild(span);
+    if (person.avatar_url) {
+      const img = new Image();
+      img.alt = '';
+      img.decoding = 'async';
+      // NOTE: no loading='lazy' here — this img starts DETACHED and is only
+      // appended once loaded; a detached lazy image never intersects the
+      // viewport, so it would never load at all (initials would show forever).
+      // Eager is fine: it fetches the 128px thumb (~15 KB), not the 512px
+      // original, so a cold load is ~2 MB for 120 members instead of ~18 MB.
+      img.onload = () => { span.remove(); cellEl.appendChild(img); };
+      img.src = idealabThumbUrl(person.avatar_url);
+    }
+    a.appendChild(cellEl);
+
+    a.addEventListener('mouseenter', () => showCard(person, a));
+    a.addEventListener('mouseleave', scheduleHideCard);
+    a.addEventListener('focus', () => showCard(person, a));
+    a.addEventListener('blur', scheduleHideCard);
+    stage.appendChild(a);
+  }
+}
+
+/* ---------- hover card ---------- */
+let hideTimer = null;
+card.addEventListener('mouseenter', () => clearTimeout(hideTimer));
+card.addEventListener('mouseleave', scheduleHideCard);
+
+function showCard(person, pixelEl) {
+  clearTimeout(hideTimer);
+  const color = person.avatar_color || FALLBACK_COLORS[hashStr(person.id) % FALLBACK_COLORS.length];
+  card.innerHTML = `
+    <div class="row">
+      <div class="card-avatar" style="background:${color}">
+        ${person.avatar_url
+          ? `<img src="${idealabThumbUrl(person.avatar_url)}" alt="" decoding="async" onerror="this.replaceWith('${initialsOf(person.name)}')">`
+          : initialsOf(person.name)}
+      </div>
+      <div>
+        <div class="name">${person.name}</div>
+        <div class="role">${person.role} · ${person.discipline}</div>
+      </div>
+    </div>
+    <span class="badge ${person.cohort}">${person.cohort === 'alumni' ? 'Alumni' : 'Current Student'}</span>
+    <a class="profile-link" href="${person.profile_url}">View profile →</a>`;
+  card.setAttribute('aria-hidden', 'false');
+
+  // position: above the pixel, clamped to viewport; flip below if no room
+  const rect = pixelEl.getBoundingClientRect();
+  card.classList.add('show');
+  const cw = card.offsetWidth, ch = card.offsetHeight, M = 10;
+  let cx = rect.left + rect.width / 2 - cw / 2;
+  cx = Math.max(M, Math.min(cx, window.innerWidth - cw - M));
+  let cyTop = rect.top - ch - 14;
+  if (cyTop < M) cyTop = rect.bottom + 14;
+  card.style.left = `${cx}px`;
+  card.style.top = `${cyTop}px`;
+}
+function scheduleHideCard() {
+  clearTimeout(hideTimer);
+  hideTimer = setTimeout(() => {
+    card.classList.remove('show');
+    card.setAttribute('aria-hidden', 'true');
+  }, 180);
+}
+
+/* ---------- boot + resize ---------- */
+let PEOPLE = [], GRID = null;
+
+async function boot() {
+  PEOPLE = await fetchPeople();
+  GRID = buildGrid();
+  if (PEOPLE.length > GRID.cells.length) {
+    console.warn(`ideaLab: ${PEOPLE.length} people but only ${GRID.cells.length} pixels — redraw PIXEL_MAP at a finer resolution.`);
+  }
+  render(PEOPLE, GRID);
+}
+boot();
+
+let resizeTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  // grid topology is resolution-independent; only the scale changes
+  resizeTimer = setTimeout(() => GRID && render(PEOPLE, GRID), 120);
+});
+</script>
+</body>
+</html>

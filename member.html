@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ideaLab — member area</title>
+<style>
+  :root {
+    --bg: #f6f4ef; --ink: #141414; --muted: #8a8578; --card: #ffffff;
+    --accent: #e8542f; --line: rgba(0,0,0,.09); --ok: #28a06d; --danger: #c0392b;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased; min-height: 100vh;
+  }
+  a { color: inherit; }
+
+  header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 24px 36px; max-width: 980px; margin: 0 auto;
+  }
+  .wordmark { font-size: 20px; font-weight: 700; letter-spacing: -.02em; text-decoration: none; }
+  .wordmark span { color: var(--accent); }
+  .session { font-size: 13px; color: var(--muted); display: flex; gap: 14px; align-items: center; }
+  .session button { background: none; border: none; font: inherit; color: var(--ink); cursor: pointer; text-decoration: underline; }
+
+  main { max-width: 720px; margin: 0 auto; padding: 24px 24px 96px; }
+
+  .panel {
+    background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+    padding: 28px; margin-bottom: 22px;
+  }
+  h1 { font-size: 26px; letter-spacing: -.02em; margin-bottom: 6px; }
+  h2 { font-size: 15px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 18px; font-weight: 600; }
+  .sub { color: var(--muted); font-size: 14px; line-height: 1.5; }
+
+  label.f { display: block; font-size: 12.5px; font-weight: 600; letter-spacing: .04em; margin: 18px 0 6px; }
+  label.f .lock { color: var(--muted); font-weight: 500; margin-left: 6px; font-size: 11.5px; }
+  input[type=text], input[type=url], select, textarea {
+    width: 100%; padding: 10px 12px; font: inherit; font-size: 14.5px;
+    border: 1px solid var(--line); border-radius: 10px; background: #fbfaf7; color: var(--ink);
+  }
+  input:disabled { color: var(--muted); background: #f1efe8; cursor: not-allowed; }
+  textarea { resize: vertical; min-height: 90px; }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); border-color: transparent; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .chip {
+    font-size: 13px; font-weight: 600; padding: 7px 13px; border-radius: 99px;
+    border: 1.5px solid var(--line); background: none; cursor: pointer; color: var(--ink);
+    transition: all .12s ease;
+  }
+  .chip.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 9px; font: inherit; font-size: 14.5px;
+    font-weight: 600; padding: 11px 20px; border-radius: 11px; cursor: pointer;
+    border: none; background: var(--ink); color: var(--bg); transition: background .15s ease;
+    text-decoration: none;
+  }
+  .btn:hover { background: var(--accent); }
+  .btn.ghost { background: none; border: 1.5px solid var(--line); color: var(--ink); }
+  .btn.ghost:hover { border-color: var(--ink); background: none; }
+  .btn.danger { background: none; border: 1.5px solid var(--danger); color: var(--danger); }
+  .btn.danger:hover { background: var(--danger); color: #fff; }
+
+  .avatar-row { display: flex; align-items: center; gap: 18px; }
+  .avatar-big {
+    width: 84px; height: 84px; border-radius: 22px; background: #2f6fe8; overflow: hidden;
+    display: flex; align-items: center; justify-content: center; color: #fff; font-size: 30px; font-weight: 700;
+    flex-shrink: 0;
+  }
+  .avatar-big img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .swatches { display: flex; gap: 8px; align-items: center; margin-top: 12px; }
+  .swatch {
+    width: 26px; height: 26px; border-radius: 50%; border: 2.5px solid transparent;
+    cursor: pointer; padding: 0; transition: transform .12s ease;
+  }
+  .swatch:hover { transform: scale(1.15); }
+  .swatch.on { border-color: var(--ink); }
+
+  .badge {
+    display: inline-block; font-size: 10.5px; font-weight: 700; letter-spacing: .07em;
+    text-transform: uppercase; padding: 4px 9px; border-radius: 99px;
+  }
+  .badge.draft { background: rgba(196,161,31,.15); color: #8a7414; }
+  .badge.live { background: rgba(40,160,109,.13); color: var(--ok); }
+
+  .notice {
+    background: rgba(196,161,31,.1); border: 1px solid rgba(196,161,31,.3);
+    padding: 13px 16px; border-radius: 12px; font-size: 13.5px; line-height: 1.5; margin-bottom: 22px;
+  }
+
+  .proj {
+    display: flex; align-items: center; gap: 14px; padding: 14px 0;
+    border-bottom: 1px solid var(--line); text-decoration: none;
+  }
+  .proj:last-of-type { border-bottom: none; }
+  .proj .pav {
+    width: 46px; height: 46px; border-radius: 12px; background: var(--ink); color: var(--bg);
+    display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0;
+  }
+  .proj .pt { font-weight: 700; font-size: 15px; }
+  .proj .pm { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+  .proj .spacer { flex: 1; }
+
+  .danger-zone { border-color: rgba(192,57,43,.35); }
+  .danger-zone h2 { color: var(--danger); }
+
+  .overlay {
+    position: fixed; inset: 0; background: rgba(20,20,20,.45); display: none;
+    align-items: center; justify-content: center; z-index: 50; padding: 20px;
+  }
+  .overlay.show { display: flex; }
+  .modal { background: var(--card); border-radius: 18px; padding: 28px; max-width: 460px; width: 100%; }
+  .modal h3 { font-size: 19px; margin-bottom: 10px; }
+  .modal ul { margin: 12px 0 4px 18px; font-size: 14px; color: var(--muted); line-height: 1.7; }
+  .modal .actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 22px; }
+
+  .center-wrap { min-height: 62vh; display: flex; align-items: center; justify-content: center; }
+  .auth-card { text-align: center; max-width: 400px; }
+  .mark-mini { font-size: 64px; font-weight: 700; letter-spacing: -.04em; margin-bottom: 18px; }
+  .gh-btn {
+    display: inline-flex; align-items: center; gap: 11px; background: var(--ink); color: var(--bg);
+    font: inherit; font-size: 15px; font-weight: 600; padding: 13px 26px; border-radius: 12px;
+    border: none; cursor: pointer; margin-top: 26px;
+  }
+  .gh-btn:hover { background: var(--accent); }
+  .gh-btn svg { width: 20px; height: 20px; fill: currentColor; }
+
+  #proto {
+    position: fixed; bottom: 16px; left: 16px; z-index: 99; background: var(--ink); color: var(--bg);
+    border-radius: 12px; padding: 10px 12px; font-size: 12px; display: flex; gap: 8px; align-items: center;
+    opacity: .92;
+  }
+  #proto select { font: inherit; border-radius: 6px; border: none; padding: 3px 6px; }
+
+  .screen { display: none; }
+  .screen.active { display: block; }
+  .hint-ok { color: var(--ok); }
+  .hint-bad { color: var(--danger); }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="wordmark" href="index.html">idea<span>Lab</span></a>
+  <div class="session" id="session-box"></div>
+</header>
+
+<main>
+
+  <!-- ============ STATE 1: SIGNED OUT ============ -->
+  <section class="screen" id="s-signedout">
+    <div class="center-wrap">
+      <div class="auth-card">
+        <div class="mark-mini">.<span style="color:var(--accent)">)</span></div>
+        <h1>Member sign in</h1>
+        <p class="sub">For ideaLab students and alumni. Sign in with GitHub to create
+        and manage your profile and projects.</p>
+        <button class="gh-btn" onclick="signIn()">
+          <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.5 7.5 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+          Continue with GitHub
+        </button>
+        <div class="sub" id="signin-hint" style="margin-top:14px"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ STATE 1b: SIGNED IN, BUT NOT A HisarCS ORG MEMBER ============ -->
+  <section class="screen" id="s-notmember">
+    <div class="center-wrap">
+      <div class="auth-card">
+        <div class="mark-mini">.<span style="color:var(--muted)">)</span></div>
+        <h1>Not one of us — yet</h1>
+        <p class="sub" style="margin-top:10px">This member area is for people in the
+        <strong>HisarCS</strong> GitHub organization. Your GitHub account
+        (<strong id="nm-username">@you</strong>) isn't in it.</p>
+        <p class="sub" style="margin-top:14px">If you are an existing ideaLab student
+        or an alumni, email us and we'll get you set up:</p>
+        <a class="gh-btn" style="margin-top:18px" href="mailto:hisarcs@hisarschool.k12.tr">
+          hisarcs@hisarschool.k12.tr
+        </a>
+        <div style="margin-top:22px">
+          <a class="btn ghost" href="index.html">← back to the mark</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ STATE 2: ONBOARDING (first login, no person row yet) ============ -->
+  <section class="screen" id="s-onboarding">
+    <div class="panel">
+      <h1>Welcome to ideaLab <span style="color:var(--accent)">.)</span></h1>
+      <p class="sub">You're signed in as <strong id="ob-username">@you</strong>. Set up your profile —
+      it stays hidden until a lab admin publishes it.</p>
+
+      <label class="f">FULL NAME</label>
+      <input type="text" id="ob-name" placeholder="Your name">
+
+      <label class="f">GRADUATION YEAR</label>
+      <input type="text" inputmode="numeric" maxlength="4" placeholder="2008 and beyond"
+        id="ob-year" oninput="checkYear(this, 'ob-year-hint')">
+      <div class="sub" id="ob-year-hint" style="margin-top:6px"></div>
+
+      <label class="f">GITHUB <span class="lock">from your login</span></label>
+      <input type="text" id="ob-gh" value="" disabled>
+
+      <label class="f">FIELDS OF INTEREST</label>
+      <div class="chips" id="ob-chips"></div>
+      <div class="sub" id="ob-chips-hint" style="margin-top:6px"></div>
+
+      <div style="margin-top:26px">
+        <button class="btn" id="ob-create" onclick="createProfile(this)">Create my profile</button>
+        <div class="sub" id="ob-hint" style="margin-top:10px"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ STATE 3: DASHBOARD ============ -->
+  <section class="screen" id="s-dashboard">
+    <div class="notice" id="draft-note">
+      Your profile is a <strong>draft</strong> — visible only to you until a lab admin
+      publishes it. You can still edit everything and create projects.
+    </div>
+
+    <div class="panel">
+      <h2>Profile</h2>
+      <div class="avatar-row">
+        <div class="avatar-big" id="avatar-big">?</div>
+        <div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap">
+            <button class="btn ghost" onclick="document.getElementById('avatar-file').click()">Upload avatar</button>
+            <input type="file" id="avatar-file" accept="image/png,image/jpeg,image/webp" hidden
+              onchange="uploadAvatar(this.files[0])">
+            <button class="btn ghost" onclick="importGithubAvatar()">Import from GitHub</button>
+            <button class="btn ghost" onclick="resetToInitials()">Reset to initials</button>
+          </div>
+          <div class="sub" id="avatar-hint" style="margin-top:8px">JPEG, PNG or WebP up to
+            10 MB — auto-cropped square and optimized to 512px.</div>
+          <div class="swatches" id="swatches" hidden>
+            <span class="sub" style="margin-right:2px">tile color:</span>
+          </div>
+        </div>
+      </div>
+
+      <label class="f">FULL NAME</label>
+      <input type="text" id="db-name" value="" placeholder="Your name">
+
+      <label class="f">BIO</label>
+      <textarea id="db-bio" placeholder="What do you make?"></textarea>
+
+      <label class="f">RESUME</label>
+      <div style="display:flex; gap:8px; align-items:center">
+        <input type="url" id="db-resume" value="" placeholder="https://… or upload a PDF" style="flex:1">
+        <button class="btn ghost" onclick="document.getElementById('resume-file').click()">Upload PDF</button>
+        <input type="file" id="resume-file" accept="application/pdf" hidden
+          onchange="uploadResume(this.files[0]); this.value=''">
+      </div>
+      <div class="sub" id="resume-hint" style="margin-top:6px">PDF up to 5 MB — or paste a
+        link to a hosted resume.</div>
+
+      <label class="f">GITHUB USERNAME <span class="lock">synced from your GitHub login</span></label>
+      <input type="text" id="gh-username" value="" readonly>
+
+      <label class="f">PROFILE URL <span class="lock">must be unique across the lab</span></label>
+      <div style="display:flex; align-items:center; gap:6px">
+        <span class="sub" style="white-space:nowrap">…/person.html?id=</span>
+        <input type="text" id="slug-input" value="" placeholder="your-profile-url" oninput="checkSlug(this.value)">
+      </div>
+      <div class="sub" id="slug-hint" style="margin-top:6px"></div>
+
+      <label class="f">GRADUATION YEAR</label>
+      <input type="text" inputmode="numeric" maxlength="4" value="2027" id="db-year"
+        placeholder="2008 and beyond" oninput="checkYear(this, 'db-year-hint')">
+      <div class="sub" id="db-year-hint" style="margin-top:6px">Your student/alumni status follows this year automatically.</div>
+
+      <label class="f">FIELDS OF INTEREST</label>
+      <div class="chips" id="db-chips"></div>
+      <div class="sub" id="db-chips-hint" style="margin-top:6px"></div>
+
+      <div style="margin-top:26px">
+        <button class="btn" onclick="saveProfile(this)">Save changes</button>
+        <span class="sub" id="save-hint" style="margin-left:12px"></span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>My projects</h2>
+      <div id="projects-list"><div class="sub">Loading…</div></div>
+      <div style="margin-top:20px">
+        <a class="btn" href="project.html">+ New project</a>
+      </div>
+    </div>
+
+    <div class="panel danger-zone">
+      <h2>Danger zone</h2>
+      <p class="sub" style="margin-bottom:16px">Deleting your account erases your profile,
+      your interest tags, and removes you from all projects. Projects where you are the
+      <strong>only</strong> member are deleted with you. This cannot be undone.</p>
+      <button class="btn danger" onclick="document.getElementById('del-overlay').classList.add('show')">
+        Delete my account
+      </button>
+    </div>
+  </section>
+
+</main>
+
+<!-- delete-account confirmation modal -->
+<div class="overlay" id="del-overlay">
+  <div class="modal">
+    <h3>Delete your account?</h3>
+    <p class="sub">This permanently erases:</p>
+    <ul>
+      <li>your profile and its place on the homepage</li>
+      <li>your interest tags and project memberships</li>
+      <li>projects where you are the only member</li>
+      <li>your GitHub login link</li>
+    </ul>
+    <label class="f">TYPE YOUR FULL NAME (<strong id="del-name-echo"></strong>) TO CONFIRM</label>
+    <input type="text" id="del-confirm" placeholder="Full name">
+    <div class="actions">
+      <button class="btn ghost" onclick="document.getElementById('del-overlay').classList.remove('show')">Cancel</button>
+      <button class="btn danger" onclick="tryDelete(this)">Delete forever</button>
+    </div>
+  </div>
+</div>
+
+<!-- demo-mode state switcher (hidden when connected to Supabase) -->
+<div id="proto" hidden>
+  demo state
+  <select onchange="go(this.value)">
+    <option value="signedout">signed out</option>
+    <option value="notmember">not a HisarCS member</option>
+    <option value="onboarding">first login (onboarding)</option>
+    <option value="dashboard" selected>member dashboard</option>
+  </select>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script>
+/* =========================================================================
+   Member area — LIVE against Supabase when config.js connects; otherwise a
+   click-through demo on mock data (the bottom-left switcher appears).
+   ========================================================================= */
+const sb = window.idealabClient();
+const $ = (id) => document.getElementById(id);
+
+let SESSION = null;        // supabase auth session
+let blockedNotMember = false; // signed in but not in the HisarCS org → show notmember, kept signed out
+let PROVIDER_TOKEN = null; // GitHub token — only delivered right after OAuth,
+                           // captured eagerly because refreshed sessions drop it
+let ME = null;             // my `people` row (live mode)
+let FIELD_LIST = [];     // [{id, name, created_by}] — what exists in the DB
+let selectedFields = new Set();  // field ids
+let pendingFields = [];  // names typed during ONBOARDING — created only on submit
+
+const PALETTE = ['#e8542f', '#2f6fe8', '#28a06d', '#c4a11f', '#9048c8', '#d2447e'];
+const FIELDS_FALLBACK = ['Robotics', 'Electronics', 'Woodworking', 'Textiles', 'Game Design',
+  'Ceramics', 'Biodesign', 'CS & AI', 'Product Design', '3D Printing'];
+
+/* ---------- screens ---------- */
+function go(state) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  $('s-' + state).classList.add('active');
+  const login = SESSION?.user?.user_metadata?.user_name || (sb ? '' : 'you');
+  $('session-box').innerHTML = (state === 'signedout' || !login) ? '' :
+    `signed in as <strong>@${login}</strong> <button onclick="signOut()">sign out</button>`;
+  const sel = document.querySelector('#proto select');
+  if (sel) sel.value = state;
+}
+
+/* ---------- auth ---------- */
+const GITHUB_ORG = 'HisarCS';  // signup is restricted to this org's members
+
+async function signIn() {
+  blockedNotMember = false;
+  if (!sb) { go('onboarding'); return; }
+  const { error } = await sb.auth.signInWithOAuth({
+    provider: 'github',
+    // HisarCS org membership is verified after sign-in (see checkOrgMembership).
+    // The auth provider is a GitHub App: membership read comes from the app's
+    // "Organization → Members: read" permission + its installation on the org.
+    // The OAuth `scopes` below are ignored by GitHub Apps but kept so the same
+    // code also works if the provider is a classic OAuth App (read:org scope).
+    options: { redirectTo: location.origin + location.pathname, scopes: 'read:org' },
+  });
+  if (error) {
+    $('signin-hint').innerHTML =
+      `<span class="hint-bad">✕ ${error.message}</span><br>` +
+      `Is the GitHub provider configured? See README §4 / §7.`;
+  }
+}
+async function signOut() {
+  if (sb) await sb.auth.signOut();
+  SESSION = null; ME = null;
+  go('signedout');
+}
+
+/* ---------- boot ---------- */
+async function init() {
+  if (!sb) {              // demo mode
+    $('proto').hidden = false;
+    FIELD_LIST = FIELDS_FALLBACK.map((n, i) => ({ id: i + 1, name: n }));
+    buildChips(FIELD_LIST);
+    selectedFields = new Set([1, 2, 8]);
+    refreshChipStates();
+    go('dashboard');
+    return;
+  }
+  sb.auth.onAuthStateChange((evt, session) => {
+    // grab the GitHub token the moment it exists — the OAuth redirect is the
+    // only time Supabase hands it over, and later refreshes drop it
+    if (session?.provider_token) PROVIDER_TOKEN = session.provider_token;
+    SESSION = session;
+    if (['INITIAL_SESSION', 'SIGNED_IN', 'SIGNED_OUT'].includes(evt)) routeOnce();
+  });
+  // safety net in case no INITIAL_SESSION event arrives
+  const { data: { session } } = await sb.auth.getSession();
+  if (session?.provider_token) PROVIDER_TOKEN = session.provider_token;
+  SESSION = SESSION || session;
+  routeOnce();
+}
+
+/* coalesce overlapping route() calls (getSession + auth events can race) */
+let _routing = false, _routeAgain = false;
+async function routeOnce() {
+  if (_routing) { _routeAgain = true; return; }
+  _routing = true;
+  try { await route(); } finally {
+    _routing = false;
+    if (_routeAgain) { _routeAgain = false; routeOnce(); }
+  }
+}
+
+async function route() {
+  if (!SESSION) { go(blockedNotMember ? 'notmember' : 'signedout'); return; }
+  await loadFields();
+  const { data: me, error } = await sb.from('people')
+    .select('*, person_fields(field_id)')
+    .eq('user_id', SESSION.user.id)
+    .maybeSingle();
+  if (error) { console.error('ideaLab: failed to load profile', error); }
+  ME = me || null;
+  const m = SESSION.user.user_metadata || {};
+  if (!ME) {
+    // gate signup on HisarCS org membership, verified with the member's own
+    // GitHub token (only present right after the OAuth redirect)
+    const verdict = await checkOrgMembership();
+    if (verdict === false) {
+      // Signed in, but not in the HisarCS org. A non-member is never left
+      // logged in: show the explainer, then end the Supabase session. The
+      // SIGNED_OUT event re-routes here (via blockedNotMember), so the page
+      // stays put — now with no session and no sign-out button anywhere.
+      blockedNotMember = true;
+      $('nm-username').textContent = '@' + (m.user_name || 'you');
+      SESSION = null;                   // UI treats them as signed out immediately
+      go('notmember');                  // session-box renders empty (no button)
+      if (sb) await sb.auth.signOut();  // actually revoke the session
+      return;
+    }
+    if (verdict === null) {
+      // token expired from an old session — one fresh sign-in re-verifies
+      await sb.auth.signOut();
+      SESSION = null;
+      go('signedout');
+      $('signin-hint').textContent = 'Please sign in again so we can verify your HisarCS membership.';
+      return;
+    }
+    // verified → mint the minimal person row NOW (one ~1ms insert). From this
+    // moment the member can create fields, even mid-onboarding.
+    ME = await createMinimalProfile(m);
+    if (!ME) {
+      go('signedout');
+      $('signin-hint').innerHTML = '<span class="hint-bad">✕ couldn\'t create your profile — try signing in again</span>';
+      return;
+    }
+    buildChips(FIELD_LIST);  // rebuild: ownership (×) now knows who ME is
+  }
+  if (ME.graduation_year == null) {
+    // profile exists but onboarding never finished (works even on a later
+    // visit with an expired GitHub token — membership was proven at minting)
+    $('ob-username').textContent = '@' + (m.user_name || 'you');
+    $('ob-gh').value = ME.github_username || m.user_name || '';
+    $('ob-name').value = ME.full_name || '';
+    selectedFields = new Set((ME.person_fields || []).map(r => r.field_id));
+    buildChips(FIELD_LIST);
+    refreshChipStates();
+    go('onboarding');
+  } else {
+    fillDashboard();
+    go('dashboard');
+  }
+}
+
+async function createMinimalProfile(m) {
+  const { data, error } = await sb.from('people')
+    .insert({
+      user_id: SESSION.user.id,
+      full_name: m.full_name || m.name || m.user_name || 'New Maker',
+      github_username: m.user_name || null,
+      avatar_url: m.avatar_url || null,   // GitHub avatar as the starting point
+    })
+    .select('*, person_fields(field_id)')
+    .single();
+  if (error) { console.error('ideaLab: minimal profile insert failed', error); return null; }
+  return data;
+}
+
+/* Resolve the ephemeral GitHub provider_token. Supabase delivers it only right
+   after the OAuth redirect, via the onAuthStateChange(SIGNED_IN) event (captured
+   into PROVIDER_TOKEN above). The getSession() safety-net in init() can call
+   route() a beat BEFORE that event fires, so poll briefly to let the token land
+   before concluding we can't verify — otherwise a fresh sign-in gets bounced
+   with "sign in again" and loops. Only reached for brand-new/unverified users,
+   so it never slows down members who already have a profile. */
+async function getProviderToken(timeoutMs = 2500) {
+  const deadline = Date.now() + timeoutMs;
+  for (;;) {
+    if (PROVIDER_TOKEN) return PROVIDER_TOKEN;
+    const { data: { session } } = await sb.auth.getSession();
+    if (session?.provider_token) { PROVIDER_TOKEN = session.provider_token; return PROVIDER_TOKEN; }
+    if (Date.now() >= deadline) return null;
+    await new Promise(r => setTimeout(r, 150));
+  }
+}
+
+/* true = active org member, false = not a member, null = can't verify
+   (no provider_token even after waiting for the post-OAuth event) */
+async function checkOrgMembership() {
+  const token = await getProviderToken();
+  if (!token) return null;
+  try {
+    const r = await fetch(`https://api.github.com/user/memberships/orgs/${GITHUB_ORG}`, {
+      headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' },
+    });
+    if (r.ok) return (await r.json()).state === 'active';
+    if (r.status === 404) return false;   // not a member at all
+    return null;                          // rate limit / API hiccup → re-verify
+  } catch { return null; }
+}
+
+/* ---------- fields / chips ---------- */
+async function loadFields() {
+  const { data } = await sb.from('fields').select('id, name, created_by').order('name');
+  FIELD_LIST = data || [];
+  buildChips(FIELD_LIST);
+}
+
+function buildChips(fields) {
+  // Onboarding shows ONLY fields that exist in the DB; anything the member
+  // types there is STAGED (dashed chip) and created when they submit.
+  // The dashboard creates fields immediately.
+  [['ob-chips', true], ['db-chips', false]].forEach(([cid, staged]) => {
+    const el = $(cid);
+    el.innerHTML = '';
+    fields.forEach(f => el.appendChild(makeChip(f)));
+    if (staged) pendingFields.forEach(nm => el.appendChild(makePendingChip(nm)));
+    el.appendChild(makeAddChip(el, staged));
+  });
+  const obHint = $('ob-chips-hint');
+  if (obHint && !obHint.querySelector('.hint-bad')) {
+    obHint.textContent = pendingFields.length
+      ? 'Dashed fields are new — they\'ll be created when you submit.' : '';
+  }
+}
+
+/* a field that will be born on submit — removable with its × until then */
+function makePendingChip(name) {
+  const b = document.createElement('button');
+  b.className = 'chip on';
+  b.style.borderStyle = 'dashed';
+  b.textContent = name;
+  b.title = 'will be created when you submit';
+  const x = document.createElement('span');
+  x.textContent = ' ×';
+  x.style.cssText = 'opacity:.55; font-weight:700';
+  x.onclick = (e) => {
+    e.stopPropagation();
+    pendingFields = pendingFields.filter(n => n !== name);
+    buildChips(FIELD_LIST);
+    refreshChipStates();
+  };
+  b.onclick = () => x.onclick(new Event('click'));  // whole chip removes it
+  b.appendChild(x);
+  return b;
+}
+function makeChip(f) {
+  const b = document.createElement('button');
+  b.className = 'chip';
+  b.textContent = f.name;
+  b.dataset.fieldId = f.id;
+  b.onclick = () => {
+    const id = Number(b.dataset.fieldId);
+    selectedFields.has(id) ? selectedFields.delete(id) : selectedFields.add(id);
+    refreshChipStates();
+  };
+  // fields YOU created get an × — delete & recreate typos on the spot
+  // (the DB only allows it while nobody else uses the field)
+  const mine = sb ? (ME && f.created_by && f.created_by === ME.id) : f.id >= 100;
+  if (mine) {
+    const x = document.createElement('span');
+    x.textContent = ' ×';
+    x.style.cssText = 'opacity:.55; font-weight:700';
+    x.title = 'delete this field (yours — allowed while nobody else uses it)';
+    x.onclick = (e) => { e.stopPropagation(); deleteField(f); };
+    b.appendChild(x);
+  }
+  return b;
+}
+
+async function deleteField(f) {
+  const hints = ['ob-chips-hint', 'db-chips-hint'].map(id => $(id)).filter(Boolean);
+  const drop = () => {
+    FIELD_LIST = FIELD_LIST.filter(x => x.id !== f.id);
+    selectedFields.delete(f.id);
+    buildChips(FIELD_LIST);
+    refreshChipStates();
+    hints.forEach(h => h.textContent = '');
+  };
+  if (!sb) { drop(); return; }  // demo
+  // .select() returns the deleted rows: empty array = RLS said no
+  const { data, error } = await sb.from('fields').delete().eq('id', f.id).select('id');
+  if (error || !data?.length) {
+    hints.forEach(h => h.innerHTML =
+      `<span class="hint-bad">✕ can't delete “${f.name}” — someone else is already using it</span>`);
+    return;
+  }
+  drop();
+}
+function refreshChipStates() {
+  document.querySelectorAll('.chip[data-field-id]').forEach(c =>
+    c.classList.toggle('on', selectedFields.has(Number(c.dataset.fieldId))));
+}
+function makeAddChip(container, staged) {
+  const add = document.createElement('button');
+  add.className = 'chip';
+  add.style.cssText = 'background:none; border-style:dashed; color:var(--muted)';
+  add.textContent = '+ new field';
+  add.onclick = () => {
+    const inp = document.createElement('input');
+    inp.type = 'text'; inp.placeholder = 'e.g. Kinetic Sculpture';
+    inp.style.cssText = 'width:170px; padding:6px 12px; font:inherit; font-size:13px; border-radius:99px; border:1.5px solid var(--accent)';
+    container.replaceChild(inp, add);
+    inp.focus();
+    let done = false;
+    const commit = async () => {
+      if (done) return; done = true;
+      const name = inp.value.replace(/\s+/g, ' ').trim();
+      container.replaceChild(add, inp);
+      if (!name) return;
+      const existing = FIELD_LIST.find(f => f.name.toLowerCase() === name.toLowerCase());
+      if (existing) { selectedFields.add(existing.id); refreshChipStates(); return; }
+      if (staged) {
+        // ONBOARDING: no DB write yet — stage the name; created on submit
+        if (!pendingFields.some(n => n.toLowerCase() === name.toLowerCase())) pendingFields.push(name);
+        buildChips(FIELD_LIST); refreshChipStates();
+        return;
+      }
+      if (!sb) {  // demo dashboard
+        const f = { id: 100 + FIELD_LIST.length, name };
+        FIELD_LIST.push(f); selectedFields.add(f.id); buildChips(FIELD_LIST); refreshChipStates();
+        return;
+      }
+      // live dashboard: create the tag now (id + created_by set server-side)
+      const hint = $(container.id + '-hint');
+      let { data, error } = await sb.from('fields').insert({ name }).select('id, name, created_by').single();
+      if (error && String(error.code) === '23505') {  // raced/case-duplicate → select it
+        ({ data, error } = await sb.from('fields').select('id, name, created_by').ilike('name', name).single());
+      }
+      if (data) {
+        FIELD_LIST.push(data); selectedFields.add(data.id);
+        buildChips(FIELD_LIST); refreshChipStates();
+        if (hint) { hint.textContent = ''; }
+      } else if (hint) {  // never fail silently — say exactly why
+        hint.innerHTML = `<span class="hint-bad">✕ couldn't create “${name}”: ${error?.message || 'unknown error'}</span>`;
+      }
+    };
+    inp.onkeydown = e => {
+      if (e.key === 'Enter') commit();
+      if (e.key === 'Escape') { done = true; container.replaceChild(add, inp); }
+    };
+    inp.onblur = commit;
+  };
+  return add;
+}
+
+/* ---------- onboarding → COMPLETES the Person (row already exists) ---------- */
+async function createProfile(btn) {
+  const name = $('ob-name').value.trim();
+  const yearOk = checkYear($('ob-year'), 'ob-year-hint');
+  if (!name) { $('ob-hint').innerHTML = '<span class="hint-bad">✕ your name is required</span>'; return; }
+  if (!yearOk) { $('ob-hint').innerHTML = '<span class="hint-bad">✕ fix the graduation year first</span>'; return; }
+  if (!sb) {  // demo: staged fields become real chips on submit
+    pendingFields.forEach(nm => {
+      const f = { id: 100 + FIELD_LIST.length, name: nm };
+      FIELD_LIST.push(f); selectedFields.add(f.id);
+    });
+    pendingFields = [];
+    buildChips(FIELD_LIST); refreshChipStates();
+    go('dashboard'); return;
+  }
+
+  btn.disabled = true;
+  // 1) create the fields staged during onboarding — the ONLY moment they
+  //    touch the database (typo'd + removed chips never existed)
+  for (const nm of pendingFields.slice()) {
+    let { data, error } = await sb.from('fields').insert({ name: nm }).select('id').single();
+    if (error && String(error.code) === '23505') {  // someone made it meanwhile
+      ({ data, error } = await sb.from('fields').select('id').ilike('name', nm).single());
+    }
+    if (!data) {
+      btn.disabled = false;
+      $('ob-hint').innerHTML = `<span class="hint-bad">✕ couldn't create “${nm}”: ${error?.message || 'unknown error'}</span>`;
+      return;
+    }
+    selectedFields.add(data.id);
+    pendingFields = pendingFields.filter(n => n !== nm);
+  }
+  await loadFields();  // refresh FIELD_LIST with the new ids/ownership
+
+  // 2) complete the profile
+  const { data, error } = await sb.from('people')
+    .update({ full_name: name, graduation_year: parseInt($('ob-year').value, 10) })
+    .eq('id', ME.id)
+    .select('*, person_fields(field_id)')
+    .single();
+  btn.disabled = false;
+  if (error) { $('ob-hint').innerHTML = `<span class="hint-bad">✕ ${error.message}</span>`; return; }
+  ME = data;
+  await syncTags();
+  fillDashboard();
+  go('dashboard');
+}
+
+/* diff the chip selection against the DB and reconcile */
+async function syncTags() {
+  const before = new Set((ME.person_fields || []).map(r => r.field_id));
+  const toAdd = [...selectedFields].filter(x => !before.has(x));
+  const toRemove = [...before].filter(x => !selectedFields.has(x));
+  if (toAdd.length) await sb.from('person_fields').insert(toAdd.map(fid => ({ person_id: ME.id, field_id: fid })));
+  if (toRemove.length) await sb.from('person_fields').delete().eq('person_id', ME.id).in('field_id', toRemove);
+  ME.person_fields = [...selectedFields].map(fid => ({ field_id: fid }));
+}
+
+/* ---------- dashboard fill + save ---------- */
+function fillDashboard() {
+  if (!ME) return;
+  $('db-name').value = ME.full_name || '';
+  $('db-bio').value = ME.bio || '';
+  $('db-resume').value = ME.resume_url || '';
+  $('gh-username').value = ME.github_username || '';
+  $('slug-input').value = ME.public_id || '';
+  $('db-year').value = ME.graduation_year || '';
+  $('slug-hint').textContent = ''; $('save-hint').textContent = '';
+  $('draft-note').style.display = ME.is_published ? 'none' : 'block';
+  selectedFields = new Set((ME.person_fields || []).map(r => r.field_id));
+  refreshChipStates();
+  renderAvatarTile();
+  loadProjects();
+}
+
+function renderAvatarTile() {
+  const av = $('avatar-big');
+  av.innerHTML = '';
+  av.style.background = ME?.avatar_color || '#2f6fe8';
+  if (ME?.avatar_url) {
+    const img = new Image(); img.alt = '';
+    img.onload = () => { av.innerHTML = ''; av.appendChild(img); };
+    img.onerror = () => { av.textContent = myInitials(); };
+    img.src = ME.avatar_url;
+    av.textContent = myInitials();  // shown until the image loads
+  } else {
+    av.textContent = myInitials();
+  }
+}
+const myInitials = () =>
+  ($('db-name').value || ME?.full_name || 'M K').split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
+
+async function saveProfile(btn) {
+  const hint = $('save-hint');
+  if (!checkYear($('db-year'), 'db-year-hint')) { hint.innerHTML = '<span class="hint-bad">fix the graduation year</span>'; return; }
+  if (!sb || !ME) { hint.innerHTML = '<span class="hint-ok">Saved ✓ (demo)</span>'; return; }
+
+  btn.disabled = true; hint.textContent = 'saving…';
+  const patch = {
+    full_name: $('db-name').value.trim(),
+    bio: $('db-bio').value.trim() || null,
+    resume_url: $('db-resume').value.trim() || null,
+    // github_username is server-owned (synced from the OAuth token by a trigger);
+    // never sent from the client.
+    public_id: $('slug-input').value.trim(),
+    graduation_year: parseInt($('db-year').value, 10),
+  };
+  const { data, error } = await sb.from('people')
+    .update(patch).eq('id', ME.id).select('*, person_fields(field_id)').single();
+  if (error) {
+    btn.disabled = false;
+    const msg = /people_public_id_key|duplicate/.test(error.message) ? 'that profile URL is taken' : error.message;
+    hint.innerHTML = `<span class="hint-bad">✕ ${msg}</span>`;
+    return;
+  }
+  ME = { ...data, person_fields: ME.person_fields };
+  await syncTags();
+  btn.disabled = false;
+  hint.innerHTML = '<span class="hint-ok">Saved ✓</span>';
+  setTimeout(() => hint.textContent = '', 2500);
+}
+
+/* ---------- projects ---------- */
+async function loadProjects() {
+  const el = $('projects-list');
+  if (!sb || !ME) {
+    el.innerHTML = '<div class="sub">Demo mode — connect Supabase to see your projects.</div>';
+    return;
+  }
+  const { data, error } = await sb.from('projects')
+    .select('public_id, title, is_published, project_members!inner(person_id)')
+    .eq('project_members.person_id', ME.id)
+    .order('title');
+  if (error) { el.innerHTML = `<div class="sub hint-bad">couldn't load projects: ${error.message}</div>`; return; }
+  if (!data.length) { el.innerHTML = '<div class="sub">No projects yet — start one below.</div>'; return; }
+  el.innerHTML = data.map(p => `
+    <a class="proj" href="project.html?id=${encodeURIComponent(p.public_id)}">
+      <div class="pav">${p.title.split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase()}</div>
+      <div><div class="pt">${p.title}</div></div>
+      <div class="spacer"></div>
+      <span class="badge ${p.is_published ? 'live' : 'draft'}">${p.is_published ? 'Published' : 'Draft'}</span>
+    </a>`).join('');
+}
+
+/* ---------- avatar controls ---------- */
+const avatarEl = $('avatar-big');
+const swatchRow = $('swatches');
+PALETTE.forEach(c => {
+  const b = document.createElement('button');
+  b.className = 'swatch';
+  b.style.background = c;
+  b.title = c;
+  b.onclick = async () => {
+    avatarEl.innerHTML = myInitials();
+    avatarEl.style.background = c;
+    swatchRow.querySelectorAll('.swatch').forEach(s => s.classList.toggle('on', s === b));
+    if (sb && ME) {
+      const { error } = await sb.from('people').update({ avatar_url: null, avatar_color: c }).eq('id', ME.id);
+      if (!error) { ME.avatar_url = null; ME.avatar_color = c; $('avatar-hint').textContent = '✓ saved'; }
+    }
+  };
+  swatchRow.appendChild(b);
+});
+
+async function uploadAvatar(file) {
+  if (!file) return;
+  const hint = $('avatar-hint');
+  const bad = idealabCheckFile(file, IDEALAB_UPLOADS.avatar);
+  if (bad) { hint.textContent = `✕ ${bad}`; return; }
+  if (!sb || !ME) {  // demo: local preview only
+    const r = new FileReader();
+    r.onload = () => { avatarEl.innerHTML = `<img src="${r.result}" alt="">`; };
+    r.readAsDataURL(file);
+    hint.textContent = '✓ preview (demo — not saved)';
+    return;
+  }
+  try {
+    hint.textContent = 'optimizing…';
+    // 512px master + 128px twin for the homepage grid; fixed paths + a ?v=
+    // cache-buster so the CDN can cache for a year yet updates show instantly
+    const big   = await idealabOptimizeImage(file, IDEALAB_UPLOADS.avatar.maxDim, { square: true });
+    const thumb = await idealabOptimizeImage(file, 128, { square: true });
+    hint.textContent = 'uploading…';
+    const up = (p, blob) => sb.storage.from('avatars')
+      .upload(p, blob, { upsert: true, cacheControl: '31536000', contentType: 'image/jpeg' });
+    let r = await up(`${SESSION.user.id}/avatar-512.jpg`, big);   if (r.error) throw r.error;
+    r     = await up(`${SESSION.user.id}/avatar-128.jpg`, thumb); if (r.error) throw r.error;
+    const url = sb.storage.from('avatars')
+      .getPublicUrl(`${SESSION.user.id}/avatar-512.jpg`).data.publicUrl + `?v=${Date.now()}`;
+    const { error } = await sb.from('people').update({ avatar_url: url }).eq('id', ME.id);
+    if (error) throw error;
+    ME.avatar_url = url;
+    swatchRow.hidden = true;
+    renderAvatarTile();
+    hint.textContent = `✓ avatar saved (${Math.max(1, Math.round(big.size / 1024))} KB after optimization)`;
+  } catch (e) {
+    hint.textContent = `✕ ${e.message || e}`;
+  }
+}
+
+async function uploadResume(file) {
+  if (!file) return;
+  const hint = $('resume-hint');
+  const bad = idealabCheckFile(file, IDEALAB_UPLOADS.resume);
+  if (bad) { hint.textContent = `✕ ${bad}`; hint.className = 'sub hint-bad'; return; }
+  if (!sb || !ME) {
+    $('db-resume').value = `(demo) ${file.name}`;
+    hint.textContent = '✓ selected (demo — not saved)'; hint.className = 'sub hint-ok';
+    return;
+  }
+  try {
+    hint.className = 'sub'; hint.textContent = 'uploading…';
+    const path = `${SESSION.user.id}/resume.pdf`;   // fixed path: new upload replaces old
+    const { error: upErr } = await sb.storage.from('resumes')
+      .upload(path, file, { upsert: true, cacheControl: '3600', contentType: 'application/pdf' });
+    if (upErr) throw upErr;
+    const url = sb.storage.from('resumes').getPublicUrl(path).data.publicUrl + `?v=${Date.now()}`;
+    const { error } = await sb.from('people').update({ resume_url: url }).eq('id', ME.id);
+    if (error) throw error;
+    ME.resume_url = url;
+    $('db-resume').value = url;
+    hint.textContent = '✓ resume uploaded'; hint.className = 'sub hint-ok';
+  } catch (e) {
+    hint.textContent = `✕ ${e.message || e}`; hint.className = 'sub hint-bad';
+  }
+}
+
+async function importGithubAvatar() {
+  const hint = $('avatar-hint');
+  // canonical source: the avatar URL inside the GitHub OAuth token
+  let url = SESSION?.user?.user_metadata?.avatar_url;
+  if (!url) {
+    const login = ($('gh-username').value || '').trim();
+    if (!login) { hint.textContent = '✕ enter your GitHub username first'; return; }
+    url = `https://github.com/${login}.png?size=240`;
+  }
+  const img = new Image();
+  img.alt = '';
+  img.onload = async () => {
+    if (sb && ME) {
+      const { error } = await sb.from('people').update({ avatar_url: url }).eq('id', ME.id);
+      if (error) { hint.textContent = `✕ ${error.message}`; return; }
+      ME.avatar_url = url;
+    }
+    avatarEl.innerHTML = '';
+    avatarEl.appendChild(img);
+    swatchRow.hidden = true;
+    hint.textContent = '✓ imported your GitHub avatar';
+  };
+  img.onerror = () => { hint.textContent = '✕ couldn\'t fetch a GitHub avatar'; };
+  img.src = url;
+}
+
+function resetToInitials() {
+  avatarEl.innerHTML = myInitials();
+  swatchRow.hidden = false;
+  $('avatar-hint').textContent = 'Pick a tile color below — it shows behind your initials on the homepage.';
+}
+
+/* ---------- validation ---------- */
+function checkYear(inp, hintId) {
+  inp.value = inp.value.replace(/\D/g, '').slice(0, 4);
+  const hint = $(hintId);
+  const min = 2008, max = new Date().getFullYear() + 12;
+  if (inp.value.length < 4) {
+    hint.textContent = `4-digit year, ${min}–${max}`;
+    hint.className = 'sub';
+    return false;
+  }
+  const y = parseInt(inp.value, 10);
+  const ok = y >= min && y <= max;
+  hint.textContent = ok
+    ? '✓ your student/alumni status follows this year automatically'
+    : `✕ must be between ${min} and ${max}`;
+  hint.className = 'sub ' + (ok ? 'hint-ok' : 'hint-bad');
+  return ok;
+}
+
+let slugTimer = null;
+function checkSlug(v) {
+  const hint = $('slug-hint');
+  const ok = /^[a-z0-9]+(-[a-z0-9]+)*$/.test(v);
+  if (ME && v === ME.public_id) { hint.textContent = '✓ this URL is yours'; hint.className = 'sub hint-ok'; return; }
+  if (!ok) { hint.textContent = '✕ lowercase letters, numbers and dashes only'; hint.className = 'sub hint-bad'; return; }
+  if (!sb) {  // demo
+    const taken = ['elif-demir', 'arda-gunes'].includes(v);
+    hint.textContent = taken ? '✕ already taken' : '✓ available';
+    hint.className = 'sub ' + (taken ? 'hint-bad' : 'hint-ok');
+    return;
+  }
+  clearTimeout(slugTimer);
+  hint.textContent = 'checking…'; hint.className = 'sub';
+  slugTimer = setTimeout(async () => {
+    const { data, error } = await sb.rpc('is_public_id_available', { candidate: v });
+    if (error) { hint.textContent = ''; return; }
+    hint.textContent = data ? '✓ available' : '✕ already taken';
+    hint.className = 'sub ' + (data ? 'hint-ok' : 'hint-bad');
+  }, 300);
+}
+
+/* ---------- delete account ---------- */
+async function tryDelete(btn) {
+  const expect = (ME?.full_name || $('db-name').value || 'your name').trim();
+  $('del-name-echo').textContent = expect;
+  const typed = $('del-confirm').value.trim();
+  if (typed !== expect) {
+    $('del-confirm').style.outline = '2px solid var(--danger)';
+    return;
+  }
+  if (!sb || !ME) { $('del-overlay').classList.remove('show'); go('signedout'); return; }
+  btn.disabled = true;
+  const { error } = await sb.rpc('delete_my_account');
+  btn.disabled = false;
+  if (error) { $('del-confirm').style.outline = '2px solid var(--danger)'; console.error(error); return; }
+  await sb.auth.signOut();
+  $('del-overlay').classList.remove('show');
+  SESSION = null; ME = null;
+  go('signedout');
+}
+// keep the modal's name echo current
+document.querySelector('.danger-zone .btn.danger').addEventListener('click', () => {
+  $('del-name-echo').textContent = (ME?.full_name || $('db-name').value || 'your name').trim();
+});
+
+init();
+</script>
+</body>
+</html>

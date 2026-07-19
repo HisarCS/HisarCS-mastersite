@@ -1,0 +1,17 @@
+{
+  "name": "hisarcs-mastersite",
+  "private": true,
+  "scripts": {
+    "dev": "serve -l 3000 .",
+    "stack": "supabase start --network-id local-network",
+    "stack:down": "supabase stop --no-backup",
+    "stack:reset": "npm run stack:down && npm run stack",
+    "test": "playwright test -c tests/playwright.config.js",
+    "db:push": "supabase db push"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.0",
+    "serve": "^14.2.0",
+    "supabase": "^2.108.0"
+  }
+}
