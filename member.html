@@ -838,12 +838,13 @@ async function loadProjects() {
     .select('public_id, title, is_published, project_members!inner(person_id)')
     .eq('project_members.person_id', ME.id)
     .order('title');
-  if (error) { el.innerHTML = `<div class="sub hint-bad">couldn't load projects: ${error.message}</div>`; return; }
+  const esc = window.idealabEsc;
+  if (error) { el.innerHTML = `<div class="sub hint-bad">couldn't load projects: ${esc(error.message)}</div>`; return; }
   if (!data.length) { el.innerHTML = '<div class="sub">No projects yet — start one below.</div>'; return; }
   el.innerHTML = data.map(p => `
     <a class="proj" href="project?id=${encodeURIComponent(p.public_id)}">
-      <div class="pav">${p.title.split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase()}</div>
-      <div><div class="pt">${p.title}</div></div>
+      <div class="pav">${esc(p.title.split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase())}</div>
+      <div><div class="pt">${esc(p.title)}</div></div>
       <div class="spacer"></div>
       <span class="badge ${p.is_published ? 'live' : 'draft'}">${p.is_published ? 'Published' : 'Draft'}</span>
     </a>`).join('');

@@ -28,19 +28,19 @@ Browser (GitHub Pages, static)                Supabase (cloud or local Docker)
 
 ## 1. Repo layout — where everything lives
 
-| Path | Role |
-|---|---|
-| `index.html` | Homepage: the pixel-art `.)` mark, one pixel per published person. |
-| `person.html` | Public profile page — loads a person by `?id=` (their `public_id`) from Supabase; falls back to an id-derived preview if the backend is unreachable. |
-| `member.html` | Signed-in area: GitHub sign-in → org check → onboarding → dashboard (edit profile, tags, projects, delete account). |
-| `project.html` | Project page — loads a project by `?id=` (its `public_id`) from Supabase (members, tags, description, files, links). Editor-mode mutations are still prototype stubs (see §9). |
-| `config.js` | Picks local vs production Supabase by hostname. Mock data exists **only on localhost** (dev playground); production never fakes content — an empty lab renders the mark in ink only, and missing profiles/projects show an honest "unavailable" card with the build stamp. |
-| `vendor/supabase.js` | Vendored supabase-js v2 (UMD build), served same-origin from Pages — no third-party CDN dependency, so the site works on networks that filter CDNs. To update: re-download the UMD build from npm/jsdelivr into this file. |
-| `serve.json` | Config for the local dev server (`npm run dev`) so it serves extensionless URLs (`/person?id=…`) with query strings intact, exactly like GitHub Pages (`cleanUrls`). |
-| `supabase/` | **Backend + local dev.** `migrations/20260711000001_schema.sql` is the whole database (tables, RLS, triggers, the directory view, storage buckets, starter tags — the single source of truth); `seed.sql` is local-only mock data replayed on each local reset (**never** touches production); `config.toml` holds local CLI settings. |
-| `tests/` | **Testing.** `playwright.config.js` + `e2e.spec.js` — end-to-end tests (DB-backed rendering, the RLS contract, graceful fallback). Run with `npm test`. |
-| `package.json` | npm scripts (`dev`, `stack`, `test`, `db:push`) + dev dependencies. |
-| `README.md` | This document. |
+| Path                 | Role                                                                                                                                                                                                                                                                                                                                   |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `index.html`         | Homepage: the pixel-art `.)` mark, one pixel per published person.                                                                                                                                                                                                                                                                     |
+| `person.html`        | Public profile page — loads a person by `?id=` (their `public_id`) from Supabase; falls back to an id-derived preview if the backend is unreachable.                                                                                                                                                                                   |
+| `member.html`        | Signed-in area: GitHub sign-in → org check → onboarding → dashboard (edit profile, tags, projects, delete account).                                                                                                                                                                                                                    |
+| `project.html`       | Project page — loads a project by `?id=` (its `public_id`) from Supabase (members, tags, description, files, links). Editor-mode mutations are still prototype stubs (see §9).                                                                                                                                                         |
+| `config.js`          | Picks local vs production Supabase by hostname. Mock data exists **only on localhost** (dev playground); production never fakes content — an empty lab renders the mark in ink only, and missing profiles/projects show an honest "unavailable" card with the build stamp.                                                             |
+| `vendor/supabase.js` | Vendored supabase-js v2 (UMD build), served same-origin from Pages — no third-party CDN dependency, so the site works on networks that filter CDNs. To update: re-download the UMD build from npm/jsdelivr into this file.                                                                                                             |
+| `serve.json`         | Config for the local dev server (`npm run dev`) so it serves extensionless URLs (`/person?id=…`) with query strings intact, exactly like GitHub Pages (`cleanUrls`).                                                                                                                                                                   |
+| `supabase/`          | **Backend + local dev.** `migrations/20260711000001_schema.sql` is the whole database (tables, RLS, triggers, the directory view, storage buckets, starter tags — the single source of truth); `seed.sql` is local-only mock data replayed on each local reset (**never** touches production); `config.toml` holds local CLI settings. |
+| `tests/`             | **Testing.** `playwright.config.js` + `e2e.spec.js` — end-to-end tests (DB-backed rendering, the RLS contract, graceful fallback). Run with `npm test`.                                                                                                                                                                                |
+| `package.json`       | npm scripts (`dev`, `stack`, `test`, `db:push`) + dev dependencies.                                                                                                                                                                                                                                                                    |
+| `README.md`          | This document.                                                                                                                                                                                                                                                                                                                         |
 
 App pages, `config.js`, and `serve.json` stay at the repo root because GitHub
 Pages serves the site from there; everything for **testing** lives in `tests/`
@@ -49,7 +49,7 @@ and everything for the **backend / local dev** lives in `supabase/`.
 The database is deliberately **one migration file**. Nothing has shipped yet, so
 there is no history to preserve — the file describes the final schema directly,
 with inline comments explaining every table and column. When you change the
-schema, add a *new* timestamped migration; never edit tables by hand in a way
+schema, add a _new_ timestamped migration; never edit tables by hand in a way
 that drifts local from production.
 
 ---
@@ -77,13 +77,13 @@ erDiagram
   auto-generated from `full_name` on insert), and `user_id` (nullable link to the
   Supabase Auth / GitHub login — null until the person first signs in). Plus
   profile fields (bio, avatar, resume, etc.) and `is_published`.
-  - *Why a nullable `graduation_year`:* a row is created the moment someone
+  - _Why a nullable `graduation_year`:_ a row is created the moment someone
     signs in (before they fill anything in), but a database `CHECK` makes it
     impossible to **publish** without a year.
-  - *Why `student`/`alumni` isn't stored:* it's derived from `graduation_year`
+  - _Why `student`/`alumni` isn't stored:_ it's derived from `graduation_year`
     against the academic year (flips July 1, Istanbul) by the
     `current_academic_year()` function. Nobody updates flags every June.
-  - *`github_username` is server-owned.* A trigger forces it to the GitHub login
+  - _`github_username` is server-owned._ A trigger forces it to the GitHub login
     from the auth token whenever the row is linked — members can't spoof it (see §3).
 - **`fields`** — one canonical tag list shared by people **and** projects, so
   "Robotics" is spelled one way everywhere. Uniqueness is case-insensitive.
@@ -93,7 +93,7 @@ erDiagram
   (media, in the storage bucket) and `project_links` (external URLs).
 - **Junction tables** (`person_fields`, `project_fields`, `project_members`)
   are the many-to-many links. `project_members` doubles as the permission list:
-  *being on it is the right to edit the project.*
+  _being on it is the right to edit the project._
 - **`admin_github_logins`** — the allowlist of admin GitHub usernames.
 - **`people_directory`** (a view) — the one thing the public pages read:
   published people + derived cohort + their tag names, in a single query.
@@ -111,12 +111,12 @@ ever grows large.
 Every rule below is enforced by the **database** (RLS policies + triggers), not
 the frontend.
 
-| Actor | Can |
-|---|---|
-| **Anon** (public visitor) | Read published people & projects. |
-| **Member** (signed in, has a profile) | Read + edit **their own** row (except the login link, publish flag, and GitHub username); manage their own tags; create tags; create/edit/delete projects they're a member of; delete their own account. |
-| **Admin** (on the allowlist) | Everything, including publishing profiles and managing admins. |
-| **Service role** (SQL editor, seed scripts) | Bypasses RLS entirely — used for setup and hand-edits. |
+| Actor                                       | Can                                                                                                                                                                                                      |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Anon** (public visitor)                   | Read published people & projects.                                                                                                                                                                        |
+| **Member** (signed in, has a profile)       | Read + edit **their own** row (except the login link, publish flag, and GitHub username); manage their own tags; create tags; create/edit/delete projects they're a member of; delete their own account. |
+| **Admin** (on the allowlist)                | Everything, including publishing profiles and managing admins.                                                                                                                                           |
+| **Service role** (SQL editor, seed scripts) | Bypasses RLS entirely — used for setup and hand-edits.                                                                                                                                                   |
 
 - **Members can't publish themselves.** New profiles are drafts; an **admin**
   publishes them (a `guard_people_update` trigger blocks members from flipping
@@ -181,15 +181,15 @@ ownership (RLS on `storage.objects`):
 **Upload requirements** — defined once in `IDEALAB_UPLOADS` (config.js) and
 enforced in every upload UI:
 
-| File | Accepted types | Max source size | What's stored |
-|---|---|---|---|
-| Avatar | JPEG, PNG, WebP | 10 MB | auto-cropped square, optimized 512px JPEG + 128px thumb (~100 KB + ~15 KB) |
-| Resume | PDF | 5 MB | the PDF as-is (recompression would cost fidelity) |
-| Project image | JPEG, PNG, WebP | 15 MB | optimized 1600px JPEG (~300–500 KB) |
-| Project PDF | PDF | 10 MB | the PDF as-is |
+| File          | Accepted types  | Max source size | What's stored                                                              |
+| ------------- | --------------- | --------------- | -------------------------------------------------------------------------- |
+| Avatar        | JPEG, PNG, WebP | 10 MB           | auto-cropped square, optimized 512px JPEG + 128px thumb (~100 KB + ~15 KB) |
+| Resume        | PDF             | 5 MB            | the PDF as-is (recompression would cost fidelity)                          |
+| Project image | JPEG, PNG, WebP | 15 MB           | optimized 1600px JPEG (~300–500 KB)                                        |
+| Project PDF   | PDF             | 10 MB           | the PDF as-is                                                              |
 
 **Why it stays fast without losing quality:** images are optimized
-*client-side* before upload (`idealabOptimizeImage` — stepped high-quality
+_client-side_ before upload (`idealabOptimizeImage` — stepped high-quality
 downscale, JPEG q0.85: visually lossless at the sizes the site displays, but
 10–20× smaller than a phone photo). The homepage grid loads the 128px thumbs
 (~2 MB cold for 120 people instead of ~18 MB) with lazy loading; profile and
@@ -238,14 +238,14 @@ Studio (the DB admin UI) is at http://127.0.0.1:54323.
 
 **Daily commands:**
 
-| Command | Does |
-|---|---|
-| `npm run dev` | Serve the frontend at :3000 (reads `serve.json`). |
-| `npm run stack` | Start the local Supabase stack (localhost-only). |
-| `npm run stack:down` | Stop it, discarding data. |
-| `npm run stack:reset` | Stop + start = a clean DB rebuilt from the migration + seed. |
-| `npm test` | Run the Playwright e2e suite (live tests self-skip if the stack is down). |
-| `npx supabase status` | Re-print local URLs and keys. |
+| Command               | Does                                                                      |
+| --------------------- | ------------------------------------------------------------------------- |
+| `npm run dev`         | Serve the frontend at :3000 (reads `serve.json`).                         |
+| `npm run stack`       | Start the local Supabase stack (localhost-only).                          |
+| `npm run stack:down`  | Stop it, discarding data.                                                 |
+| `npm run stack:reset` | Stop + start = a clean DB rebuilt from the migration + seed.              |
+| `npm test`            | Run the Playwright e2e suite (live tests self-skip if the stack is down). |
+| `npx supabase status` | Re-print local URLs and keys.                                             |
 
 > ⚠️ **Don't run `supabase db reset` on the `local-network`.** It recreates the
 > DB container on the wrong network and the other containers can't reach it
@@ -285,34 +285,34 @@ survives graduations:
    - Check **"Request user authorization (OAuth) during installation."**
    - **Webhook:** uncheck **Active** (not needed).
    - **Permissions:**
-     - *Account* → **Email addresses: Read-only** (so Supabase can read the email).
-     - *Organization* → **Members: Read-only** (for the HisarCS membership check).
-   - **Where can this app be installed:** *Only on this account* (HisarCS).
+     - _Account_ → **Email addresses: Read-only** (so Supabase can read the email).
+     - _Organization_ → **Members: Read-only** (for the HisarCS membership check).
+   - **Where can this app be installed:** _Only on this account_ (HisarCS).
    - Create the app, then **generate a client secret** and copy the **Client ID**.
-2. **Install the app on the HisarCS org** (the app's page → *Install App* →
-   HisarCS → *All members*). Without installation the membership check can't
+2. **Install the app on the HisarCS org** (the app's page → _Install App_ →
+   HisarCS → _All members_). Without installation the membership check can't
    read org data.
-3. Supabase → *Authentication → Providers → GitHub* → enable → paste the
+3. Supabase → _Authentication → Providers → GitHub_ → enable → paste the
    **Client ID** and **Client secret**.
-4. Supabase → *Authentication → URL Configuration* → **Site URL** = the Pages
+4. Supabase → _Authentication → URL Configuration_ → **Site URL** = the Pages
    URL above; add `http://localhost:3000` as an additional **Redirect URL** for
    local dev.
 5. Fill the `production` block in [`config.js`](config.js) with the project's
-   URL + anon key (*Settings → API*; the anon key is public-safe — RLS is the
+   URL + anon key (_Settings → API_; the anon key is public-safe — RLS is the
    real boundary).
 
 > **Membership-check note.** The gate calls `GET /user/memberships/orgs/HisarCS`
 > with the signed-in user's token; it resolves once the GitHub App has
-> *Members: read* **and** is installed on the org. If GitHub ever stops serving
+> _Members: read_ **and** is installed on the org. If GitHub ever stops serving
 > that endpoint for user-to-server tokens, the robust upgrade is the Edge
-> Function in §9 (checks membership with an app *installation* token). Either
+> Function in §9 (checks membership with an app _installation_ token). Either
 > way, admins publishing profiles is the actual security gate.
 
 ### C. GitHub Pages
 
 1. Push to `HisarCS/HisarCS-mastersite` (`main`). `.nojekyll` is committed so
    Pages serves files verbatim.
-2. Repo → *Settings → Pages* → *Deploy from a branch* → `main` / `/ (root)`.
+2. Repo → _Settings → Pages_ → _Deploy from a branch_ → `main` / `/ (root)`.
    Every subsequent `git push` redeploys automatically. Site:
    `https://hisarcs.github.io/HisarCS-mastersite/`.
 3. Project Pages live under `/HisarCS-mastersite/`; keep links relative and use
@@ -378,7 +378,7 @@ Still to build:
 3. Build a small **admin panel** (publish queue for new members, manage the
    allowlist, edit anyone).
 4. **Harden the org gate server-side.** A Supabase Edge Function that verifies
-   HisarCS membership with a GitHub App *installation* token (instead of the
+   HisarCS membership with a GitHub App _installation_ token (instead of the
    client-side user-token check) makes the gate unspoofable and immune to
    GitHub's user-to-server endpoint rules.
 5. Extensions the schema already anticipates: cohort override for mentors/staff,

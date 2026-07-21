@@ -480,20 +480,22 @@ card.addEventListener('mouseleave', scheduleHideCard);
 function showCard(person, pixelEl) {
   clearTimeout(hideTimer);
   const color = person.avatar_color || FALLBACK_COLORS[hashStr(person.id) % FALLBACK_COLORS.length];
+  const esc = window.idealabEsc, safeUrl = window.idealabSafeUrl;
+  const initials = initialsOf(person.name);
   card.innerHTML = `
     <div class="row">
       <div class="card-avatar" style="background:${color}">
         ${person.avatar_url
-          ? `<img src="${idealabThumbUrl(person.avatar_url)}" alt="" decoding="async" onerror="this.replaceWith('${initialsOf(person.name)}')">`
-          : initialsOf(person.name)}
+          ? `<img src="${esc(safeUrl(idealabThumbUrl(person.avatar_url)))}" alt="" decoding="async" data-initials="${esc(initials)}" onerror="this.replaceWith(this.getAttribute('data-initials'))">`
+          : esc(initials)}
       </div>
       <div>
-        <div class="name">${person.name}</div>
-        <div class="role">${person.role} · ${person.discipline}</div>
+        <div class="name">${esc(person.name)}</div>
+        <div class="role">${esc(person.role)} · ${esc(person.discipline)}</div>
       </div>
     </div>
     <span class="badge ${person.cohort}">${person.cohort === 'alumni' ? 'Alumni' : 'Current Student'}</span>
-    <a class="profile-link" href="${person.profile_url}">View profile →</a>`;
+    <a class="profile-link" href="${esc(safeUrl(person.profile_url))}">View profile →</a>`;
   card.setAttribute('aria-hidden', 'false');
 
   // position: above the pixel, clamped to viewport; flip below if no room

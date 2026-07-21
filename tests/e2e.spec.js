@@ -23,8 +23,11 @@ test.beforeAll(async () => {
   try {
     const r = await fetch(REST('fields?select=id&limit=1'), { headers: HEADERS });
     stackUp = r.ok;
-  } catch { /* stack down */ }
-  if (!stackUp) console.log('⚠ Supabase stack not reachable — live tests will be skipped (npm run stack)');
+  } catch {
+    /* stack down */
+  }
+  if (!stackUp)
+    console.log('⚠ Supabase stack not reachable — live tests will be skipped (npm run stack)');
 });
 
 // ---------------------------------------------------------------- live tests
@@ -44,28 +47,30 @@ test('every pixel links to a unique person URL', async ({ page }) => {
   await page.waitForSelector('.pixel.person');
   const hrefs = await page.$$eval('.pixel.person', (els) => els.map((e) => e.getAttribute('href')));
   expect(hrefs.length).toBeGreaterThan(0);
-  expect(new Set(hrefs).size).toBe(hrefs.length);       // all distinct
+  expect(new Set(hrefs).size).toBe(hrefs.length); // all distinct
   for (const h of hrefs) expect(h).toMatch(/^person\?id=/); // real public_ids, extensionless
 });
 
 test('person page loads the requested person by id', async ({ page }) => {
   test.skip(!stackUp, 'local Supabase not running');
-  await page.goto('/person?id=ceren-kaya');               // seeded, published
+  await page.goto('/person?id=ceren-kaya'); // seeded, published
   await expect(page.locator('h1')).toContainText('Ceren Kaya');
   await expect(page.locator('#meta')).toContainText('Class of');
 });
 
 test('cohort derives from graduation year', async ({ page }) => {
   test.skip(!stackUp, 'local Supabase not running');
-  await page.goto('/person?id=elif-demir');             // seeded grad 2022
+  await page.goto('/person?id=elif-demir'); // seeded grad 2022
   await expect(page.locator('.badge')).toContainText(/alumni/i);
 });
 
 test('RLS: draft people are invisible to the public', async () => {
   test.skip(!stackUp, 'local Supabase not running');
-  const r = await fetch(REST('people?select=public_id&public_id=eq.draft-deniz'), { headers: HEADERS });
+  const r = await fetch(REST('people?select=public_id&public_id=eq.draft-deniz'), {
+    headers: HEADERS,
+  });
   expect(r.ok).toBeTruthy();
-  expect(await r.json()).toEqual([]);                   // seeded draft, hidden
+  expect(await r.json()).toEqual([]); // seeded draft, hidden
 });
 
 test('RLS: anonymous visitors cannot write', async () => {
@@ -82,8 +87,8 @@ test('RLS: draft projects and their links are hidden', async () => {
   test.skip(!stackUp, 'local Supabase not running');
   const r = await fetch(REST('projects?select=public_id'), { headers: HEADERS });
   const ids = (await r.json()).map((p) => p.public_id);
-  expect(ids).toContain('pixel-wall');                  // published
-  expect(ids).not.toContain('seed-garden');             // seeded draft
+  expect(ids).toContain('pixel-wall'); // published
+  expect(ids).not.toContain('seed-garden'); // seeded draft
 });
 
 // ------------------------------------------------------------- always-on test
@@ -99,5 +104,5 @@ test('graceful fallback: site still renders with no backend at all', async ({ pa
   await page.goto('/');
   await page.waitForSelector('.pixel.person', { timeout: 15_000 });
   const count = await page.locator('.pixel.person').count();
-  expect(count).toBeGreaterThanOrEqual(20);             // mock people rendered
+  expect(count).toBeGreaterThanOrEqual(20); // mock people rendered
 });

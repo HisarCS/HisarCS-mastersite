@@ -205,23 +205,24 @@ if (!p) {
     img.onload = () => { av.textContent = ''; av.appendChild(img); };
     img.src = p.avatar_url;
   }
+  const esc = window.idealabEsc, safeUrl = window.idealabSafeUrl;
   document.getElementById('name').innerHTML =
-    `${p.name}<span class="badge ${p.cohort}">${p.cohort === 'alumni' ? 'Alumni' : 'Current student'}</span>`;
+    `${esc(p.name)}<span class="badge ${p.cohort}">${p.cohort === 'alumni' ? 'Alumni' : 'Current student'}</span>`;
   document.getElementById('meta').textContent = `Class of ${p.grad_year}`;
   document.getElementById('chips').innerHTML =
-    p.fields.map(f => `<span class="chip">${f}</span>`).join('');
+    p.fields.map(f => `<span class="chip">${esc(f)}</span>`).join('');
   document.getElementById('bio').textContent = p.bio;
 
   const actions = [];
-  if (p.resume_url) actions.push(`<a class="btn" href="${p.resume_url}">Resume ↗</a>`);
-  if (p.github_username) actions.push(`<a class="btn ghost" href="https://github.com/${p.github_username}">GitHub ↗</a>`);
+  if (p.resume_url) actions.push(`<a class="btn" href="${esc(safeUrl(p.resume_url))}">Resume ↗</a>`);
+  if (p.github_username) actions.push(`<a class="btn ghost" href="https://github.com/${esc(p.github_username)}">GitHub ↗</a>`);
   document.getElementById('actions').innerHTML = actions.join('');
 
   document.getElementById('projects').innerHTML = p.projects.length
     ? p.projects.map(pr => `
-        <a class="proj" href="project?id=${pr.public_id}">
-          <div class="pav">${pr.title.split(/\s+/).map(w => w[0]).slice(0, 2).join('')}</div>
-          <div><div class="pt">${pr.title}</div><div class="pm">${pr.meta}</div></div>
+        <a class="proj" href="project?id=${esc(pr.public_id)}">
+          <div class="pav">${esc(pr.title.split(/\s+/).map(w => w[0]).slice(0, 2).join(''))}</div>
+          <div><div class="pt">${esc(pr.title)}</div><div class="pm">${esc(pr.meta)}</div></div>
         </a>`).join('')
     : '<div class="empty">No published projects yet.</div>';
 }

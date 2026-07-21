@@ -7,14 +7,15 @@ const path = require('path');
 const repoRoot = path.join(__dirname, '..');
 
 module.exports = defineConfig({
-  testDir: __dirname,                 // the tests/ folder itself
+  testDir: __dirname,
+  testIgnore: ['**/unit/**'], // the tests/ folder itself
   timeout: 30_000,
   use: {
     baseURL: 'http://localhost:3000',
   },
   webServer: {
     command: 'npx serve -l 3000 .',
-    cwd: repoRoot,                     // serve the repo root, not tests/
+    cwd: repoRoot, // serve the repo root, not tests/
     url: 'http://localhost:3000',
     reuseExistingServer: true,
     timeout: 15_000,
