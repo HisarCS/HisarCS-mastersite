@@ -55,7 +55,7 @@ function idealabIsLocalHost(h) {
 }
 window.IDEALAB_ENV = idealabIsLocalHost(location.hostname) ? 'local' : 'production';
 window.IDEALAB_CONFIG = IDEALAB_ENVIRONMENTS[window.IDEALAB_ENV];
-window.IDEALAB_BUILD = '20260719-2'; // bump on deploys — proves which build a device is seeing
+window.IDEALAB_BUILD = '20260721-1'; // bump on deploys — proves which build a device is seeing
 console.log(`ideaLab: ${window.IDEALAB_ENV} environment · build ${window.IDEALAB_BUILD}`);
 
 /* Shared helper: returns a Supabase client, or null → pages use mock data. */

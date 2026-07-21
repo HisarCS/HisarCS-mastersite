@@ -130,7 +130,9 @@
   .gh-btn:hover { background: var(--accent); }
   .gh-btn svg { width: 20px; height: 20px; fill: currentColor; }
 
-  #proto {
+  /* :not([hidden]) so the `hidden` attribute actually hides it — a plain
+     #proto{display:flex} id-rule would outrank [hidden]{display:none} */
+  #proto:not([hidden]) {
     position: fixed; bottom: 16px; left: 16px; z-index: 99; background: var(--ink); color: var(--bg);
     border-radius: 12px; padding: 10px 12px; font-size: 12px; display: flex; gap: 8px; align-items: center;
     opacity: .92;
@@ -165,6 +167,29 @@
           Continue with GitHub
         </button>
         <div class="sub" id="signin-hint" style="margin-top:14px"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ STATE 1c: SIGNED IN, BUT MEMBERSHIP COULDN'T BE VERIFIED ======= -->
+  <section class="screen" id="s-verifyfail">
+    <div class="center-wrap">
+      <div class="auth-card">
+        <div class="mark-mini">.<span style="color:var(--accent)">(</span></div>
+        <h1>Couldn't verify your membership</h1>
+        <p class="sub" style="margin-top:10px">You signed in as
+        <strong id="vf-username">@you</strong>, but we couldn't confirm you're in the
+        <strong>HisarCS</strong> GitHub organization. <strong>If you are a member, this
+        is almost certainly a setup issue on our side — not you.</strong></p>
+        <p class="sub" style="margin-top:14px">Try once more, or email us and we'll sort it out:</p>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center; margin-top:18px">
+          <button class="gh-btn" onclick="signIn()">Try again</button>
+          <a class="btn ghost" href="mailto:hisarcs@hisarschool.k12.tr">Email us</a>
+        </div>
+        <div style="margin-top:16px">
+          <a class="btn ghost" href="index">← back to the mark</a>
+        </div>
+        <div class="sub" id="vf-reason" style="margin-top:20px; opacity:.55; font-size:11.5px"></div>
       </div>
     </div>
   </section>
@@ -353,6 +378,8 @@ const $ = (id) => document.getElementById(id);
 
 let SESSION = null;        // supabase auth session
 let blockedNotMember = false; // signed in but not in the HisarCS org → show notmember, kept signed out
+let verifyFailed = false;  // signed in but membership couldn't be confirmed → show verifyfail
+let VERIFY_REASON = '';    // human-readable cause of a failed/indeterminate org check (for debugging)
 let PROVIDER_TOKEN = null; // GitHub token — only delivered right after OAuth,
                            // captured eagerly because refreshed sessions drop it
 let ME = null;             // my `people` row (live mode)
@@ -380,6 +407,7 @@ const GITHUB_ORG = 'HisarCS';  // signup is restricted to this org's members
 
 async function signIn() {
   blockedNotMember = false;
+  verifyFailed = false;
   if (!sb) { go('onboarding'); return; }
   const { error } = await sb.auth.signInWithOAuth({
     provider: 'github',
@@ -454,7 +482,7 @@ async function routeOnce() {
 }
 
 async function route() {
-  if (!SESSION) { go(blockedNotMember ? 'notmember' : 'signedout'); return; }
+  if (!SESSION) { go(blockedNotMember ? 'notmember' : verifyFailed ? 'verifyfail' : 'signedout'); return; }
   await loadFields();
   const { data: me, error } = await sb.from('people')
     .select('*, person_fields(field_id)')
@@ -480,11 +508,16 @@ async function route() {
       return;
     }
     if (verdict === null) {
-      // token expired from an old session — one fresh sign-in re-verifies
-      await sb.auth.signOut();
+      // Signed in, but membership could NOT be confirmed (not a definitive "no").
+      // Show a clear, non-looping page that names the cause and offers a way out,
+      // and end the session so nobody is left half-authed. The SIGNED_OUT event
+      // re-routes here via verifyFailed.
+      verifyFailed = true;
+      $('vf-username').textContent = '@' + (m.user_name || 'you');
+      $('vf-reason').textContent = VERIFY_REASON;
       SESSION = null;
-      go('signedout');
-      $('signin-hint').textContent = 'Please sign in again so we can verify your HisarCS membership.';
+      go('verifyfail');
+      if (sb) await sb.auth.signOut();
       return;
     }
     // verified → mint the minimal person row NOW (one ~1ms insert). From this
@@ -549,15 +582,34 @@ async function getProviderToken(timeoutMs = 2500) {
    (no provider_token even after waiting for the post-OAuth event) */
 async function checkOrgMembership() {
   const token = await getProviderToken();
-  if (!token) return null;
+  if (!token) {
+    VERIFY_REASON = 'No GitHub token was returned after sign-in — the auth provider may not be issuing a provider_token.';
+    console.warn('ideaLab: org check —', VERIFY_REASON);
+    return null;
+  }
   try {
     const r = await fetch(`https://api.github.com/user/memberships/orgs/${GITHUB_ORG}`, {
       headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' },
     });
-    if (r.ok) return (await r.json()).state === 'active';
-    if (r.status === 404) return false;   // not a member at all
-    return null;                          // rate limit / API hiccup → re-verify
-  } catch { return null; }
+    if (r.ok) {
+      const state = (await r.json()).state;
+      VERIFY_REASON = `GitHub reports membership state: ${state}`;
+      console.log('ideaLab: org check —', VERIFY_REASON);
+      return state === 'active';
+    }
+    if (r.status === 404) { VERIFY_REASON = 'GitHub returned 404 — not a member of the org.'; return false; }
+    let detail = '';
+    try { detail = (await r.json()).message || ''; } catch { /* body not JSON */ }
+    VERIFY_REASON =
+      `GitHub API returned ${r.status}${detail ? ` — “${detail}”` : ''}. ` +
+      `Likely the auth app lacks "Organization → Members: read" or isn't installed on ${GITHUB_ORG}.`;
+    console.warn('ideaLab: org check —', VERIFY_REASON);
+    return null;
+  } catch (e) {
+    VERIFY_REASON = `Couldn't reach GitHub to verify membership (${e.message}).`;
+    console.warn('ideaLab: org check —', VERIFY_REASON);
+    return null;
+  }
 }
 
 /* ---------- fields / chips ---------- */
