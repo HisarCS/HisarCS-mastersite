@@ -146,7 +146,7 @@
 <body>
 
 <header>
-  <a class="wordmark" href="index.html">idea<span>Lab</span></a>
+  <a class="wordmark" href="index">idea<span>Lab</span></a>
   <div class="session" id="session-box"></div>
 </header>
 
@@ -184,7 +184,7 @@
           hisarcs@hisarschool.k12.tr
         </a>
         <div style="margin-top:22px">
-          <a class="btn ghost" href="index.html">← back to the mark</a>
+          <a class="btn ghost" href="index">← back to the mark</a>
         </div>
       </div>
     </div>
@@ -267,7 +267,7 @@
 
       <label class="f">PROFILE URL <span class="lock">must be unique across the lab</span></label>
       <div style="display:flex; align-items:center; gap:6px">
-        <span class="sub" style="white-space:nowrap">…/person.html?id=</span>
+        <span class="sub" style="white-space:nowrap">…/person?id=</span>
         <input type="text" id="slug-input" value="" placeholder="your-profile-url" oninput="checkSlug(this.value)">
       </div>
       <div class="sub" id="slug-hint" style="margin-top:6px"></div>
@@ -291,7 +291,7 @@
       <h2>My projects</h2>
       <div id="projects-list"><div class="sub">Loading…</div></div>
       <div style="margin-top:20px">
-        <a class="btn" href="project.html">+ New project</a>
+        <a class="btn" href="project">+ New project</a>
       </div>
     </div>
 
@@ -340,6 +340,8 @@
 </div>
 
 <script src="vendor/supabase.js"></script>
+<script>window.supabase || document.write('<script src="https://unpkg.com/@supabase/supabase-js@2"><\/script>');</script>
+<script>window.supabase || document.write('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"><\/script>');</script>
 <script src="config.js"></script>
 <script>
 /* =========================================================================
@@ -401,8 +403,23 @@ async function signOut() {
 }
 
 /* ---------- boot ---------- */
+// Production never silently degrades to the demo/prototype UI. If the client
+// can't start, say exactly why ON SCREEN (readable on any device, no DevTools)
+// plus the build stamp, so stale-cache vs blocked-script vs misconfig are
+// distinguishable at a glance.
+function idealabFatal(reason) {
+  window.idealabErrorPage('The member area can’t start', reason);
+}
+
 async function init() {
-  if (!sb) {              // demo mode
+  if (!sb) {
+    if (window.IDEALAB_ENV === 'production') {
+      idealabFatal(window.supabase
+        ? 'The backend is not configured for this deployment (config.js).'
+        : 'The app library could not be loaded — three sources were tried (this site’s own copy and two CDNs). A network filter or proxy on this connection is most likely blocking script downloads.');
+      return;
+    }
+    // local demo mode (prototype playground)
     $('proto').hidden = false;
     FIELD_LIST = FIELDS_FALLBACK.map((n, i) => ({ id: i + 1, name: n }));
     buildChips(FIELD_LIST);
@@ -824,7 +841,7 @@ async function loadProjects() {
   if (error) { el.innerHTML = `<div class="sub hint-bad">couldn't load projects: ${error.message}</div>`; return; }
   if (!data.length) { el.innerHTML = '<div class="sub">No projects yet — start one below.</div>'; return; }
   el.innerHTML = data.map(p => `
-    <a class="proj" href="project.html?id=${encodeURIComponent(p.public_id)}">
+    <a class="proj" href="project?id=${encodeURIComponent(p.public_id)}">
       <div class="pav">${p.title.split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase()}</div>
       <div><div class="pt">${p.title}</div></div>
       <div class="spacer"></div>

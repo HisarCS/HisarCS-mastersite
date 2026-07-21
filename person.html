@@ -76,8 +76,8 @@
 <body>
 
 <header>
-  <a class="wordmark" href="index.html">idea<span>Lab</span></a>
-  <a class="back" href="index.html">← back to the mark</a>
+  <a class="wordmark" href="index">idea<span>Lab</span></a>
+  <a class="back" href="index">← back to the mark</a>
 </header>
 
 <main>
@@ -101,6 +101,8 @@
 </main>
 
 <script src="vendor/supabase.js"></script>
+<script>window.supabase || document.write('<script src="https://unpkg.com/@supabase/supabase-js@2"><\/script>');</script>
+<script>window.supabase || document.write('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"><\/script>');</script>
 <script src="config.js"></script>
 <script type="module">
 /* =========================================================================
@@ -172,44 +174,57 @@ async function loadPerson() {
           .map(pr => ({ public_id: pr.public_id, title: pr.title, meta: 'ideaLab project' })),
       };
     }
-    console.warn('ideaLab: person not found in Supabase — falling back to mock.', error || '');
+    console.warn('ideaLab: person not found or backend error.', error || '');
   }
+  // Production never fakes a person: not found / unreachable → honest message.
+  if (window.IDEALAB_ENV === 'production') return null;
   return mockPerson(id);
 }
 
-const p = await loadPerson();
-const initials = p.name.split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
-const color = p.avatar_color || FALLBACK_COLORS[p.name.length % FALLBACK_COLORS.length];
-
-document.title = `${p.name} — ideaLab`;
-const av = document.getElementById('avatar');
-av.style.setProperty('--fallback', color);
-av.textContent = initials;
-if (p.avatar_url) {
-  const img = new Image();
-  img.alt = '';
-  img.onload = () => { av.textContent = ''; av.appendChild(img); };
-  img.src = p.avatar_url;
+function showUnavailable() {
+  const reachable = !!window.idealabClient();
+  window.idealabErrorPage('This profile isn’t available',
+    reachable ? 'It may have been unpublished or removed, or the link may be mistyped.'
+              : 'The site couldn’t reach its backend from this connection.');
 }
-document.getElementById('name').innerHTML =
-  `${p.name}<span class="badge ${p.cohort}">${p.cohort === 'alumni' ? 'Alumni' : 'Current student'}</span>`;
-document.getElementById('meta').textContent = `Class of ${p.grad_year}`;
-document.getElementById('chips').innerHTML =
-  p.fields.map(f => `<span class="chip">${f}</span>`).join('');
-document.getElementById('bio').textContent = p.bio;
 
-const actions = [];
-if (p.resume_url) actions.push(`<a class="btn" href="${p.resume_url}">Resume ↗</a>`);
-if (p.github_username) actions.push(`<a class="btn ghost" href="https://github.com/${p.github_username}">GitHub ↗</a>`);
-document.getElementById('actions').innerHTML = actions.join('');
+const p = await loadPerson();
+if (!p) {
+  showUnavailable();
+} else {
+  const initials = p.name.split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
+  const color = p.avatar_color || FALLBACK_COLORS[p.name.length % FALLBACK_COLORS.length];
 
-document.getElementById('projects').innerHTML = p.projects.length
-  ? p.projects.map(pr => `
-      <a class="proj" href="project.html?id=${pr.public_id}">
-        <div class="pav">${pr.title.split(/\s+/).map(w => w[0]).slice(0, 2).join('')}</div>
-        <div><div class="pt">${pr.title}</div><div class="pm">${pr.meta}</div></div>
-      </a>`).join('')
-  : '<div class="empty">No published projects yet.</div>';
+  document.title = `${p.name} — ideaLab`;
+  const av = document.getElementById('avatar');
+  av.style.setProperty('--fallback', color);
+  av.textContent = initials;
+  if (p.avatar_url) {
+    const img = new Image();
+    img.alt = '';
+    img.onload = () => { av.textContent = ''; av.appendChild(img); };
+    img.src = p.avatar_url;
+  }
+  document.getElementById('name').innerHTML =
+    `${p.name}<span class="badge ${p.cohort}">${p.cohort === 'alumni' ? 'Alumni' : 'Current student'}</span>`;
+  document.getElementById('meta').textContent = `Class of ${p.grad_year}`;
+  document.getElementById('chips').innerHTML =
+    p.fields.map(f => `<span class="chip">${f}</span>`).join('');
+  document.getElementById('bio').textContent = p.bio;
+
+  const actions = [];
+  if (p.resume_url) actions.push(`<a class="btn" href="${p.resume_url}">Resume ↗</a>`);
+  if (p.github_username) actions.push(`<a class="btn ghost" href="https://github.com/${p.github_username}">GitHub ↗</a>`);
+  document.getElementById('actions').innerHTML = actions.join('');
+
+  document.getElementById('projects').innerHTML = p.projects.length
+    ? p.projects.map(pr => `
+        <a class="proj" href="project?id=${pr.public_id}">
+          <div class="pav">${pr.title.split(/\s+/).map(w => w[0]).slice(0, 2).join('')}</div>
+          <div><div class="pt">${pr.title}</div><div class="pm">${pr.meta}</div></div>
+        </a>`).join('')
+    : '<div class="empty">No published projects yet.</div>';
+}
 </script>
 </body>
 </html>

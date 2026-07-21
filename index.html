@@ -210,7 +210,7 @@
     <div class="tagline">makers, in all disciplines</div>
     <!-- member entry point — students & alumni today; Hisar Coding Summit,
          FabLab and other programs can join via the same door later -->
-    <a class="join" href="member.html">One of us? →</a>
+    <a class="join" href="member">One of us? →</a>
   </div>
 </header>
 
@@ -225,6 +225,10 @@
 </footer>
 
 <script src="vendor/supabase.js"></script>
+<!-- fallbacks: if the same-origin copy is blocked/missing, try two independent CDNs.
+     document.write keeps execution order ahead of config.js and the page script. -->
+<script>window.supabase || document.write('<script src="https://unpkg.com/@supabase/supabase-js@2"><\/script>');</script>
+<script>window.supabase || document.write('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"><\/script>');</script>
 <script src="config.js"></script>
 <script>
 /* =========================================================================
@@ -307,11 +311,18 @@ async function fetchPeople() {
         discipline: (p.fields && p.fields[0]) || 'Maker',
         avatar_url: p.avatar_url,
         avatar_color: p.avatar_color,
-        profile_url: `person.html?id=${encodeURIComponent(p.public_id)}`,
+        profile_url: `person?id=${encodeURIComponent(p.public_id)}`,
       }));
     }
-    console.warn('ideaLab: Supabase unreachable or empty — using mock people.', error || '');
+    if (error) console.warn('ideaLab: directory query failed —', error.message);
   }
+  // Production never fakes people. With nobody published (or no backend), the
+  // mark renders honestly: every pixel is ink.
+  if (window.IDEALAB_ENV === 'production') {
+    console.log('ideaLab: no published people to show — the mark renders in ink only.');
+    return [];
+  }
+  console.warn('ideaLab: local demo — using mock people.');
   return mockPeople();
 }
 
@@ -343,7 +354,7 @@ function mockPeople() {
     cohort: i % 3 === 0 ? 'alumni' : 'student',
     avatar_url: `https://i.pravatar.cc/120?img=${(i % 70) + 1}`,
     avatar_color: null, // member-picked initials-tile color (people.avatar_color)
-    profile_url: `person.html?id=${mockSlug(name)}`, // same URL shape as real data
+    profile_url: `person?id=${mockSlug(name)}`, // same URL shape as real data
   }));
 }
 

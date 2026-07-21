@@ -3,8 +3,17 @@
    ----------------------------------------------------------------------------
    ONE codebase, TWO backends. Every page picks its Supabase automatically:
 
-     • opened on localhost / 127.0.0.1  → the LOCAL Supabase CLI stack
-     • opened anywhere else (GitHub Pages, custom domain) → PRODUCTION
+     • any LOCAL / private address → the LOCAL Supabase CLI stack
+         (localhost, 127.0.0.1, ::1, a bare machine name, *.local, a private-LAN
+          IP like 192.168.x/10.x/172.16-31.x, or a file:// open)
+     • a real PUBLIC host (GitHub Pages, a custom domain) → PRODUCTION
+
+   Rationale: local development is ALWAYS local, however you reach the dev
+   server — by name or by LAN IP — so it can never silently hit the production
+   database. Production is only ever the deployed public site. This is pure
+   hostname logic: no IPs are hard-coded, and it reproduces identically on any
+   machine (Linux/Windows/Mac) that clones this repo. To preview production
+   behaviour, open the deployed URL — not the local server.
 
    So the exact files you validate locally are the files you deploy — no
    build step, no branch juggling, no "did I swap the key?" mistakes.
@@ -28,10 +37,19 @@ const IDEALAB_ENVIRONMENTS = {
   },
 };
 
-window.IDEALAB_ENV =
-  ['localhost', '127.0.0.1'].includes(location.hostname) ? 'local' : 'production';
+function idealabIsLocalHost(h) {
+  return h === '' || h === 'localhost' || h === '127.0.0.1'   // '' = file:// open
+    || h === '::1' || h === '[::1]' || h === '0.0.0.0'
+    || !h.includes('.')                                       // bare machine name
+    || h.endsWith('.local')                                   // mDNS / Bonjour
+    || /^10\./.test(h)                                        // private LAN ranges
+    || /^192\.168\./.test(h)
+    || /^172\.(1[6-9]|2[0-9]|3[01])\./.test(h);
+}
+window.IDEALAB_ENV = idealabIsLocalHost(location.hostname) ? 'local' : 'production';
 window.IDEALAB_CONFIG = IDEALAB_ENVIRONMENTS[window.IDEALAB_ENV];
-console.log(`ideaLab: ${window.IDEALAB_ENV} environment`);
+window.IDEALAB_BUILD = '20260719-2';   // bump on deploys — proves which build a device is seeing
+console.log(`ideaLab: ${window.IDEALAB_ENV} environment · build ${window.IDEALAB_BUILD}`);
 
 /* Shared helper: returns a Supabase client, or null → pages use mock data. */
 window.idealabClient = function () {
@@ -136,4 +154,22 @@ window.idealabThumbUrl = function (url) {
   if (/github\.com\/[^/]+\.png/.test(url)) return url.split('?')[0] + '?size=128';
   if (/i\.pravatar\.cc\/\d+/.test(url)) return url.replace(/pravatar\.cc\/\d+/, 'pravatar.cc/128');
   return url;
+};
+
+/* Minimal full-page state for "nothing to show / can't start" — matches the
+   homepage: cream canvas, the brand mark drawn as a downturned ".(" . Shared by
+   person/project/member so every honest state looks identical. */
+window.idealabErrorPage = function (heading, detail) {
+  document.title = `${heading} — ideaLab`;
+  document.documentElement.style.background = '#f6f4ef';
+  document.body.style.cssText = 'margin:0;background:#f6f4ef';
+  document.body.innerHTML =
+    `<main style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+                  gap:15px;padding:28px;text-align:center;
+                  font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;color:#141414">
+       <div aria-hidden="true" style="font-size:58px;font-weight:700;letter-spacing:-.05em;line-height:1">.<span style="color:#e8542f">(</span></div>
+       <div style="font-size:15px;font-weight:600">${heading}</div>
+       <div style="font-size:13px;line-height:1.6;color:#8a8578;max-width:300px">${detail}</div>
+       <a href="index" style="margin-top:2px;font-size:12.5px;font-weight:600;color:#141414;text-decoration:none;border-bottom:1.5px solid currentColor;padding-bottom:1px">back to the mark</a>
+     </main>`;
 };

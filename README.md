@@ -34,9 +34,9 @@ Browser (GitHub Pages, static)                Supabase (cloud or local Docker)
 | `person.html` | Public profile page — loads a person by `?id=` (their `public_id`) from Supabase; falls back to an id-derived preview if the backend is unreachable. |
 | `member.html` | Signed-in area: GitHub sign-in → org check → onboarding → dashboard (edit profile, tags, projects, delete account). |
 | `project.html` | Project page — loads a project by `?id=` (its `public_id`) from Supabase (members, tags, description, files, links). Editor-mode mutations are still prototype stubs (see §9). |
-| `config.js` | Picks local vs production Supabase by hostname; falls back to mock data if the backend is unreachable. |
+| `config.js` | Picks local vs production Supabase by hostname. Mock data exists **only on localhost** (dev playground); production never fakes content — an empty lab renders the mark in ink only, and missing profiles/projects show an honest "unavailable" card with the build stamp. |
 | `vendor/supabase.js` | Vendored supabase-js v2 (UMD build), served same-origin from Pages — no third-party CDN dependency, so the site works on networks that filter CDNs. To update: re-download the UMD build from npm/jsdelivr into this file. |
-| `serve.json` | Config for the local dev server (`npm run dev`) so it serves `.html` paths with query strings intact, like GitHub Pages. |
+| `serve.json` | Config for the local dev server (`npm run dev`) so it serves extensionless URLs (`/person?id=…`) with query strings intact, exactly like GitHub Pages (`cleanUrls`). |
 | `supabase/` | **Backend + local dev.** `migrations/20260711000001_schema.sql` is the whole database (tables, RLS, triggers, the directory view, storage buckets, starter tags — the single source of truth); `seed.sql` is local-only mock data replayed on each local reset (**never** touches production); `config.toml` holds local CLI settings. |
 | `tests/` | **Testing.** `playwright.config.js` + `e2e.spec.js` — end-to-end tests (DB-backed rendering, the RLS contract, graceful fallback). Run with `npm test`. |
 | `package.json` | npm scripts (`dev`, `stack`, `test`, `db:push`) + dev dependencies. |
@@ -73,7 +73,7 @@ erDiagram
 
 - **`people`** — one row per maker. Three identifiers, each with a distinct job:
   `id` (uuid primary key — the row's internal identity, what foreign keys point
-  to), `public_id` (the name-derived URL key like `person.html?id=mert-karakas`,
+  to), `public_id` (the name-derived URL key like `/person?id=mert-karakas`,
   auto-generated from `full_name` on insert), and `user_id` (nullable link to the
   Supabase Auth / GitHub login — null until the person first signs in). Plus
   profile fields (bio, avatar, resume, etc.) and `is_published`.

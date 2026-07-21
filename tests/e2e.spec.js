@@ -45,19 +45,19 @@ test('every pixel links to a unique person URL', async ({ page }) => {
   const hrefs = await page.$$eval('.pixel.person', (els) => els.map((e) => e.getAttribute('href')));
   expect(hrefs.length).toBeGreaterThan(0);
   expect(new Set(hrefs).size).toBe(hrefs.length);       // all distinct
-  for (const h of hrefs) expect(h).toMatch(/^person\.html\?id=/); // real public_ids
+  for (const h of hrefs) expect(h).toMatch(/^person\?id=/); // real public_ids, extensionless
 });
 
 test('person page loads the requested person by id', async ({ page }) => {
   test.skip(!stackUp, 'local Supabase not running');
-  await page.goto('/person.html?id=ceren-kaya');          // seeded, published
+  await page.goto('/person?id=ceren-kaya');               // seeded, published
   await expect(page.locator('h1')).toContainText('Ceren Kaya');
   await expect(page.locator('#meta')).toContainText('Class of');
 });
 
 test('cohort derives from graduation year', async ({ page }) => {
   test.skip(!stackUp, 'local Supabase not running');
-  await page.goto('/person.html?id=elif-demir');        // seeded grad 2022
+  await page.goto('/person?id=elif-demir');             // seeded grad 2022
   await expect(page.locator('.badge')).toContainText(/alumni/i);
 });
 

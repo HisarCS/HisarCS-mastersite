@@ -148,13 +148,15 @@
   #proto select { font: inherit; border-radius: 6px; border: none; padding: 3px 6px; }
 </style>
 <script src="vendor/supabase.js"></script>
+<script>window.supabase || document.write('<script src="https://unpkg.com/@supabase/supabase-js@2"><\/script>');</script>
+<script>window.supabase || document.write('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"><\/script>');</script>
 <script src="config.js"></script>
 </head>
 <body>
 
 <header>
-  <a class="wordmark" href="index.html">idea<span>Lab</span></a>
-  <div class="session"><span id="session-user"></span><a href="member.html">my page →</a></div>
+  <a class="wordmark" href="index">idea<span>Lab</span></a>
+  <div class="session"><span id="session-user"></span><a href="member">my page →</a></div>
 </header>
 
 <main>
@@ -283,9 +285,18 @@ async function loadProject() {
       links: (data.project_links || []).slice().sort((a, b) => a.sort_order - b.sort_order),
       files: (data.project_files || []).slice().sort((a, b) => a.sort_order - b.sort_order),
     };
-    console.warn('ideaLab: project not found in Supabase — showing preview.', error || '');
+    console.warn('ideaLab: project not found or backend error.', error || '');
   }
+  // Production never fakes a project: not found / unreachable → honest message.
+  if (window.IDEALAB_ENV === 'production') return null;
   return mockProject(id);
+}
+
+function showUnavailable() {
+  const reachable = !!SB;
+  window.idealabErrorPage('This project isn’t available',
+    reachable ? 'It may be a draft, may have been removed, or the link may be mistyped.'
+              : 'The site couldn’t reach its backend from this connection.');
 }
 
 // graceful fallback only — derived from the id, never a hard-coded project/person
@@ -311,7 +322,7 @@ function render(p) {
     `<span class="chip">${esc(f)}<span class="x" title="remove">×</span></span>`).join(''));
 
   $('members').insertAdjacentHTML('afterbegin', p.members.map(m => `
-    <a class="member" href="person.html?id=${encodeURIComponent(m.public_id)}">
+    <a class="member" href="person?id=${encodeURIComponent(m.public_id)}">
       <span class="ma" style="background:${esc(m.color || colorFor(m.name))}">${esc(initials(m.name))}</span>
       <span><span class="mn">${esc(m.name)}</span><br><span class="mr">${esc(m.role)}</span></span>
       <span class="x" title="remove from project">×</span>
@@ -428,6 +439,7 @@ function togglePublish() { togglePublishUI(!published); }
     if (u) $('session-user').textContent = `signed in as @${u} · `;
   }
   PROJECT = await loadProject();
+  if (!PROJECT) { showUnavailable(); return; }
   render(PROJECT);
   if (SB && PROJECT.dbId) {
     // live data: editor rights = actually on the member list (same DB function
