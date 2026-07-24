@@ -437,7 +437,12 @@ async function signIn() {
   }
 }
 async function signOut() {
-  if (sb) await sb.auth.signOut();
+  // scope:'local' clears the browser session with no server round-trip, so it
+  // still works when the server session is already gone (e.g. right after
+  // account deletion) — a default global sign-out throws there and would leave
+  // a zombie token in localStorage. try/catch guarantees the UI clears anyway.
+  try { if (sb) await sb.auth.signOut({ scope: 'local' }); }
+  catch (e) { console.warn('ideaLab: signOut failed, clearing locally', e); }
   SESSION = null; ME = null;
   go('signedout');
 }
@@ -515,7 +520,7 @@ async function route() {
       $('vf-reason').textContent = VERIFY_REASON;
       SESSION = null;
       go('verifyfail');
-      if (sb) await sb.auth.signOut();
+      if (sb) await sb.auth.signOut({ scope: 'local' });
       return;
     }
     // verified → mint the minimal person row NOW (one ~1ms insert). From this
@@ -608,7 +613,7 @@ async function bounceNotMember(username) {
   $('nm-username').textContent = '@' + (username || 'you');
   SESSION = null; ME = null;
   go('notmember');
-  if (sb) await sb.auth.signOut();
+  if (sb) await sb.auth.signOut({ scope: 'local' });
 }
 
 /* Background re-verification for a returning member. Reuses the same server-side
@@ -1153,7 +1158,7 @@ async function tryDelete(btn) {
     console.error('ideaLab: delete_my_account failed', error);
     return;
   }
-  await sb.auth.signOut();
+  await sb.auth.signOut({ scope: 'local' });
   $('del-overlay').classList.remove('show');
   SESSION = null; ME = null;
   go('signedout');

@@ -18,11 +18,16 @@
 
 import { installationToken, ORG, orgMembershipState } from '../_shared/github.ts';
 import { adminClient, getCaller, githubLogin } from '../_shared/supabase.ts';
+import { corsHeaders } from '../_shared/cors.ts';
 import { json } from '../_shared/http.ts';
 
 const TTL_MS = (Number(Deno.env.get('VERIFY_TTL_SECONDS')) || 900) * 1000; // default 15 min
 
 Deno.serve(async (req) => {
+  // CORS preflight — must answer before any auth, and with no JWT (browsers
+  // never send one on the preflight).
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+
   try {
     // 1. Who is calling? Trust the JWT, never the request body.
     const user = await getCaller(req);

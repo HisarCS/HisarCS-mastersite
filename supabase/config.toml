@@ -395,10 +395,12 @@ deno_version = 2
 # secret_key = "env(SECRET_VALUE)"
 
 # Called by the browser (after sign-in, and as a background refresh on returning
-# member page loads) — must carry the member's JWT so the function can read who
-# they are. Keep JWT verification ON.
+# member page loads). Platform JWT verification is OFF so the CORS preflight
+# (which carries no JWT) isn't rejected before our handler runs — the handler
+# authenticates the caller itself via getCaller(), and returns 401 with no
+# valid session, so this is no less secure.
 [functions.verify-org-member]
-verify_jwt = true
+verify_jwt = false
 
 [analytics]
 enabled = true

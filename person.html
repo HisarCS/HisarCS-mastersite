@@ -215,8 +215,9 @@ if (!p) {
   document.getElementById('bio').textContent = p.bio;
 
   const actions = [];
-  if (p.resume_url) actions.push(`<a class="btn" href="${esc(safeUrl(p.resume_url))}">Resume ↗</a>`);
-  if (p.github_username) actions.push(`<a class="btn ghost" href="https://github.com/${esc(p.github_username)}">GitHub ↗</a>`);
+  // external links open in a new tab; rel=noopener noreferrer for safety
+  if (p.resume_url) actions.push(`<a class="btn" href="${esc(safeUrl(p.resume_url))}" target="_blank" rel="noopener noreferrer">Resume ↗</a>`);
+  if (p.github_username) actions.push(`<a class="btn ghost" href="https://github.com/${esc(p.github_username)}" target="_blank" rel="noopener noreferrer">GitHub ↗</a>`);
   document.getElementById('actions').innerHTML = actions.join('');
 
   document.getElementById('projects').innerHTML = p.projects.length
