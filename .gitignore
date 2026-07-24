@@ -1,6 +1,12 @@
 node_modules/
 .DS_Store
 
+# Next.js build artifacts
+.next/
+/out/
+next-env.d.ts
+*.tsbuildinfo
+
 # machine-local Claude Code state (launch.json IS shareable and may be committed)
 .claude/settings.local.json
 

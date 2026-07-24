@@ -1,0 +1,38 @@
+/* ============================================================================
+   Design tokens — the one source of truth for the color system.
+   Black + orange on a warm off-white. Confirmed values from the original site.
+   ============================================================================ */
+:root {
+  --bg: #f6f4ef; /* warm off-white canvas */
+  --ink: #141414; /* near-black text */
+  --muted: #8a8578; /* secondary text */
+  --card: #ffffff;
+  --accent: #e8542f; /* orange */
+  --line: rgba(0, 0, 0, 0.09);
+  --ok: #28a06d;
+  --danger: #c0392b;
+
+  --font-sans: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--ink);
+}
+
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+a {
+  color: inherit;
+}
