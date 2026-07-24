@@ -1,4 +1,22 @@
 -- ============================================================================
+-- ideaLab — consolidated schema (squashed)
+--
+-- This single file is the squash of what were four sequential migrations:
+--   20260711000001_schema                  (base schema)
+--   20260721000002_self_publish_and_storage (self-publish + uploads)
+--   20260721000003_fix_storage_cleanup      (storage-deletion fix)
+--   20260721000004_org_member_gate          (server-enforced org membership)
+--
+-- The sections below are those files concatenated IN ORDER — identical to the
+-- sequence a `db reset` runs — so the end state is byte-for-byte the same. Some
+-- objects are created and then `create or replace`d / dropped in a later
+-- section; that churn is harmless and preserved to keep this provably equal to
+-- the migration history it replaces. Squashed only after the four were applied
+-- to the remote; see the reconciliation runbook.
+-- ============================================================================
+
+
+-- ============================================================================
 -- ideaLab portfolio — consolidated schema (single source of truth)
 --
 -- This replaces the earlier 0001–0006 migration chain, which built and then
@@ -616,3 +634,380 @@ create policy "project editors delete files" on storage.objects
   for delete to authenticated
   using (bucket_id = 'project-files'
          and public.is_project_editor(((storage.foldername(name))[1])::uuid));
+
+
+-- ####################################################################
+-- ## section 2 of 4 — was 20260721000002_self_publish_and_storage.sql
+-- ####################################################################
+
+-- ============================================================================
+-- ideaLab — migration 0002 (first ADDITIVE migration)
+--
+-- ADR-0003's "one editable migration" era ends here: production now holds real
+-- member data, so from this point migrations are append-only and never edited
+-- once shipped.
+--
+-- 1. Members publish their own profiles (the admin publish gate is removed).
+-- 2. Re-assert the storage buckets + owner-scoped policies. Re-running a
+--    schema file that was edited in place does NOT re-apply on a project that
+--    already ran it, so a project deployed from an earlier revision can be
+--    missing the `resumes` bucket and the multi-bucket write policies — which
+--    surfaces as "new row violates row-level security policy" on upload.
+--    Everything here is idempotent and safe on an already-correct project.
+-- ============================================================================
+
+-- ----------------------------------------------------------- self-publish ----
+-- Members may now publish/unpublish themselves. The login link (user_id) stays
+-- server-owned. Publishing is still gated by the people_published_needs_year
+-- CHECK constraint — you cannot publish without a graduation year.
+create or replace function public.guard_people_update()
+returns trigger language plpgsql security definer
+set search_path = public
+as $$
+begin
+  if auth.uid() is not null and not public.is_admin() then
+    if new.user_id is distinct from old.user_id then
+      raise exception 'members cannot change the login link';
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+-- --------------------------------------------------------------- storage ----
+insert into storage.buckets (id, name, public) values
+  ('avatars', 'avatars', true),
+  ('resumes', 'resumes', true),
+  ('project-files', 'project-files', true)
+on conflict (id) do nothing;
+
+-- own-folder writes across BOTH personal buckets. The UPDATE policy carries an
+-- explicit WITH CHECK so `upsert: true` uploads (insert-or-replace) pass.
+drop policy if exists "avatar owner writes"  on storage.objects;
+drop policy if exists "avatar owner updates" on storage.objects;
+drop policy if exists "avatar owner deletes" on storage.objects;
+
+create policy "avatar owner writes" on storage.objects
+  for insert to authenticated
+  with check (bucket_id in ('avatars', 'resumes')
+              and (storage.foldername(name))[1] = auth.uid()::text);
+
+create policy "avatar owner updates" on storage.objects
+  for update to authenticated
+  using (bucket_id in ('avatars', 'resumes')
+         and (storage.foldername(name))[1] = auth.uid()::text)
+  with check (bucket_id in ('avatars', 'resumes')
+              and (storage.foldername(name))[1] = auth.uid()::text);
+
+create policy "avatar owner deletes" on storage.objects
+  for delete to authenticated
+  using (bucket_id in ('avatars', 'resumes')
+         and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- project files: writable by the project's member list (is_project_editor)
+drop policy if exists "project editors write files"  on storage.objects;
+drop policy if exists "project editors update files" on storage.objects;
+drop policy if exists "project editors delete files" on storage.objects;
+
+create policy "project editors write files" on storage.objects
+  for insert to authenticated
+  with check (bucket_id = 'project-files'
+              and public.is_project_editor(((storage.foldername(name))[1])::uuid));
+
+create policy "project editors update files" on storage.objects
+  for update to authenticated
+  using (bucket_id = 'project-files'
+         and public.is_project_editor(((storage.foldername(name))[1])::uuid))
+  with check (bucket_id = 'project-files'
+              and public.is_project_editor(((storage.foldername(name))[1])::uuid));
+
+create policy "project editors delete files" on storage.objects
+  for delete to authenticated
+  using (bucket_id = 'project-files'
+         and public.is_project_editor(((storage.foldername(name))[1])::uuid));
+
+
+-- ####################################################################
+-- ## section 3 of 4 — was 20260721000003_fix_storage_cleanup.sql
+-- ####################################################################
+
+-- ============================================================================
+-- ideaLab — migration 0003
+--
+-- Fix: account deletion (and project deletion) failed outright.
+--
+-- `delete_my_account()` and the `projects_after_delete()` trigger tried to
+-- clean up uploaded files with `DELETE FROM storage.objects`. Supabase blocks
+-- that with a `storage.protect_delete()` trigger — and rightly so: removing the
+-- row only drops the *index entry*, leaving the actual file orphaned in the
+-- storage backend. The raised exception aborted the whole transaction, so
+-- `delete_my_account()` erased nothing.
+--
+-- Storage must be cleaned through the Storage API. The client now removes the
+-- member's files (owner-scoped, allowed by the existing delete policies) before
+-- calling the RPC, so erasure still covers files + rows + login.
+-- ============================================================================
+
+-- no SQL-side storage deletion — see note above
+create or replace function public.delete_my_account()
+returns void language plpgsql security definer
+set search_path = public
+as $$
+begin
+  if auth.uid() is null then raise exception 'not signed in'; end if;
+  -- Uploaded files are removed by the caller via the Storage API first; SQL
+  -- cannot delete storage.objects (storage.protect_delete).
+  delete from public.people where user_id = auth.uid();
+  delete from auth.users where id = auth.uid();
+end;
+$$;
+revoke all on function public.delete_my_account() from public;
+grant execute on function public.delete_my_account() to authenticated;
+
+-- the project-file cleanup trigger had the same defect: drop it. Project files
+-- are removed through the Storage API by the project editor UI.
+drop trigger if exists projects_files_cleanup on public.projects;
+drop function if exists public.projects_after_delete();
+
+-- owners may LIST their own files (storage.list() goes through RLS), so the
+-- client can enumerate and remove everything it uploaded — including legacy
+-- timestamped avatar filenames — before erasing the account.
+drop policy if exists "avatar owner reads" on storage.objects;
+create policy "avatar owner reads" on storage.objects
+  for select to authenticated
+  using (bucket_id in ('avatars', 'resumes')
+         and (storage.foldername(name))[1] = auth.uid()::text);
+
+
+-- ####################################################################
+-- ## section 4 of 4 — was 20260721000004_org_member_gate.sql
+-- ####################################################################
+
+-- ============================================================================
+-- ideaLab — migration 0004: server-enforced HisarCS org membership
+--
+-- Until now, "is this person in the HisarCS org?" was checked only in the
+-- browser (ADR-0006). Postgres cannot call the GitHub API, so RLS could not
+-- enforce it — and once members gained self-publish (ADR-0016), that browser
+-- check became the ONLY thing standing between a random GitHub account and a
+-- published profile on the public homepage.
+--
+-- This migration makes membership a fact the database knows:
+--   1. `org_members`      — the verified roster (service role / admins write)
+--   2. `is_org_member()`  — unspoofable check, reads the GitHub login from the
+--                           auth token exactly like is_admin()
+--   3. EVERY write policy now requires it
+--
+-- Membership is required to create OR edit *any* resource — including your own
+-- unpublished draft profile and interest tags. A GitHub account that is not in
+-- the HisarCS org has read-only access to the site and can create nothing; a
+-- verified member gets full authoring rights. There is no "awaiting
+-- verification" middle state that can write.
+--
+-- Because the Edge Function (step 4) adds a member to the roster at sign-in,
+-- before they ever reach the editor, a legitimate member is already verified by
+-- the time they create their draft. Existing members are grandfathered in below
+-- so nobody is locked out on deploy.
+-- ============================================================================
+
+-- --------------------------------------------------------- 1. the roster ----
+create table if not exists public.org_members (
+  github_login text primary key
+    check (github_login ~ '^[a-z0-9][a-z0-9-]{0,38}$'),
+  added_at     timestamptz not null default now(),
+  -- last time GitHub confirmed this login is still in the org. The
+  -- verify-org-member function checks membership lazily, piggybacking on the
+  -- member's own page loads, and skips the GitHub call when this is fresh — so
+  -- the roster self-heals on activity without any scheduled polling.
+  verified_at  timestamptz not null default now()
+);
+
+alter table public.org_members enable row level security;
+
+-- normalize case/whitespace on insert (reuses the admin allowlist's normalizer)
+drop trigger if exists org_members_normalize on public.org_members;
+create trigger org_members_normalize before insert on public.org_members
+  for each row execute function public.admin_logins_before_insert();
+
+-- admins manage the roster by hand; the Edge Function writes with the service
+-- role, which bypasses RLS entirely
+drop policy if exists "admins manage org members" on public.org_members;
+create policy "admins manage org members" on public.org_members
+  for all to authenticated
+  using (public.is_admin()) with check (public.is_admin());
+
+-- grandfather everyone who already signed up: they passed the browser-side org
+-- check at the time, and their github_username is server-owned (ADR-0008)
+insert into public.org_members (github_login)
+select distinct lower(github_username)
+  from public.people
+ where github_username is not null
+   and user_id is not null
+   and github_username ~ '^[A-Za-z0-9][A-Za-z0-9-]{0,38}$'
+on conflict (github_login) do nothing;
+
+-- ------------------------------------------------------ 2. the predicate ----
+-- Same unspoofable source as is_admin(): the GitHub login inside the caller's
+-- auth token, which the user cannot edit. Admins always count as members.
+create or replace function public.is_org_member()
+returns boolean language sql stable security definer
+set search_path = public
+as $$
+  select public.is_admin() or exists (
+    select 1
+    from auth.users u
+    join public.org_members m
+      on m.github_login = lower(coalesce(
+           u.raw_user_meta_data->>'user_name',
+           u.raw_user_meta_data->>'preferred_username'))
+    where u.id = auth.uid()
+  );
+$$;
+
+-- ------------------------------------ 3a. profile: create + edit + publish ----
+-- All three now require verified membership (below). The trigger keeps the one
+-- invariant RLS can't express — a member must never rewrite the login link that
+-- ties a row to an auth user.
+create or replace function public.guard_people_update()
+returns trigger language plpgsql security definer
+set search_path = public
+as $$
+begin
+  if auth.uid() is not null and not public.is_admin()
+     and new.user_id is distinct from old.user_id then
+    raise exception 'members cannot change the login link';
+  end if;
+  return new;
+end;
+$$;
+
+-- creating a draft, editing it, and publishing it all require membership
+drop policy if exists "create own profile" on public.people;
+create policy "create own profile" on public.people
+  for insert to authenticated
+  with check (user_id = auth.uid() and is_published = false
+              and public.is_org_member());
+
+drop policy if exists "update own profile" on public.people;
+create policy "update own profile" on public.people
+  for update to authenticated
+  using (user_id = auth.uid() and public.is_org_member())
+  with check (user_id = auth.uid() and public.is_org_member());
+
+-- interest tags on your own profile: members only
+drop policy if exists "manage own tags" on public.person_fields;
+create policy "manage own tags" on public.person_fields
+  for all to authenticated
+  using (public.is_org_member()
+         and exists (select 1 from public.people p
+                     where p.id = person_id and p.user_id = auth.uid()))
+  with check (public.is_org_member()
+              and exists (select 1 from public.people p
+                          where p.id = person_id and p.user_id = auth.uid()));
+
+-- --------------------------------- 3b. shared vocabulary requires a member ----
+drop policy if exists "members create fields" on public.fields;
+create policy "members create fields" on public.fields
+  for insert to authenticated
+  with check (public.is_org_member());
+
+-- ------------------------------------------ 3c. projects require a member ----
+drop policy if exists "create project" on public.projects;
+create policy "create project" on public.projects
+  for insert to authenticated
+  with check (public.is_org_member()
+              and ((created_by = public.my_person_id() and created_by is not null)
+                   or public.is_admin()));
+
+drop policy if exists "editors update project" on public.projects;
+create policy "editors update project" on public.projects
+  for update to authenticated
+  using (public.is_org_member() and (public.is_project_editor(id) or public.is_admin()))
+  with check (public.is_org_member() and (public.is_project_editor(id) or public.is_admin()));
+
+drop policy if exists "editors delete project" on public.projects;
+create policy "editors delete project" on public.projects
+  for delete to authenticated
+  using (public.is_org_member() and (public.is_project_editor(id) or public.is_admin()));
+
+-- ------------------------------- 3d. project sub-resources require a member ----
+drop policy if exists "editors add members" on public.project_members;
+create policy "editors add members" on public.project_members
+  for insert to authenticated
+  with check (public.is_org_member()
+              and (public.is_project_editor(project_id) or public.is_admin()));
+
+drop policy if exists "editors update member roles" on public.project_members;
+create policy "editors update member roles" on public.project_members
+  for update to authenticated
+  using (public.is_org_member()
+         and (public.is_project_editor(project_id) or public.is_admin()))
+  with check (public.is_org_member()
+              and (public.is_project_editor(project_id) or public.is_admin()));
+
+-- leaving a project stays possible even if verification lapses
+drop policy if exists "editors remove members or self-leave" on public.project_members;
+create policy "editors remove members or self-leave" on public.project_members
+  for delete to authenticated
+  using (public.is_project_editor(project_id)
+         or person_id = public.my_person_id()
+         or public.is_admin());
+
+drop policy if exists "editors manage project fields" on public.project_fields;
+create policy "editors manage project fields" on public.project_fields
+  for all to authenticated
+  using (public.is_org_member()
+         and (public.is_project_editor(project_id) or public.is_admin()))
+  with check (public.is_org_member()
+              and (public.is_project_editor(project_id) or public.is_admin()));
+
+drop policy if exists "editors manage links" on public.project_links;
+create policy "editors manage links" on public.project_links
+  for all to authenticated
+  using (public.is_org_member()
+         and (public.is_project_editor(project_id) or public.is_admin()))
+  with check (public.is_org_member()
+              and (public.is_project_editor(project_id) or public.is_admin()));
+
+drop policy if exists "editors manage files" on public.project_files;
+create policy "editors manage files" on public.project_files
+  for all to authenticated
+  using (public.is_org_member()
+         and (public.is_project_editor(project_id) or public.is_admin()))
+  with check (public.is_org_member()
+              and (public.is_project_editor(project_id) or public.is_admin()));
+
+-- ------------------------------------------- 3e. uploads require a member ----
+-- Buckets are public-read, so an upload IS public content. Deletes stay open so
+-- erasure (and cleaning up your own files) always works.
+drop policy if exists "avatar owner writes" on storage.objects;
+create policy "avatar owner writes" on storage.objects
+  for insert to authenticated
+  with check (bucket_id in ('avatars', 'resumes')
+              and (storage.foldername(name))[1] = auth.uid()::text
+              and public.is_org_member());
+
+drop policy if exists "avatar owner updates" on storage.objects;
+create policy "avatar owner updates" on storage.objects
+  for update to authenticated
+  using (bucket_id in ('avatars', 'resumes')
+         and (storage.foldername(name))[1] = auth.uid()::text)
+  with check (bucket_id in ('avatars', 'resumes')
+              and (storage.foldername(name))[1] = auth.uid()::text
+              and public.is_org_member());
+
+drop policy if exists "project editors write files" on storage.objects;
+create policy "project editors write files" on storage.objects
+  for insert to authenticated
+  with check (bucket_id = 'project-files'
+              and public.is_project_editor(((storage.foldername(name))[1])::uuid)
+              and public.is_org_member());
+
+drop policy if exists "project editors update files" on storage.objects;
+create policy "project editors update files" on storage.objects
+  for update to authenticated
+  using (bucket_id = 'project-files'
+         and public.is_project_editor(((storage.foldername(name))[1])::uuid))
+  with check (bucket_id = 'project-files'
+              and public.is_project_editor(((storage.foldername(name))[1])::uuid)
+              and public.is_org_member());

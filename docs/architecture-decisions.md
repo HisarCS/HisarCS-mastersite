@@ -117,14 +117,26 @@ Auth drives an OAuth flow; org membership is read via the user's token.
 **Decision:** Use a dedicated **GitHub App** (not the org's Supabase integration
 app) as the auth provider, with "Organization → Members: read" and org
 installation. The membership check runs client-side; a non-member is signed out
-immediately. The **real** gate is that admins publish profiles, so unverified
-drafts are never visible.
+immediately.
 
 **Consequences:** Works with no backend. Explicitly **not** a hard security
-boundary — a determined non-member could POST a draft via the API (it stays
-invisible). Hardening path documented: a Supabase Edge Function that verifies
-membership with a GitHub App _installation_ token. Accepted the client-gate for
-launch because the curation gate is the true control.
+boundary — a determined non-member could POST a draft via the API. This was
+originally acceptable because admins published profiles (an unverified draft was
+never publicly visible); **ADR-0016 removed that gate**, which briefly made the
+client-side check the only barrier — until **ADR-0017 moved it server-side** (a
+Supabase Edge Function that verifies membership with a GitHub App _installation_
+token and writes the RLS-enforced `org_members` roster). The client check is now
+advisory UX only.
+
+**Setup gotchas (learned in production):** two failures cost real debugging time
+and are worth recording. (1) A **client-secret mismatch** in Supabase's provider
+config surfaces as the opaque GoTrue error `unexpected_failure: Unable to
+exchange external code` — re-generate the secret and re-paste it. (2) Creating
+the GitHub App is **not** enough: it must be **installed on the org**, or the
+user token gets `403 Resource not accessible by integration` on
+`GET /user/memberships/orgs/{org}` and the membership check can never resolve.
+`member.html` now records the exact cause (no token / 403 / 404) to the console
+and the "couldn't verify" page.
 
 ---
 
@@ -298,3 +310,84 @@ lifecycle. Complements the broader privacy posture (data minimization, EU
 hosting, no third-party requests). Outstanding compliance items are policy, not
 code: a privacy notice, the Supabase DPA, and parental-consent routing through
 the school.
+
+---
+
+## ADR-0016 — Members publish their own profiles (admin gate removed)
+
+**Status:** Accepted 2026-07-21 (supersedes the admin-publish gate in ADR-0006)
+
+**Context:** Profiles started as drafts that only an admin could publish — a
+curation step, and in practice the system's real barrier to public visibility.
+It also made every new member wait on an admin before their pixel appeared,
+which does not fit a lab where anyone in the HisarCS org is legitimately a
+member.
+
+**Decision:** Anyone signed in may publish and unpublish their **own** profile.
+The `guard_people_update` trigger no longer protects `is_published` (it still
+protects `user_id`, the login link). The `people_published_needs_year` CHECK
+still refuses to publish a profile with no graduation year. Delivered in the
+consolidated schema migration `20260711000001_schema.sql`.
+
+**Consequences:** Members are self-serve — no admin bottleneck. But this
+**removes the system's last server-side barrier to public visibility**, and that
+trade must be stated plainly: org membership is checked only in the browser
+(ADR-0006), so a determined non-member who calls the API directly with the
+public anon key can now create _and publish_ a profile that appears on the
+homepage. Previously that draft would have stayed invisible.
+
+Mitigations in force: admins can unpublish or delete any profile, and every
+profile is attributable to a GitHub login. The server-side gate this ADR called
+for has since been built — **see ADR-0017**, which makes membership a fact the
+database enforces, so the browser check is no longer the only barrier.
+
+---
+
+## ADR-0017 — Server-enforced HisarCS org membership
+
+**Status:** Accepted 2026-07-24 (closes the open hardening item in ADR-0016;
+promotes the client-side gate of ADR-0006 to a real boundary)
+
+**Context:** ADR-0006 checked org membership only in the browser, and ADR-0016
+removed the admin-publish gate — so the browser check became the _only_ thing
+between any GitHub account on earth and a published profile on the public
+homepage. Supabase issues a valid session to anyone who completes GitHub
+sign-in, member or not, and RLS cannot ask GitHub anything: a policy is a
+synchronous SQL expression, and org membership is a fact that lives at GitHub.
+The database simply could not know it.
+
+**Decision:** Make membership a fact the database _does_ know, then gate on it.
+
+- **`org_members`** — a roster table of verified GitHub logins, writable only by
+  the service role (or admins). It carries a `verified_at` timestamp.
+- **`is_org_member()`** — reads the caller's GitHub login from their auth token
+  (unspoofable, exactly like `is_admin()`) and checks the roster. Admins always
+  pass.
+- **Every write policy requires it** — creating _or_ editing a profile (even an
+  unpublished draft), interest tags, projects and their sub-resources, and all
+  uploads. A non-member has read-only access and can create nothing; there is no
+  "awaiting verification" state that can write. Reads and self-service deletes
+  (leaving a project, erasing your own account/files) stay open.
+- **`verify-org-member` Edge Function** populates the roster. It reads the caller
+  from their JWT, asks GitHub with the app's own _installation_ token (not the
+  member's ephemeral user token), and upserts or removes their row.
+
+**The roster stays current without a scheduled job.** Verification is lazy: the
+browser calls the function at signup (awaited — it needs the verdict) and again
+as a fire-and-forget refresh on every returning-member page load. The function
+self-throttles on `verified_at` (skips GitHub when confirmed within
+`VERIFY_TTL_SECONDS`, default 15 min), so reloads are cheap. A member who leaves
+the org is caught on their next visit and bounced; a member who leaves and never
+returns is harmless, because their inert row grants nothing they exercise. This
+was chosen over a daily cron, which polls everyone forever to catch the few who
+are active _and_ gone — the members' own requests are a better trigger than a
+timer. Existing members are grandfathered into the roster on deploy.
+
+**Consequences:** The homepage is a real boundary again — the browser check is
+now only advisory UX; RLS is the enforcement. The residual gap is narrow and
+honestly bounded: a departed member with a still-valid session making _headless_
+API calls (never loading the page) keeps write access until their next page
+load — a strictly smaller window than the cron's, and RLS still attributes every
+write to a GitHub login the whole time. The cost is a dependency on the GitHub
+App's private key living as a Supabase secret, and one GitHub API call per
+active-and-stale member. See §9 of the README for the deploy/secrets runbook.

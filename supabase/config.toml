@@ -394,6 +394,12 @@ deno_version = 2
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 
+# Called by the browser (after sign-in, and as a background refresh on returning
+# member page loads) — must carry the member's JWT so the function can read who
+# they are. Keep JWT verification ON.
+[functions.verify-org-member]
+verify_jwt = true
+
 [analytics]
 enabled = true
 port = 54327

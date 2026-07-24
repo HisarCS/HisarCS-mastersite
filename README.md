@@ -46,11 +46,15 @@ App pages, `config.js`, and `serve.json` stay at the repo root because GitHub
 Pages serves the site from there; everything for **testing** lives in `tests/`
 and everything for the **backend / local dev** lives in `supabase/`.
 
-The database is deliberately **one migration file**. Nothing has shipped yet, so
-there is no history to preserve — the file describes the final schema directly,
-with inline comments explaining every table and column. When you change the
-schema, add a _new_ timestamped migration; never edit tables by hand in a way
-that drifts local from production.
+The schema began as **one editable migration** (readable end state, no
+build-then-undo history). That era ended when production gained real member data:
+migrations are now **append-only**. `20260711000001_schema.sql` is the baseline,
+and future changes ship as their own timestamped files (see ADR-0003). Never edit
+tables by hand in Studio, or local and production drift.
+
+> Editing an already-applied migration in place is a **no-op on production** —
+> `supabase db push` skips migrations it has already recorded. If a deployed
+> project is missing something you "added" to the baseline, ship a new migration.
 
 ---
 
@@ -118,12 +122,22 @@ the frontend.
 | **Admin** (on the allowlist)                | Everything, including publishing profiles and managing admins.                                                                                                                                           |
 | **Service role** (SQL editor, seed scripts) | Bypasses RLS entirely — used for setup and hand-edits.                                                                                                                                                   |
 
-- **Members can't publish themselves.** New profiles are drafts; an **admin**
-  publishes them (a `guard_people_update` trigger blocks members from flipping
-  `is_published` or `user_id`). This is the curation gate.
+- **Members publish themselves.** New profiles start as drafts, and the member
+  publishes (or unpublishes) their own from the dashboard. The
+  `guard_people_update` trigger still blocks changes to `user_id` (the login
+  link), and the `people_published_needs_year` CHECK refuses to publish a
+  profile with no graduation year. See ADR-0016. Publishing (and every other
+  write) is gated on **verified HisarCS org membership**, enforced in the
+  database via `is_org_member()` — see the org-gate bullet below and ADR-0017.
 - **Projects publish themselves.** Any member on a project's member list can
   edit, publish, or delete it, and add/remove members. When the last member
   leaves, a trigger deletes the orphaned project.
+- **Org membership is server-enforced.** Every write requires
+  `is_org_member()` — creating or editing a profile (even a draft), tags,
+  projects, and uploads. It reads your GitHub login from the **auth token** and
+  checks the `org_members` roster, which the `verify-org-member` Edge Function
+  keeps current (lazily, on each visit — no cron). A non-member has read-only
+  access and can create nothing. See ADR-0017 and §9.
 - **Admins are unspoofable.** `is_admin()` reads your GitHub username from the
   **auth token** (which you cannot edit), not from any editable profile field,
   and checks it against `admin_github_logins`. `kmert10` is the seeded founding
@@ -142,21 +156,24 @@ it up. The flow:
 
 1. Visitor clicks "Continue with GitHub" → GitHub authorization → back to
    `member.html` signed in.
-2. The app checks **HisarCS org membership** using the signed-in user's token
-   (`GET /user/memberships/orgs/HisarCS`). This works because the GitHub App has
-   the "Organization → Members: read" permission and is installed on the org.
+2. The app checks **HisarCS org membership** by invoking the `verify-org-member`
+   Edge Function, which asks GitHub with the app's own _installation_ token and
+   writes the `org_members` roster that RLS enforces (see ADR-0017, §9).
    - **Member →** continues to onboarding.
    - **Not a member →** shown a "not one of us — email us" page **and signed
      out immediately** (a non-member is never left with a live session; no
      sign-out button, no dashboard access).
 3. First-time members get an onboarding form (name, graduation year, interests)
    which inserts their `people` row as a **draft** with a server-generated `public_id`.
-4. The dashboard shows a draft banner until an admin publishes them — at which
-   point their pixel appears on the homepage.
+4. The dashboard shows a draft banner with a **Publish my profile** button — the
+   member publishes themselves, and their pixel appears on the homepage. They can
+   unpublish at any time.
 
-> The org check is a **UX filter, not the security boundary.** The real gate is
-> that admins publish profiles, so an unverified draft never shows publicly. If
-> you want membership enforced server-side too, add the Edge Function in §9.
+> ✅ Members self-publish (ADR-0016), but org membership is now **enforced
+> server-side** (ADR-0017): every write is gated on `is_org_member()`, and the
+> `verify-org-member` Edge Function verifies against GitHub with an app
+> installation token. The browser check is advisory UX; RLS is the boundary. A
+> non-member calling the API directly with the anon key can create nothing.
 
 Account deletion is one call, `delete_my_account()` (behind a typed-name
 confirmation modal): it erases the person, their tags, their memberships (solo
@@ -301,12 +318,16 @@ survives graduations:
    URL + anon key (_Settings → API_; the anon key is public-safe — RLS is the
    real boundary).
 
-> **Membership-check note.** The gate calls `GET /user/memberships/orgs/HisarCS`
-> with the signed-in user's token; it resolves once the GitHub App has
-> _Members: read_ **and** is installed on the org. If GitHub ever stops serving
-> that endpoint for user-to-server tokens, the robust upgrade is the Edge
-> Function in §9 (checks membership with an app _installation_ token). Either
-> way, admins publishing profiles is the actual security gate.
+> **Membership-check note.** The gate runs server-side in the `verify-org-member`
+> Edge Function, which checks membership with the app's _installation_ token and
+> writes the `org_members` roster RLS enforces (ADR-0017). It resolves once the
+> GitHub App has _Members: read_ **and** is installed on the org, and its App ID
+> / installation ID / private key are set as function secrets (see §9).
+>
+> **Setup gotcha:** creating the GitHub App is not enough — it must be
+> **installed on the org**, or the membership call returns `403 Resource not
+accessible by integration` and sign-in dead-ends on "couldn't verify your
+> membership".
 
 ### C. GitHub Pages
 
@@ -324,7 +345,8 @@ survives graduations:
 
 - [ ] Homepage loads real published people; clicking a pixel opens the right profile.
 - [ ] `kmert10` signs in → `is_admin()` returns true (Studio SQL).
-- [ ] A **member** account: sign in → onboarding → draft → admin publishes → pixel appears.
+- [ ] A **member** account: sign in → onboarding → draft → **Publish my profile** → pixel appears.
+- [ ] Upload an avatar and a resume PDF; both land in Storage under your user id.
 - [ ] A **non-member** account: sign in → "not one of us" page, and it's signed out (no dashboard).
 - [ ] A project opens by id with its real members, tags, and links.
 
@@ -377,9 +399,25 @@ Still to build:
    filter — the `people_directory` view already backs this).
 3. Build a small **admin panel** (publish queue for new members, manage the
    allowlist, edit anyone).
-4. **Harden the org gate server-side.** A Supabase Edge Function that verifies
-   HisarCS membership with a GitHub App _installation_ token (instead of the
-   client-side user-token check) makes the gate unspoofable and immune to
-   GitHub's user-to-server endpoint rules.
-5. Extensions the schema already anticipates: cohort override for mentors/staff,
+4. Extensions the schema already anticipates: cohort override for mentors/staff,
    an awards table, full-text bio search.
+
+### Org-gate Edge Function (deployed)
+
+The server-side membership gate (ADR-0017) lives in
+`supabase/functions/verify-org-member`. To deploy or rotate it:
+
+```bash
+# 1. Secrets — the GitHub App's own credentials (private key stays here, never
+#    in the browser). VERIFY_TTL_SECONDS is optional (default 900 = 15 min).
+supabase secrets set GH_APP_ID=… GH_APP_INSTALLATION_ID=… \
+  GH_APP_PRIVATE_KEY="$(cat your-app.private-key.pem)"
+
+# 2. Deploy
+supabase functions deploy verify-org-member
+```
+
+Requires the GitHub App to have **Organization → Members: read** and be
+**installed on HisarCS**. The browser invokes it at signup and as a throttled
+background refresh on each visit; it upserts/removes the caller's `org_members`
+row, which every RLS write policy enforces via `is_org_member()`.

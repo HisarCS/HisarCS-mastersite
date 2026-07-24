@@ -9,7 +9,10 @@ test-results/
 playwright-report/
 coverage/
 
-# secrets — never commit OAuth/app credentials
+# secrets
+secrets/
+*.pem
+*.key
 *secret*.txt
 github_oath_app_secrets.txt
 .env

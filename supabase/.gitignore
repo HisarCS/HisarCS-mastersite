@@ -7,5 +7,6 @@
 .env.local
 .env.*.local
 
-# Local Dev Secrets
+# Secrets
 github_oath_app_secrets.txt
+/secrets/

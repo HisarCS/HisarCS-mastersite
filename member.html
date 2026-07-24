@@ -248,8 +248,19 @@
   <!-- ============ STATE 3: DASHBOARD ============ -->
   <section class="screen" id="s-dashboard">
     <div class="notice" id="draft-note">
-      Your profile is a <strong>draft</strong> — visible only to you until a lab admin
-      publishes it. You can still edit everything and create projects.
+      <div>Your profile is a <strong>draft</strong> — only you can see it. Publish it to
+      take your pixel on the homepage. You need a graduation year first.</div>
+      <div style="margin-top:12px; display:flex; gap:10px; align-items:center; flex-wrap:wrap">
+        <button class="btn" onclick="setPublished(true, this)">Publish my profile</button>
+        <span class="sub" id="publish-hint"></span>
+      </div>
+    </div>
+    <div class="notice" id="live-note" style="display:none">
+      <div>Your profile is <strong>live</strong> — it has a pixel on the homepage.</div>
+      <div style="margin-top:12px; display:flex; gap:10px; align-items:center; flex-wrap:wrap">
+        <button class="btn ghost" onclick="setPublished(false, this)">Unpublish</button>
+        <span class="sub" id="unpublish-hint"></span>
+      </div>
     </div>
 
     <div class="panel">
@@ -345,8 +356,10 @@
       <li>projects where you are the only member</li>
       <li>your GitHub login link</li>
     </ul>
-    <label class="f">TYPE YOUR FULL NAME (<strong id="del-name-echo"></strong>) TO CONFIRM</label>
-    <input type="text" id="del-confirm" placeholder="Full name">
+    <label class="f">TYPE YOUR GITHUB USERNAME (<strong id="del-name-echo"></strong>) TO CONFIRM</label>
+    <input type="text" id="del-confirm" placeholder="GitHub username" autocapitalize="off"
+      autocorrect="off" spellcheck="false">
+    <div class="sub" id="del-hint" style="margin-top:10px"></div>
     <div class="actions">
       <button class="btn ghost" onclick="document.getElementById('del-overlay').classList.remove('show')">Cancel</button>
       <button class="btn danger" onclick="tryDelete(this)">Delete forever</button>
@@ -381,8 +394,6 @@ let SESSION = null;        // supabase auth session
 let blockedNotMember = false; // signed in but not in the HisarCS org → show notmember, kept signed out
 let verifyFailed = false;  // signed in but membership couldn't be confirmed → show verifyfail
 let VERIFY_REASON = '';    // human-readable cause of a failed/indeterminate org check (for debugging)
-let PROVIDER_TOKEN = null; // GitHub token — only delivered right after OAuth,
-                           // captured eagerly because refreshed sessions drop it
 let ME = null;             // my `people` row (live mode)
 let FIELD_LIST = [];     // [{id, name, created_by}] — what exists in the DB
 let selectedFields = new Set();  // field ids
@@ -458,15 +469,11 @@ async function init() {
     return;
   }
   sb.auth.onAuthStateChange((evt, session) => {
-    // grab the GitHub token the moment it exists — the OAuth redirect is the
-    // only time Supabase hands it over, and later refreshes drop it
-    if (session?.provider_token) PROVIDER_TOKEN = session.provider_token;
     SESSION = session;
     if (['INITIAL_SESSION', 'SIGNED_IN', 'SIGNED_OUT'].includes(evt)) routeOnce();
   });
   // safety net in case no INITIAL_SESSION event arrives
   const { data: { session } } = await sb.auth.getSession();
-  if (session?.provider_token) PROVIDER_TOKEN = session.provider_token;
   SESSION = SESSION || session;
   routeOnce();
 }
@@ -492,22 +499,12 @@ async function route() {
   if (error) { console.error('ideaLab: failed to load profile', error); }
   ME = me || null;
   const m = SESSION.user.user_metadata || {};
+  const returning = !!ME;   // existing profile vs. brand-new signup
   if (!ME) {
-    // gate signup on HisarCS org membership, verified with the member's own
-    // GitHub token (only present right after the OAuth redirect)
+    // gate signup on HisarCS org membership, verified server-side (the
+    // verify-org-member Edge Function writes the authoritative roster)
     const verdict = await checkOrgMembership();
-    if (verdict === false) {
-      // Signed in, but not in the HisarCS org. A non-member is never left
-      // logged in: show the explainer, then end the Supabase session. The
-      // SIGNED_OUT event re-routes here (via blockedNotMember), so the page
-      // stays put — now with no session and no sign-out button anywhere.
-      blockedNotMember = true;
-      $('nm-username').textContent = '@' + (m.user_name || 'you');
-      SESSION = null;                   // UI treats them as signed out immediately
-      go('notmember');                  // session-box renders empty (no button)
-      if (sb) await sb.auth.signOut();  // actually revoke the session
-      return;
-    }
+    if (verdict === false) { await bounceNotMember(m.user_name); return; }
     if (verdict === null) {
       // Signed in, but membership could NOT be confirmed (not a definitive "no").
       // Show a clear, non-looping page that names the cause and offers a way out,
@@ -530,10 +527,17 @@ async function route() {
       return;
     }
     buildChips(FIELD_LIST);  // rebuild: ownership (×) now knows who ME is
+  } else if (returning) {
+    // A returning member: re-confirm org membership in the background. This is
+    // what keeps the roster in sync with GitHub org changes — no scheduled job.
+    // Self-throttled server-side, so reloads are cheap; fire-and-forget so the
+    // dashboard renders instantly. If they've since left the org, it bounces
+    // them (below) and RLS already blocks any write in the meantime.
+    refreshMembership(m);
   }
   if (ME.graduation_year == null) {
-    // profile exists but onboarding never finished (works even on a later
-    // visit with an expired GitHub token — membership was proven at minting)
+    // profile exists but onboarding never finished (membership was proven at
+    // minting and is re-checked in the background on each returning visit)
     $('ob-username').textContent = '@' + (m.user_name || 'you');
     $('ob-gh').value = ME.github_username || m.user_name || '';
     $('ob-name').value = ME.full_name || '';
@@ -561,56 +565,58 @@ async function createMinimalProfile(m) {
   return data;
 }
 
-/* Resolve the ephemeral GitHub provider_token. Supabase delivers it only right
-   after the OAuth redirect, via the onAuthStateChange(SIGNED_IN) event (captured
-   into PROVIDER_TOKEN above). The getSession() safety-net in init() can call
-   route() a beat BEFORE that event fires, so poll briefly to let the token land
-   before concluding we can't verify — otherwise a fresh sign-in gets bounced
-   with "sign in again" and loops. Only reached for brand-new/unverified users,
-   so it never slows down members who already have a profile. */
-async function getProviderToken(timeoutMs = 2500) {
-  const deadline = Date.now() + timeoutMs;
-  for (;;) {
-    if (PROVIDER_TOKEN) return PROVIDER_TOKEN;
-    const { data: { session } } = await sb.auth.getSession();
-    if (session?.provider_token) { PROVIDER_TOKEN = session.provider_token; return PROVIDER_TOKEN; }
-    if (Date.now() >= deadline) return null;
-    await new Promise(r => setTimeout(r, 150));
+/* true = active org member, false = not a member, null = can't verify.
+   The verdict is decided SERVER-SIDE by the verify-org-member Edge Function:
+   it reads the caller's identity from their JWT, asks GitHub with the app's
+   own installation token, and — this is the important part — writes the
+   authoritative public.org_members roster that RLS gates every write on. The
+   boolean it returns is only advisory UX; the real enforcement is that a
+   non-member is never added to the roster, so RLS blocks them regardless of
+   anything the browser does. Because it uses the app token (not the member's
+   ephemeral provider_token), it also verifies returning members whose OAuth
+   token has long since expired — e.g. someone re-creating a deleted profile. */
+async function checkOrgMembership() {
+  try {
+    const { data, error } = await sb.functions.invoke('verify-org-member');
+    if (error) {
+      // 401/400/500 from the function — a problem, not a definitive "not a member"
+      let detail = '';
+      try { detail = (await error.context?.json?.())?.error || ''; } catch { /* no body */ }
+      VERIFY_REASON =
+        `Membership verification service returned an error${detail ? ` — “${detail}”` : ''}. ` +
+        `Likely the GitHub App isn't configured (App ID / installation / "Members: read") for ${GITHUB_ORG}.`;
+      console.warn('ideaLab: org check —', VERIFY_REASON, error);
+      return null;
+    }
+    VERIFY_REASON = `GitHub reports membership state: ${data?.state ?? 'unknown'}`;
+    console.log('ideaLab: org check —', VERIFY_REASON);
+    return data?.member === true;
+  } catch (e) {
+    VERIFY_REASON = `Couldn't reach the membership verification service (${e.message}).`;
+    console.warn('ideaLab: org check —', VERIFY_REASON);
+    return null;
   }
 }
 
-/* true = active org member, false = not a member, null = can't verify
-   (no provider_token even after waiting for the post-OAuth event) */
-async function checkOrgMembership() {
-  const token = await getProviderToken();
-  if (!token) {
-    VERIFY_REASON = 'No GitHub token was returned after sign-in — the auth provider may not be issuing a provider_token.';
-    console.warn('ideaLab: org check —', VERIFY_REASON);
-    return null;
-  }
-  try {
-    const r = await fetch(`https://api.github.com/user/memberships/orgs/${GITHUB_ORG}`, {
-      headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' },
-    });
-    if (r.ok) {
-      const state = (await r.json()).state;
-      VERIFY_REASON = `GitHub reports membership state: ${state}`;
-      console.log('ideaLab: org check —', VERIFY_REASON);
-      return state === 'active';
-    }
-    if (r.status === 404) { VERIFY_REASON = 'GitHub returned 404 — not a member of the org.'; return false; }
-    let detail = '';
-    try { detail = (await r.json()).message || ''; } catch { /* body not JSON */ }
-    VERIFY_REASON =
-      `GitHub API returned ${r.status}${detail ? ` — “${detail}”` : ''}. ` +
-      `Likely the auth app lacks "Organization → Members: read" or isn't installed on ${GITHUB_ORG}.`;
-    console.warn('ideaLab: org check —', VERIFY_REASON);
-    return null;
-  } catch (e) {
-    VERIFY_REASON = `Couldn't reach GitHub to verify membership (${e.message}).`;
-    console.warn('ideaLab: org check —', VERIFY_REASON);
-    return null;
-  }
+/* Revoke UI access for someone who is not (or is no longer) a HisarCS member:
+   flag it, show the explainer, and end the Supabase session. The SIGNED_OUT
+   event re-routes via blockedNotMember, so the page stays put — now with no
+   session and no sign-out button anywhere. Shared by the signup gate and the
+   returning-member background refresh. */
+async function bounceNotMember(username) {
+  blockedNotMember = true;
+  $('nm-username').textContent = '@' + (username || 'you');
+  SESSION = null; ME = null;
+  go('notmember');
+  if (sb) await sb.auth.signOut();
+}
+
+/* Background re-verification for a returning member. Reuses the same server-side
+   check as signup and only acts on a definitive "not a member" — they've left
+   the org since last time. A transient error (null verdict) is ignored: RLS is
+   still the hard boundary on every write. */
+async function refreshMembership(m) {
+  if (await checkOrgMembership() === false) await bounceNotMember(m.user_name);
 }
 
 /* ---------- fields / chips ---------- */
@@ -826,11 +832,45 @@ function fillDashboard() {
   $('slug-input').value = ME.public_id || '';
   $('db-year').value = ME.graduation_year || '';
   $('slug-hint').textContent = ''; $('save-hint').textContent = '';
-  $('draft-note').style.display = ME.is_published ? 'none' : 'block';
+  renderPublishState();
   selectedFields = new Set((ME.person_fields || []).map(r => r.field_id));
   refreshChipStates();
   renderAvatarTile();
   loadProjects();
+}
+
+/* Members publish themselves (no admin gate). The DB still refuses to publish a
+   profile with no graduation year (people_published_needs_year), so mirror that
+   rule in the UI instead of surfacing a raw constraint error. */
+function renderPublishState() {
+  const live = !!ME?.is_published;
+  $('draft-note').style.display = live ? 'none' : 'block';
+  $('live-note').style.display = live ? 'block' : 'none';
+  $('publish-hint').textContent = '';
+  $('unpublish-hint').textContent = '';
+}
+
+async function setPublished(next, btn) {
+  const hint = $(next ? 'publish-hint' : 'unpublish-hint');
+  if (!sb || !ME) { hint.textContent = 'demo mode — not saved'; return; }
+  if (next && !ME.graduation_year && !parseInt($('db-year').value, 10)) {
+    hint.innerHTML = '<span class="hint-bad">add your graduation year and save first</span>';
+    return;
+  }
+  btn.disabled = true;
+  hint.textContent = next ? 'publishing…' : 'unpublishing…';
+  const { data, error } = await sb.from('people')
+    .update({ is_published: next }).eq('id', ME.id)
+    .select('*, person_fields(field_id)').single();
+  btn.disabled = false;
+  if (error) {
+    hint.innerHTML = `<span class="hint-bad">✕ ${window.idealabEsc(error.message)}</span>`;
+    return;
+  }
+  ME = data;
+  renderPublishState();
+  $(next ? 'unpublish-hint' : 'publish-hint').innerHTML =
+    `<span class="hint-ok">${next ? '✓ your profile is live' : '✓ back to draft'}</span>`;
 }
 
 function renderAvatarTile() {
@@ -1060,27 +1100,71 @@ function checkSlug(v) {
 }
 
 /* ---------- delete account ---------- */
+/* Remove every file this member uploaded, through the Storage API. Postgres
+   cannot delete storage.objects (Supabase's storage.protect_delete guards
+   against orphaning the real file), so full erasure has to start here. Listing
+   is owner-scoped by RLS, so this only ever sees the member's own folder. */
+async function purgeMyStorage() {
+  const uid = SESSION?.user?.id;
+  if (!sb || !uid) return;
+  for (const bucket of ['avatars', 'resumes']) {
+    try {
+      const { data } = await sb.storage.from(bucket).list(uid);
+      const paths = (data || []).map((f) => `${uid}/${f.name}`);
+      if (paths.length) await sb.storage.from(bucket).remove(paths);
+    } catch (e) {
+      console.warn(`ideaLab: could not purge ${bucket}`, e);
+    }
+  }
+}
+
+/* Confirm with the GitHub username, not the display name: it's server-owned
+   (the sync trigger forces it from the OAuth token), always present for a
+   linked member, and unique — unlike full_name, which can be blank or shared. */
+const myGithubHandle = () =>
+  (ME?.github_username || SESSION?.user?.user_metadata?.user_name || '').trim();
+
 async function tryDelete(btn) {
-  const expect = (ME?.full_name || $('db-name').value || 'your name').trim();
-  $('del-name-echo').textContent = expect;
-  const typed = $('del-confirm').value.trim();
-  if (typed !== expect) {
+  const hint = $('del-hint');
+  // GitHub handles are ASCII and case-insensitive; tolerate a pasted "@" and
+  // stray whitespace. Plain toLowerCase (NOT the Turkish locale — that would
+  // turn "I" into "ı" and break handles like "Ipek").
+  const norm = (s) => String(s || '').trim().replace(/^@+/, '').toLowerCase();
+  const expect = myGithubHandle();
+  $('del-name-echo').textContent = expect ? '@' + expect : 'your GitHub username';
+
+  if (!expect || norm($('del-confirm').value) !== norm(expect)) {
     $('del-confirm').style.outline = '2px solid var(--danger)';
+    hint.innerHTML =
+      `<span class="hint-bad">✕ that doesn't match — type “${window.idealabEsc(expect || 'your GitHub username')}” to confirm</span>`;
     return;
   }
+  $('del-confirm').style.outline = '';
+
   if (!sb || !ME) { $('del-overlay').classList.remove('show'); go('signedout'); return; }
   btn.disabled = true;
+  hint.textContent = 'deleting your account…';
+  await purgeMyStorage();   // files first — SQL can't delete them (see migration 0003)
   const { error } = await sb.rpc('delete_my_account');
   btn.disabled = false;
-  if (error) { $('del-confirm').style.outline = '2px solid var(--danger)'; console.error(error); return; }
+  if (error) {
+    // never fail silently — the member sees exactly why
+    hint.innerHTML = `<span class="hint-bad">✕ ${window.idealabEsc(error.message)}</span>`;
+    console.error('ideaLab: delete_my_account failed', error);
+    return;
+  }
   await sb.auth.signOut();
   $('del-overlay').classList.remove('show');
   SESSION = null; ME = null;
   go('signedout');
 }
-// keep the modal's name echo current
+// keep the modal's name echo current, and clear any stale error
 document.querySelector('.danger-zone .btn.danger').addEventListener('click', () => {
-  $('del-name-echo').textContent = (ME?.full_name || $('db-name').value || 'your name').trim();
+  const handle = myGithubHandle();
+  $('del-name-echo').textContent = handle ? '@' + handle : 'your GitHub username';
+  $('del-hint').textContent = '';
+  $('del-confirm').style.outline = '';
+  $('del-confirm').value = '';
 });
 
 init();
