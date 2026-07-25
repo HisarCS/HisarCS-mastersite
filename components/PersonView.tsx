@@ -18,8 +18,9 @@ type State =
   | { status: 'ok'; member: Member }
   | { status: 'missing'; reachable: boolean };
 
-/** Public profile — client-fetched by public_id so edits stay live. */
-export function PersonView({ id }: { id: string }) {
+/** Public profile — client-fetched by public_id so edits stay live. When
+ *  `embedded` (inside the homepage detail modal) the shared header is omitted. */
+export function PersonView({ id, embedded = false }: { id: string; embedded?: boolean }) {
   const [state, setState] = useState<State>({ status: 'loading' });
 
   useEffect(() => {
@@ -43,7 +44,7 @@ export function PersonView({ id }: { id: string }) {
   if (state.status === 'loading') {
     return (
       <>
-        <SiteHeader />
+        {!embedded && <SiteHeader />}
         <main className={styles.main} aria-busy="true" />
       </>
     );
@@ -69,7 +70,7 @@ export function PersonView({ id }: { id: string }) {
 
   return (
     <>
-      <SiteHeader />
+      {!embedded && <SiteHeader />}
       <main className={styles.main}>
         <div className={styles.hero}>
           <div className={styles.avatar} style={{ background: color }}>

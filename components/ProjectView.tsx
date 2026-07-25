@@ -27,8 +27,9 @@ const colorFor = (s: string) =>
 
 type State = { status: 'loading' } | { status: 'ok'; project: Project } | { status: 'missing' };
 
-/** Public project page — read-only view (editor mode is a later phase). */
-export function ProjectView({ id }: { id: string }) {
+/** Public project page — read-only view. When `embedded` (homepage detail modal)
+ *  the shared header is omitted. */
+export function ProjectView({ id, embedded = false }: { id: string; embedded?: boolean }) {
   const [state, setState] = useState<State>({ status: 'loading' });
 
   useEffect(() => {
@@ -52,7 +53,7 @@ export function ProjectView({ id }: { id: string }) {
   if (state.status === 'loading') {
     return (
       <>
-        <SiteHeader />
+        {!embedded && <SiteHeader />}
         <main className={styles.main} aria-busy="true" />
       </>
     );
@@ -71,7 +72,7 @@ export function ProjectView({ id }: { id: string }) {
 
   return (
     <>
-      <SiteHeader />
+      {!embedded && <SiteHeader />}
       <main className={styles.main}>
         <div className={styles.hero}>
           <div className={styles.pav}>

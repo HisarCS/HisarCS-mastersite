@@ -51,8 +51,10 @@ Commands: `npm run dev` (Next dev) · `npm run build` (needs `NEXT_PUBLIC_BASE_P
   `listProjects()`/`mockProjects()` added; generic `components/Carousel.tsx`
   (cross-fade overlay, prev/next paging, responsive card width, cards → detail
   pages). Verified: Members carousel renders with avatars + name + cohort·field.
-- **3d** — card → inline **modal** over dimmed mark, reusing `PersonView`/`ProjectView`
-  (they already take an `id` prop — decoupled on purpose). Prev/next/back controls.
+- **3d DONE** — `components/DetailModal.tsx`: card → inline modal over the dimmed
+  carousel, renders `PersonView`/`ProjectView` with `embedded` (skips SiteHeader),
+  prev/next through cards + close, keyboard (Esc/←/→) centralized in `Home`.
+  Cards keep their `href` (accessibility) but open the modal on click. Verified.
 - **3e** — **FLIP morph** as progressive enhancement (Web Animations API), gated by
   capability check (`matchMedia` pointer/width + `prefers-reduced-motion`). Put the
   strategy behind a selector (`ANIMATION_MODE = adaptive|flip|crossfade`) so reverting

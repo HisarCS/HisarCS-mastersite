@@ -10,6 +10,7 @@ import { hashStr } from '@/lib/util/hash';
 import type { MemberCard, ProjectCard } from '@/lib/domain/types';
 import { PixelMark } from './PixelMark';
 import { Carousel, type CarouselItem } from './Carousel';
+import { DetailModal } from './DetailModal';
 import styles from './Home.module.css';
 
 // Research is a static public/ file, so its link needs basePath prepended.
@@ -19,11 +20,13 @@ const colorFor = (id: string) => FALLBACK_COLORS[hashStr(id) % FALLBACK_COLORS.l
 
 type Mode = 'mark' | 'members' | 'projects';
 
-/** Homepage shell: the pixel mark plus the Members/Projects carousel modes. */
+/** Homepage: the pixel mark, the Members/Projects carousel modes, and the inline
+ *  detail modal (card → full profile with prev/next). */
 export function Home() {
   const [members, setMembers] = useState<MemberCard[]>([]);
   const [projects, setProjects] = useState<ProjectCard[]>([]);
   const [mode, setMode] = useState<Mode>('mark');
+  const [selected, setSelected] = useState<number | null>(null); // card open in the modal
 
   useEffect(() => {
     document.body.style.overflow = 'hidden'; // full-screen stage → no page scroll
@@ -41,15 +44,6 @@ export function Home() {
     };
   }, []);
 
-  // Esc closes a carousel mode back to the mark
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setMode('mark');
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, []);
-
   const items: CarouselItem[] = useMemo(() => {
     if (mode === 'members') {
       return members.map((m) => ({
@@ -59,6 +53,8 @@ export function Home() {
         avatarUrl: m.avatarUrl,
         color: m.avatarColor || colorFor(m.id),
         href: `/person?id=${encodeURIComponent(m.publicId)}`,
+        kind: 'member',
+        detailId: m.publicId,
       }));
     }
     if (mode === 'projects') {
@@ -69,29 +65,51 @@ export function Home() {
         avatarUrl: p.avatarUrl,
         color: colorFor(p.id),
         href: `/project?id=${encodeURIComponent(p.publicId)}`,
+        kind: 'project',
+        detailId: p.publicId,
       }));
     }
     return [];
   }, [mode, members, projects]);
 
-  const toggle = (m: Mode) => setMode((cur) => (cur === m ? 'mark' : m));
+  // Keyboard: modal open → Esc closes, ←/→ step cards; carousel mode (no modal)
+  // → Esc returns to the mark. Centralized so it composes with the mode state.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (selected !== null) {
+        if (e.key === 'Escape') setSelected(null);
+        else if (e.key === 'ArrowLeft') setSelected((i) => Math.max(0, (i ?? 0) - 1));
+        else if (e.key === 'ArrowRight')
+          setSelected((i) => Math.min(items.length - 1, (i ?? 0) + 1));
+      } else if (mode !== 'mark' && e.key === 'Escape') {
+        setMode('mark');
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [selected, mode, items.length]);
+
+  const switchMode = (m: Mode) => {
+    setSelected(null);
+    setMode((cur) => (cur === m ? 'mark' : m));
+  };
 
   return (
     <>
       <header className={styles.header}>
         <nav className={styles.nav}>
-          <Link href="/" className={styles.wordmark} onClick={() => setMode('mark')}>
+          <Link href="/" className={styles.wordmark} onClick={() => switchMode('mark')}>
             idea<span>Lab</span>
           </Link>
           <button
             className={`${styles.navBtn} ${mode === 'members' ? styles.active : ''}`}
-            onClick={() => toggle('members')}
+            onClick={() => switchMode('members')}
           >
             Members
           </button>
           <button
             className={`${styles.navBtn} ${mode === 'projects' ? styles.active : ''}`}
-            onClick={() => toggle('projects')}
+            onClick={() => switchMode('projects')}
           >
             Projects
           </button>
@@ -106,7 +124,17 @@ export function Home() {
 
       <PixelMark members={members} />
 
-      {mode !== 'mark' && <Carousel items={items} label={mode} />}
+      {mode !== 'mark' && <Carousel items={items} label={mode} onSelect={setSelected} />}
+
+      {selected !== null && (
+        <DetailModal
+          items={items}
+          index={selected}
+          onClose={() => setSelected(null)}
+          onPrev={() => setSelected((i) => Math.max(0, (i ?? 0) - 1))}
+          onNext={() => setSelected((i) => Math.min(items.length - 1, (i ?? 0) + 1))}
+        />
+      )}
 
       <footer className={styles.footer}>
         <div>Hisar School · ideaLab</div>

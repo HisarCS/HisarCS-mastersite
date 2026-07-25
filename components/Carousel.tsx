@@ -11,7 +11,9 @@ export interface CarouselItem {
   subtitle: string;
   avatarUrl: string | null;
   color: string;
-  href: string;
+  href: string; // kept for accessibility / middle-click / future deep-link
+  kind: 'member' | 'project';
+  detailId: string; // public_id passed to the detail view in the modal
 }
 
 const initials = (s: string) =>
@@ -28,7 +30,15 @@ const initials = (s: string) =>
  * inline detail modal (3d) layer on top later. Cards currently link to the
  * detail pages.
  */
-export function Carousel({ items, label }: { items: CarouselItem[]; label: string }) {
+export function Carousel({
+  items,
+  label,
+  onSelect,
+}: {
+  items: CarouselItem[];
+  label: string;
+  onSelect?: (index: number) => void;
+}) {
   const trackRef = useRef<HTMLDivElement>(null);
 
   const page = (dir: number) => {
@@ -47,8 +57,18 @@ export function Carousel({ items, label }: { items: CarouselItem[]; label: strin
         ‹
       </button>
       <div className={styles.track} ref={trackRef}>
-        {items.map((it) => (
-          <Link key={it.id} href={it.href} className={styles.card}>
+        {items.map((it, i) => (
+          <Link
+            key={it.id}
+            href={it.href}
+            className={styles.card}
+            onClick={(e) => {
+              if (onSelect) {
+                e.preventDefault(); // open the inline modal instead of navigating
+                onSelect(i);
+              }
+            }}
+          >
             <div className={styles.avatar} style={{ background: it.color }}>
               {it.avatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
