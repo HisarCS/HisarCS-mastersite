@@ -11,9 +11,14 @@ import type { Member, MemberCard } from '../domain/types';
 export async function listMembers(): Promise<MemberCard[]> {
   const sb = getSupabase();
   if (!sb) return [];
-  const { data, error } = await sb
-    .from('people_directory')
-    .select('id, public_id, full_name, cohort, avatar_url, avatar_color, fields');
+  let data: any, error: any;
+  try {
+    ({ data, error } = await sb
+      .from('people_directory')
+      .select('id, public_id, full_name, cohort, avatar_url, avatar_color, fields'));
+  } catch {
+    return [];
+  }
   if (error || !data) return [];
   return data.map((r: any) => ({
     id: r.id,
@@ -30,15 +35,20 @@ export async function listMembers(): Promise<MemberCard[]> {
 export async function getMember(publicId: string): Promise<Member | null> {
   const sb = getSupabase();
   if (!sb) return null;
-  const { data, error } = await sb
-    .from('people')
-    .select(
-      `public_id, full_name, graduation_year, bio, avatar_url, avatar_color,
+  let data: any, error: any;
+  try {
+    ({ data, error } = await sb
+      .from('people')
+      .select(
+        `public_id, full_name, graduation_year, bio, avatar_url, avatar_color,
        resume_url, github_username, fields!person_fields(name),
        project_members(role, projects(public_id, title, is_published))`,
-    )
-    .eq('public_id', publicId)
-    .single();
+      )
+      .eq('public_id', publicId)
+      .single());
+  } catch {
+    return null; // network/backend unreachable → honest fallback
+  }
   if (error || !data) return null;
   const d = data as any;
   return {

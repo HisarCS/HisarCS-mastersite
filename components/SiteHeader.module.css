@@ -1,0 +1,31 @@
+.header {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 24px 36px;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.wordmark {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-decoration: none;
+  margin-right: 4px;
+}
+.wordmark span {
+  color: var(--accent);
+}
+
+.link {
+  font-size: 13px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.link:hover {
+  color: var(--ink);
+}

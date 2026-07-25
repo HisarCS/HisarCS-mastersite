@@ -3,21 +3,32 @@ import type { Project } from '../domain/types';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+/** Public URL for a file in the project-files bucket ('#' with no backend). */
+export function projectFileUrl(storagePath: string): string {
+  const sb = getSupabase();
+  return sb ? sb.storage.from('project-files').getPublicUrl(storagePath).data.publicUrl : '#';
+}
+
 /** One project's full detail by public_id, or null if not found / no backend. */
 export async function getProject(publicId: string): Promise<Project | null> {
   const sb = getSupabase();
   if (!sb) return null;
-  const { data, error } = await sb
-    .from('projects')
-    .select(
-      `id, public_id, title, description, avatar_url, is_published,
+  let data: any, error: any;
+  try {
+    ({ data, error } = await sb
+      .from('projects')
+      .select(
+        `id, public_id, title, description, avatar_url, is_published,
        project_fields(fields(name)),
        project_members(role, people(public_id, full_name, avatar_color)),
        project_links(label, url, sort_order),
        project_files(id, storage_path, kind, caption, sort_order)`,
-    )
-    .eq('public_id', publicId)
-    .single();
+      )
+      .eq('public_id', publicId)
+      .single());
+  } catch {
+    return null; // network/backend unreachable → honest fallback
+  }
   if (error || !data) return null;
   const d = data as any;
   return {
