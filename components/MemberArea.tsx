@@ -14,6 +14,7 @@ import {
 import type { MemberScreen } from '@/lib/domain/memberState';
 import type { MyProfile } from '@/lib/domain/types';
 import { Onboarding } from './member/Onboarding';
+import { Dashboard } from './member/Dashboard';
 import styles from './MemberArea.module.css';
 
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
@@ -93,6 +94,14 @@ export function MemberArea() {
       <a href={`${BASE}/research.html`} className={styles.research}>
         Research
       </a>
+      {(screen === 'onboarding' || screen === 'dashboard') && (
+        <span className={styles.session}>
+          signed in as <strong>@{ghLogin}</strong>
+          <button className={styles.linkBtn} onClick={() => void signOutLocal().then(resolve)}>
+            sign out
+          </button>
+        </span>
+      )}
     </header>
   );
 
@@ -198,18 +207,8 @@ export function MemberArea() {
           <Onboarding profile={profile} ghLogin={ghLogin} onComplete={resolve} />
         )}
 
-        {screen === 'dashboard' && (
-          <div className={styles.panel}>
-            <h1>
-              Your dashboard <span className={styles.accent}>.)</span>
-            </h1>
-            <p className={styles.sub}>
-              Signed in as <strong>@{ghLogin}</strong>. The dashboard UI lands in 4c.{' '}
-              <button className={styles.linkBtn} onClick={() => void signOutLocal().then(resolve)}>
-                sign out
-              </button>
-            </p>
-          </div>
+        {screen === 'dashboard' && profile && (
+          <Dashboard profile={profile} onProfileChange={setProfile} />
         )}
       </main>
     </>

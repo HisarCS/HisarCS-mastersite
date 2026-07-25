@@ -36,6 +36,13 @@ export interface MyProfile {
   fieldIds: number[];
 }
 
+/** A project the signed-in member belongs to (dashboard list). */
+export interface MyProjectSummary {
+  publicId: string;
+  title: string;
+  isPublished: boolean;
+}
+
 /** Directory card for a project (homepage Projects carousel). */
 export interface ProjectCard {
   id: string;

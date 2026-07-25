@@ -23,6 +23,14 @@
 .research:hover {
   color: var(--ink);
 }
+.session {
+  margin-left: auto;
+  font-size: 13px;
+  color: var(--muted);
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
 
 .main {
   max-width: 720px;

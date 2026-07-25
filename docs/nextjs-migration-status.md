@@ -107,7 +107,16 @@ whole file.** New data fns go in `lib/data/profile.ts` (create it); UI in
   create staged fields, `syncTags` (person_fields insert/delete diff), then → dashboard.
   Add data fns: `updateMyProfile(id, {...})`, `listFields()`, `createField(name)`,
   `syncPersonFields(personId, fieldIds)`. Consider a unit test for the field-diff logic.
-- **4c — dashboard** (member.html 249-339 markup, 831-928 + 960-970 logic). Draft
+- **4c DONE** — `components/member/Dashboard.tsx` (+ .module.css): draft/live notice +
+  publish/unpublish (grad-year guard), editable name/bio/resume-URL/slug(+availability
+  via `is_public_id_available`)/grad-year/fields (immediate create), avatar tile + color
+  swatches (`setAvatarColor`), projects list. `lib/data/profile.ts` gained
+  `updateMyProfile`, `setPublished`, `setAvatarColor`, `isPublicIdAvailable`,
+  `listMyProjects`; `MyProjectSummary` type. Wired into `MemberArea` (renders Dashboard on
+  dashboard screen, `onProfileChange=setProfile`; header shows session + sign out).
+  DEFERRED to later sub-steps: avatar/resume UPLOAD buttons (4d), danger-zone delete (4e).
+  Original ref below:
+- 4c source (member.html 249-339 markup, 831-928 + 960-970 logic). Draft
   banner + publish toggle (`setPublished` → people.update is_published; needs grad year;
   `people_published_needs_year` CHECK enforces). Edit name/bio/fields; save
   (`saveProfile` → people.update + syncTags). Avatar tile with 6 color swatches

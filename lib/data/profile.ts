@@ -1,7 +1,7 @@
 import { getSupabase } from '../supabase';
 import { mapProfile, PROFILE_SELECT } from './auth';
 import { diffFieldIds } from '../domain/fields';
-import type { Field, MyProfile } from '../domain/types';
+import type { Field, MyProfile, MyProjectSummary } from '../domain/types';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -73,6 +73,117 @@ export async function completeOnboarding(
     return mapProfile(data);
   } catch {
     return null;
+  }
+}
+
+export interface ProfilePatch {
+  fullName: string;
+  bio: string;
+  resumeUrl: string;
+  publicId: string;
+  gradYear: number;
+}
+
+/** Save the editable profile fields. github_username is server-owned (a trigger
+ *  syncs it from the OAuth token) so it's never sent. */
+export async function updateMyProfile(
+  id: string,
+  patch: ProfilePatch,
+): Promise<{ profile: MyProfile | null; error: string | null }> {
+  const sb = getSupabase();
+  if (!sb) return { profile: null, error: 'no backend' };
+  try {
+    const { data, error } = await sb
+      .from('people')
+      .update({
+        full_name: patch.fullName,
+        bio: patch.bio || null,
+        resume_url: patch.resumeUrl || null,
+        public_id: patch.publicId,
+        graduation_year: patch.gradYear,
+      })
+      .eq('id', id)
+      .select(PROFILE_SELECT)
+      .single();
+    if (error) {
+      const msg = /people_public_id_key|duplicate/.test(error.message)
+        ? 'that profile URL is taken'
+        : error.message;
+      return { profile: null, error: msg };
+    }
+    return { profile: mapProfile(data), error: null };
+  } catch (e: any) {
+    return { profile: null, error: e?.message ?? 'save failed' };
+  }
+}
+
+/** Publish / unpublish. The DB CHECK (people_published_needs_year) blocks
+ *  publishing without a graduation year — callers should guard first for UX. */
+export async function setPublished(
+  id: string,
+  next: boolean,
+): Promise<{ profile: MyProfile | null; error: string | null }> {
+  const sb = getSupabase();
+  if (!sb) return { profile: null, error: 'no backend' };
+  try {
+    const { data, error } = await sb
+      .from('people')
+      .update({ is_published: next })
+      .eq('id', id)
+      .select(PROFILE_SELECT)
+      .single();
+    if (error) return { profile: null, error: error.message };
+    return { profile: mapProfile(data), error: null };
+  } catch (e: any) {
+    return { profile: null, error: e?.message ?? 'failed' };
+  }
+}
+
+/** Pick an initials-tile color (clears any uploaded avatar). */
+export async function setAvatarColor(id: string, color: string): Promise<boolean> {
+  const sb = getSupabase();
+  if (!sb) return false;
+  try {
+    const { error } = await sb
+      .from('people')
+      .update({ avatar_url: null, avatar_color: color })
+      .eq('id', id);
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
+/** Is a profile URL slug free? (RPC is_public_id_available.) */
+export async function isPublicIdAvailable(candidate: string): Promise<boolean> {
+  const sb = getSupabase();
+  if (!sb) return false;
+  try {
+    const { data, error } = await sb.rpc('is_public_id_available', { candidate });
+    return !error && !!data;
+  } catch {
+    return false;
+  }
+}
+
+/** Projects the member belongs to (dashboard list). */
+export async function listMyProjects(personId: string): Promise<MyProjectSummary[]> {
+  const sb = getSupabase();
+  if (!sb) return [];
+  try {
+    const { data, error } = await sb
+      .from('projects')
+      .select('public_id, title, is_published, project_members!inner(person_id)')
+      .eq('project_members.person_id', personId)
+      .order('title');
+    if (error || !data) return [];
+    return data.map((p: any) => ({
+      publicId: p.public_id,
+      title: p.title,
+      isPublished: p.is_published,
+    }));
+  } catch {
+    return [];
   }
 }
 
