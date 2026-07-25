@@ -14,6 +14,21 @@ export interface MemberCard {
   fields: string[];
 }
 
+/** The signed-in member's own profile (member area — editable). */
+export interface MyProfile {
+  id: string;
+  publicId: string;
+  fullName: string;
+  gradYear: number | null;
+  githubUsername: string | null;
+  bio: string;
+  avatarUrl: string | null;
+  avatarColor: string | null;
+  resumeUrl: string | null;
+  isPublished: boolean;
+  fieldIds: number[];
+}
+
 /** Directory card for a project (homepage Projects carousel). */
 export interface ProjectCard {
   id: string;

@@ -69,11 +69,24 @@ Commands: `npm run dev` (Next dev) · `npm run build` (needs `NEXT_PUBLIC_BASE_P
 
 **PHASE 3 COMPLETE.** The full carousel feature works end-to-end.
 
-### Phase 4 — member area (auth) — LAST, riskiest
-- Port `member.html` (sign-in, onboarding, dashboard, edit profile/tags/projects,
-  avatar/resume upload, delete account). Uses the org-gate flow already stabilized:
-  `verify-org-member` invoke, `is_org_member` RLS, `signOut({scope:'local'})`.
-  `optimizeImage`/`UPLOAD_SPECS`/`checkFile` already ported in `lib/util/media.ts`.
+### Phase 4 — member area (auth) — LAST, riskiest (in progress)
+- **4a DONE** — auth foundation: `lib/domain/memberState.ts` (`deriveMemberScreen`,
+  the tested state-machine spec), `lib/data/auth.ts` (getAuthUser, onAuthChange,
+  signInWithGitHub, signOutLocal `scope:'local'`, verifyOrgMembership invoke,
+  getMyProfile, createMinimalProfile), `components/MemberArea.tsx` (state machine +
+  signedout/verifying/notmember/verifyfail screens; onboarding/dashboard stubbed),
+  `app/member/page.tsx`. Tests: `memberState.test.ts` + backfilled `mark.test.ts`
+  (36 unit tests total). Signed-out screen verified in browser; auth flow needs a
+  real GitHub session to exercise live.
+- **4b** — onboarding form (name, graduation year w/ validation, GitHub locked,
+  fields/interest chips → create/complete profile). Original: member.html §onboarding.
+- **4c** — dashboard: edit profile (name/bio/fields), publish toggle
+  (`is_published`, needs grad year), avatar color swatches, projects list.
+- **4d** — uploads: avatar (optimizeImage 512, avatar-512/128), resume PDF — to the
+  `avatars`/`resumes` buckets. `optimizeImage`/`UPLOAD_SPECS`/`checkFile` already in
+  `lib/util/media.ts`. `purgeMyStorage` (list+remove) belongs here too.
+- **4e** — delete account: typed-GitHub-handle confirm → `purgeMyStorage()` then
+  `delete_my_account` RPC → signOutLocal. Original: member.html §delete.
 
 ### Final cleanup (after Phase 4)
 - Delete old root HTML (`index/person/project/member.html`), `config.js`, `vendor/`,
