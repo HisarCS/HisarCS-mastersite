@@ -11,6 +11,7 @@ import {
   syncPersonFields,
   updateMyProfile,
 } from '@/lib/data/profile';
+import { setAvatarUrl, uploadAvatar, uploadResume } from '@/lib/data/storage';
 import { cleanYearInput, gradYearMax, GRAD_YEAR_MIN, isValidGradYear } from '@/lib/util/year';
 import { thumbUrl } from '@/lib/util/media';
 import type { Field, MyProfile, MyProjectSummary } from '@/lib/domain/types';
@@ -26,16 +27,23 @@ const initialsOf = (s: string) =>
     .toUpperCase();
 
 /**
- * Dashboard (4c) — edit profile, publish toggle, interest fields, avatar color,
- * projects list. Avatar/resume UPLOAD is 4d; account deletion is 4e. Mirrors
- * member.html fillDashboard/saveProfile/setPublished/loadProjects.
+ * Dashboard (4c/4d) — edit profile, publish toggle, interest fields, avatar
+ * (color / upload / GitHub import), resume upload, projects list. Account
+ * deletion is 4e. Mirrors member.html fillDashboard/saveProfile/setPublished/
+ * loadProjects/uploadAvatar/uploadResume/importGithubAvatar.
  */
 export function Dashboard({
   profile,
   onProfileChange,
+  userId,
+  ghLogin,
+  ghAvatarUrl,
 }: {
   profile: MyProfile;
   onProfileChange: (p: MyProfile) => void;
+  userId: string;
+  ghLogin: string;
+  ghAvatarUrl: string | null;
 }) {
   const [name, setName] = useState(profile.fullName);
   const [bio, setBio] = useState(profile.bio);
@@ -49,8 +57,12 @@ export function Dashboard({
   const [saveHint, setSaveHint] = useState('');
   const [pubHint, setPubHint] = useState('');
   const [slugHint, setSlugHint] = useState('');
+  const [avatarHint, setAvatarHint] = useState('');
+  const [resumeHint, setResumeHint] = useState('');
   const [busy, setBusy] = useState(false);
   const slugTimer = useRef<number | undefined>(undefined);
+  const avatarInput = useRef<HTMLInputElement>(null);
+  const resumeInput = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     void listFields().then(setFields);
@@ -150,6 +162,60 @@ export function Dashboard({
     if (ok) onProfileChange({ ...profile, avatarUrl: null, avatarColor: c });
   };
 
+  const onAvatarFile = async (file: File | undefined) => {
+    if (!file) return;
+    setAvatarHint('optimizing…');
+    const { url, error } = await uploadAvatar(userId, profile.id, file);
+    if (error || !url) {
+      setAvatarHint(`✕ ${error ?? 'upload failed'}`);
+      return;
+    }
+    onProfileChange({ ...profile, avatarUrl: url });
+    setAvatarHint('✓ avatar saved');
+  };
+
+  const importGithub = async () => {
+    const url = ghAvatarUrl || (ghLogin ? `https://github.com/${ghLogin}.png?size=240` : '');
+    if (!url) {
+      setAvatarHint('✕ no GitHub avatar to import');
+      return;
+    }
+    setAvatarHint('importing…');
+    const err = await setAvatarUrl(profile.id, url);
+    if (err) {
+      setAvatarHint(`✕ ${err}`);
+      return;
+    }
+    onProfileChange({ ...profile, avatarUrl: url });
+    setAvatarHint('✓ imported your GitHub avatar');
+  };
+
+  const resetToInitials = async () => {
+    // clearing the avatar falls back to the initials tile (keeps the color)
+    const ok = await setAvatarColor(profile.id, profile.avatarColor || PALETTE[1]);
+    if (ok) {
+      onProfileChange({
+        ...profile,
+        avatarUrl: null,
+        avatarColor: profile.avatarColor || PALETTE[1],
+      });
+      setAvatarHint('✓ back to your initials tile');
+    }
+  };
+
+  const onResumeFile = async (file: File | undefined) => {
+    if (!file) return;
+    setResumeHint('uploading…');
+    const { url, error } = await uploadResume(userId, profile.id, file);
+    if (error || !url) {
+      setResumeHint(`✕ ${error ?? 'upload failed'}`);
+      return;
+    }
+    setResume(url);
+    onProfileChange({ ...profile, resumeUrl: url });
+    setResumeHint('✓ resume uploaded');
+  };
+
   const live = profile.isPublished;
   const initials = useMemo(() => initialsOf(name || profile.fullName), [name, profile.fullName]);
 
@@ -199,18 +265,47 @@ export function Dashboard({
             )}
           </div>
           <div>
-            <div className={styles.sub}>Tile color (avatar upload arrives in 4d):</div>
+            <div className={styles.avatarBtns}>
+              <button className={styles.btnGhost} onClick={() => avatarInput.current?.click()}>
+                Upload photo
+              </button>
+              <button className={styles.btnGhost} onClick={importGithub}>
+                Use GitHub avatar
+              </button>
+              {profile.avatarUrl && (
+                <button className={styles.btnGhost} onClick={resetToInitials}>
+                  Reset to initials
+                </button>
+              )}
+            </div>
+            <input
+              ref={avatarInput}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              hidden
+              onChange={(e) => void onAvatarFile(e.target.files?.[0])}
+            />
+            <div className={styles.sub}>
+              …or pick a tile color (shows behind your initials on the homepage):
+            </div>
             <div className={styles.swatches}>
               {PALETTE.map((c) => (
                 <button
                   key={c}
-                  className={`${styles.swatch} ${profile.avatarColor === c ? styles.on : ''}`}
+                  className={`${styles.swatch} ${!profile.avatarUrl && profile.avatarColor === c ? styles.on : ''}`}
                   style={{ background: c }}
                   title={c}
                   onClick={() => pickColor(c)}
                 />
               ))}
             </div>
+            {avatarHint && (
+              <div
+                className={`${styles.sub} ${avatarHint.startsWith('✕') ? styles.bad : styles.ok}`}
+              >
+                {avatarHint}
+              </div>
+            )}
           </div>
         </div>
 
@@ -224,11 +319,31 @@ export function Dashboard({
           placeholder="What do you make?"
         />
 
-        <label className={styles.f}>RESUME URL</label>
+        <label className={styles.f}>RESUME</label>
         <input
           value={resume}
           onChange={(e) => setResume(e.target.value)}
-          placeholder="https://… (PDF upload arrives in 4d)"
+          placeholder="https://… or upload a PDF"
+        />
+        <div className={styles.avatarBtns}>
+          <button className={styles.btnGhost} onClick={() => resumeInput.current?.click()}>
+            Upload PDF
+          </button>
+          {resume && (
+            <a className={styles.btnGhost} href={resume} target="_blank" rel="noopener noreferrer">
+              View current
+            </a>
+          )}
+          <span className={`${styles.sub} ${resumeHint.startsWith('✕') ? styles.bad : styles.ok}`}>
+            {resumeHint}
+          </span>
+        </div>
+        <input
+          ref={resumeInput}
+          type="file"
+          accept="application/pdf"
+          hidden
+          onChange={(e) => void onResumeFile(e.target.files?.[0])}
         />
 
         <label className={styles.f}>

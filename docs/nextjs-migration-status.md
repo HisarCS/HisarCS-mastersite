@@ -123,7 +123,15 @@ whole file.** New data fns go in `lib/data/profile.ts` (create it); UI in
   (people.avatar_color; picking a color clears avatar_url). Projects list (`loadProjects`
   → project_members→projects for this person; "new project" is a stub in the original).
   public_id edit uses `checkSlug` + RPC `is_public_id_available`.
-- **4d — uploads** (member.html 971-1059). Avatar: `optimizeImage(file,512,{square:true})`
+- **4d DONE** — `lib/data/storage.ts` (`uploadAvatar` 512+128 twin, `uploadResume`,
+  `setAvatarUrl` for GitHub import, `purgeMyStorage` ready for 4e); all no-op cleanly
+  without a backend; RLS gates on `is_org_member()` (ADR-0017). Dashboard avatar block
+  gained Upload photo / Use GitHub avatar / Reset to initials + hidden file input +
+  hint; swatch "on" state now suppressed while an uploaded avatar wins. Resume field
+  gained Upload PDF / View current + hint. `MemberArea` now tracks `userId`/`ghAvatar`
+  and passes `userId`/`ghLogin`/`ghAvatarUrl` to Dashboard. No new pure logic → no new
+  unit test (storage fns are I/O wrappers). Original ref below:
+- 4d source (member.html 971-1059). Avatar: `optimizeImage(file,512,{square:true})`
   + a 128 thumb → `avatars` bucket at `${userId}/avatar-512.jpg` & `avatar-128.jpg`
   (upsert, cacheControl 31536000, contentType image/jpeg) → people.update avatar_url
   (append `?v=Date.now()`). Resume: PDF → `resumes` bucket `${userId}/resume.pdf`

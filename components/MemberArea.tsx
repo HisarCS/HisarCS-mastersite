@@ -28,6 +28,8 @@ export function MemberArea() {
   const [screen, setScreen] = useState<MemberScreen>('loading');
   const [profile, setProfile] = useState<MyProfile | null>(null);
   const [ghLogin, setGhLogin] = useState('you');
+  const [userId, setUserId] = useState('');
+  const [ghAvatar, setGhAvatar] = useState<string | null>(null);
   const [reason, setReason] = useState('');
   const [signinHint, setSigninHint] = useState('');
   // after a bounce we sign the user out; this keeps the bounce screen showing
@@ -41,6 +43,8 @@ export function MemberArea() {
       return;
     }
     setGhLogin(user.githubLogin || 'you');
+    setUserId(user.userId);
+    setGhAvatar(user.avatarUrl);
 
     const existing = await getMyProfile(user.userId);
     if (existing) {
@@ -208,7 +212,13 @@ export function MemberArea() {
         )}
 
         {screen === 'dashboard' && profile && (
-          <Dashboard profile={profile} onProfileChange={setProfile} />
+          <Dashboard
+            profile={profile}
+            onProfileChange={setProfile}
+            userId={userId}
+            ghLogin={ghLogin}
+            ghAvatarUrl={ghAvatar}
+          />
         )}
       </main>
     </>

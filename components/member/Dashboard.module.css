@@ -148,6 +148,17 @@
   object-fit: cover;
   display: block;
 }
+.avatarBtns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.avatarBtns .btnGhost {
+  padding: 8px 14px;
+  font-size: 13px;
+}
 .swatches {
   display: flex;
   gap: 8px;
@@ -198,6 +209,8 @@
   cursor: default;
 }
 .btnGhost {
+  display: inline-flex;
+  align-items: center;
   font: inherit;
   font-size: 14.5px;
   font-weight: 600;
@@ -207,6 +220,7 @@
   background: none;
   border: 1.5px solid var(--line);
   color: var(--ink);
+  text-decoration: none;
 }
 .btnGhost:hover:not(:disabled) {
   border-color: var(--ink);
