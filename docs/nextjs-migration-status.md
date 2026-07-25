@@ -55,11 +55,19 @@ Commands: `npm run dev` (Next dev) · `npm run build` (needs `NEXT_PUBLIC_BASE_P
   carousel, renders `PersonView`/`ProjectView` with `embedded` (skips SiteHeader),
   prev/next through cards + close, keyboard (Esc/←/→) centralized in `Home`.
   Cards keep their `href` (accessibility) but open the modal on click. Verified.
-- **3e** — **FLIP morph** as progressive enhancement (Web Animations API), gated by
-  capability check (`matchMedia` pointer/width + `prefers-reduced-motion`). Put the
-  strategy behind a selector (`ANIMATION_MODE = adaptive|flip|crossfade`) so reverting
-  to cross-fade everywhere is one line. See ADR discussion in chat.
-- **3f** — hash routing (`#members/mert-karakas`) for deep-links + back/forward.
+- **3e DONE** — adaptive FLIP in `lib/homepage/motion.ts` (`pickTransition()`:
+  `ANIMATION_MODE = adaptive|flip|crossfade`, capability = fine pointer + ≥900px +
+  motion-ok). `Carousel` gets `flip` prop → cards fly in from their matching pixel
+  (`data-pixel`/`data-card`) via Web Animations API; else the CSS cross-fade
+  baseline. One-line revert = set ANIMATION_MODE='crossfade'. (Motion not
+  screenshot-verifiable; end-state + build verified.)
+- **3f DONE** — hash routing in `Home` (`#members` · `#members/<public_id>` ·
+  `#projects/<public_id>`). pushState is silent so no sync loop; diff-check +
+  skip-initial-render guard the edge cases; `pendingDetail` resolves a deep-linked
+  id to a card index once items load. Verified: deep-link restore, hash updates on
+  next/prev, browser back/forward.
+
+**PHASE 3 COMPLETE.** The full carousel feature works end-to-end.
 
 ### Phase 4 — member area (auth) — LAST, riskiest
 - Port `member.html` (sign-in, onboarding, dashboard, edit profile/tags/projects,

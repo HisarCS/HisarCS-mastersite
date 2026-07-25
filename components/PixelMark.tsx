@@ -84,6 +84,7 @@ export function PixelMark({ members }: { members: MemberCard[] }) {
             href={`/person?id=${encodeURIComponent(person.publicId)}`}
             className={`${styles.pixel} ${styles.person} ${styles[shape]}`}
             style={{ ...pos, ['--cell' as string]: `${size}px` } as React.CSSProperties}
+            data-pixel={person.id}
             aria-label={`${person.name} — view profile`}
             onMouseEnter={(e) => showHover(person, e.currentTarget)}
             onMouseLeave={hideSoon}

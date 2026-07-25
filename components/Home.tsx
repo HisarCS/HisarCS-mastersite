@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { listMembers } from '@/lib/data/members';
 import { listProjects } from '@/lib/data/projects';
 import { mockMembers, mockProjects } from '@/lib/data/mock';
 import { currentEnv } from '@/lib/env';
+import { pickTransition } from '@/lib/homepage/motion';
 import { hashStr } from '@/lib/util/hash';
 import type { MemberCard, ProjectCard } from '@/lib/domain/types';
 import { PixelMark } from './PixelMark';
@@ -27,9 +28,13 @@ export function Home() {
   const [projects, setProjects] = useState<ProjectCard[]>([]);
   const [mode, setMode] = useState<Mode>('mark');
   const [selected, setSelected] = useState<number | null>(null); // card open in the modal
+  const [flip, setFlip] = useState(false); // FLIP vs cross-fade, decided client-side
+  const [pendingDetail, setPendingDetail] = useState<string | null>(null); // detail id from the hash, awaiting items
+  const mounted = useRef(false);
 
   useEffect(() => {
     document.body.style.overflow = 'hidden'; // full-screen stage → no page scroll
+    setFlip(pickTransition() === 'flip');
     let alive = true;
     void (async () => {
       const [m, p] = await Promise.all([listMembers(), listProjects()]);
@@ -89,6 +94,54 @@ export function Home() {
     return () => window.removeEventListener('keydown', onKey);
   }, [selected, mode, items.length]);
 
+  // --- hash routing (3f): #members · #members/<public_id> · #projects/<public_id> ---
+  // hash → state: initial deep-link + browser back/forward (popstate).
+  useEffect(() => {
+    const apply = () => {
+      const [m, detail] = window.location.hash.replace(/^#/, '').split('/');
+      if (m === 'members' || m === 'projects') {
+        setMode(m);
+        setPendingDetail(detail ?? null);
+        if (!detail) setSelected(null);
+      } else {
+        setMode('mark');
+        setSelected(null);
+        setPendingDetail(null);
+      }
+    };
+    apply();
+    window.addEventListener('popstate', apply);
+    return () => window.removeEventListener('popstate', apply);
+  }, []);
+
+  // resolve a pending detail id (from the hash) to a card index once items load
+  useEffect(() => {
+    if (pendingDetail == null) return;
+    const idx = items.findIndex((it) => it.detailId === pendingDetail);
+    if (idx >= 0) {
+      setSelected(idx);
+      setPendingDetail(null);
+    }
+  }, [items, pendingDetail]);
+
+  // state → hash. pushState is silent (fires no popstate), so there's no loop;
+  // the diff-check covers back/forward, and we skip the first render so a
+  // deep-link hash isn't wiped before it's applied.
+  useEffect(() => {
+    if (!mounted.current) {
+      mounted.current = true;
+      return;
+    }
+    let hash = '';
+    if (mode !== 'mark') {
+      hash = '#' + mode;
+      if (selected !== null && items[selected]) hash += '/' + items[selected]!.detailId;
+    }
+    if (hash !== window.location.hash) {
+      window.history.pushState(null, '', hash || window.location.pathname + window.location.search);
+    }
+  }, [mode, selected, items]);
+
   const switchMode = (m: Mode) => {
     setSelected(null);
     setMode((cur) => (cur === m ? 'mark' : m));
@@ -124,7 +177,9 @@ export function Home() {
 
       <PixelMark members={members} />
 
-      {mode !== 'mark' && <Carousel items={items} label={mode} onSelect={setSelected} />}
+      {mode !== 'mark' && (
+        <Carousel items={items} label={mode} onSelect={setSelected} flip={flip} />
+      )}
 
       {selected !== null && (
         <DetailModal
