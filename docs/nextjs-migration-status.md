@@ -1,0 +1,75 @@
+# Next.js migration — status & resume guide
+
+Working branch: **`nextjs-migration`** (do NOT merge to `main` until Phase 4 done;
+`main` is the live static site + the deploy workflow trigger). Nothing pushed.
+
+Commands: `npm run dev` (Next dev) · `npm run build` (needs `NEXT_PUBLIC_BASE_PATH=/HisarCS-mastersite`) ·
+`npm run typecheck` · `npm run test:unit` (24 tests) · local Supabase: `npm run stack`.
+
+## Done (committed)
+
+- **Phase 0** `b0ca681` — Next 15 App Router, `output:'export'`, `basePath` from
+  `NEXT_PUBLIC_BASE_PATH` (one env var; set in `.github/workflows/deploy.yml`),
+  `app/globals.css` design tokens, GH Actions build→Pages.
+- **Phase 1** `53da8fa` — framework-agnostic layers in `lib/`:
+  - `env.ts` (runtime hostname local/prod switching — ADR-0010 preserved),
+    `supabase.ts` (browser client singleton, null on server/no-backend),
+    `util/{html,media,date,hash}.ts`, `domain/types.ts`,
+    `data/{members,projects}.ts` (queries), `data/mock.ts`, `data/build.ts` (deleted in P2).
+- **Phase 2** `55ae5da` — read-only pages, **query-param routing** (`/person?id=`,
+  `/project?id=`): `app/person/page.tsx` + `PersonRoute` (Suspense→useSearchParams)
+  → `PersonView`; same for project. `research.html` + `research/*` moved to
+  `public/` (served as-is). Data fetches wrapped in try/catch (resilient).
+- **Phase 3a** `31fe9c9` — homepage pixel mark: `lib/homepage/mark.ts` (PIXEL_MAP,
+  grid, seeded layout — pure/testable), `components/PixelMark.tsx` (stage, pixels,
+  hover card, resize), `components/Home.tsx` (shell: nav + fetch members + mark),
+  `app/page.tsx`. Verified: avatars/shapes/fillers/nav/footer/hover card all work.
+
+## Critical decisions & gotchas (don't re-derive)
+
+1. **Routing is query-param, NOT path-based.** `output:export` + `dynamicParams:false`
+   makes any un-enumerated id 404 AND breaks the build when a type has 0 published
+   rows. Query-param = one static page, client-fetches any id. Do NOT reintroduce
+   `[id]` dynamic routes.
+2. **Data fetches MUST try/catch** — supabase-js rejects on unreachable backend;
+   uncaught → stuck loading. Pattern is in `data/members.ts`/`projects.ts`.
+3. **basePath**: served at `/HisarCS-mastersite` today (will move to root later —
+   just change the env var). `public/` static links (research) need `BASE` prepended
+   manually (`process.env.NEXT_PUBLIC_BASE_PATH`); Next `<Link>` handles it automatically.
+4. **Homepage body scroll**: `Home.tsx` sets `document.body.style.overflow='hidden'`
+   on mount, restores on unmount (full-screen stage).
+5. **Edge function** (`verify-org-member`) already deployed with `verify_jwt=false`
+   + CORS; unrelated to this branch's frontend.
+6. Nav redesign (Research/One of Us next to wordmark, no arrows) is in `SiteHeader`
+   (inner pages) and `Home` (homepage). Members/Projects toggles are Phase 3b.
+
+## Remaining work
+
+### Phase 3 (rest) — the carousel feature (the main ask)
+- **3b** — `Members`/`Projects` mode toggles in the homepage nav + a mode store
+  (observable/`useState` in `Home`, or `lib/homepage/store.ts`). Fetch projects
+  list too (need a `listProjects()` in `data/projects.ts` — directory query).
+- **3c** — carousel: pixels → cards. Build **cross-fade** first (resilient baseline).
+  Layout adapts: desktop multi-card, mobile single-card swipe.
+- **3d** — card → inline **modal** over dimmed mark, reusing `PersonView`/`ProjectView`
+  (they already take an `id` prop — decoupled on purpose). Prev/next/back controls.
+- **3e** — **FLIP morph** as progressive enhancement (Web Animations API), gated by
+  capability check (`matchMedia` pointer/width + `prefers-reduced-motion`). Put the
+  strategy behind a selector (`ANIMATION_MODE = adaptive|flip|crossfade`) so reverting
+  to cross-fade everywhere is one line. See ADR discussion in chat.
+- **3f** — hash routing (`#members/mert-karakas`) for deep-links + back/forward.
+
+### Phase 4 — member area (auth) — LAST, riskiest
+- Port `member.html` (sign-in, onboarding, dashboard, edit profile/tags/projects,
+  avatar/resume upload, delete account). Uses the org-gate flow already stabilized:
+  `verify-org-member` invoke, `is_org_member` RLS, `signOut({scope:'local'})`.
+  `optimizeImage`/`UPLOAD_SPECS`/`checkFile` already ported in `lib/util/media.ts`.
+
+### Final cleanup (after Phase 4)
+- Delete old root HTML (`index/person/project/member.html`), `config.js`, `vendor/`,
+  old `tests/unit/config.test.js`, `tests/e2e.spec.js` (or port e2e to Next).
+- ESLint flat config for Next (`next lint` / eslint-config-next) — currently the
+  `check` script skips lint; the deploy build only warns.
+- Optionally unify `/research` pages' nav (currently their original nav; low value,
+  340KB embedded-asset HTML).
+- Then merge `nextjs-migration` → `main` (triggers the Pages deploy).
