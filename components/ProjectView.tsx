@@ -54,7 +54,11 @@ export function ProjectView({ id, embedded = false }: { id: string; embedded?: b
     return (
       <>
         {!embedded && <SiteHeader />}
-        <main className={styles.main} aria-busy="true" />
+        <main className={styles.main} aria-busy="true">
+          <div className={styles.loading}>
+            <span className={styles.spinner} aria-hidden="true" />
+          </div>
+        </main>
       </>
     );
   }
