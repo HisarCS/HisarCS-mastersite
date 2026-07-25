@@ -1,4 +1,4 @@
-import type { Member, Project } from '../domain/types';
+import type { Member, MemberCard, Project } from '../domain/types';
 import { cohortFor } from '../util/date';
 
 /**
@@ -55,6 +55,76 @@ export function mockPerson(id: string): Member {
     githubUsername: null,
     projects: [],
   };
+}
+
+// slugify a mock name the way the DB does (Turkish-aware), so mock-mode pixel
+// links resolve on the person page instead of pointing at opaque ids
+function mockSlug(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/[ıİ]/g, 'i')
+    .replace(/ş/g, 's')
+    .replace(/ğ/g, 'g')
+    .replace(/ü/g, 'u')
+    .replace(/ö/g, 'o')
+    .replace(/ç/g, 'c')
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+/** Local-dev mock directory for the homepage pixel mark. */
+export function mockMembers(): MemberCard[] {
+  const disciplines = [
+    'Robotics',
+    'Electronics',
+    'Woodworking',
+    'Textiles',
+    'Game Design',
+    'Ceramics',
+    'Biodesign',
+    'CS & AI',
+    'Product Design',
+    '3D Printing',
+  ];
+  const names = [
+    'Mert Karakaş',
+    'Elif Demir',
+    'Kaan Yıldız',
+    'Zeynep Aksoy',
+    'Deniz Çelik',
+    'Selin Arslan',
+    'Emre Koç',
+    'Aylin Şahin',
+    'Baran Öztürk',
+    'Ceren Kaya',
+    'Mehmet Aydın',
+    'İpek Doğan',
+    'Arda Güneş',
+    'Naz Erdem',
+    'Cem Yılmaz',
+    'Lara Polat',
+    'Umut Kara',
+    'Defne Ateş',
+    'Ege Turan',
+    'Melis Ünal',
+    'Yiğit Sönmez',
+    'Ada Korkmaz',
+    'Ozan Tekin',
+    'Sude Bilgin',
+    'Alp Erten',
+    'Mina Sezer',
+  ];
+  return names.map((name, i) => ({
+    id: `p${i + 1}`,
+    publicId: mockSlug(name),
+    name,
+    cohort: i % 3 === 0 ? 'alumni' : 'student',
+    avatarUrl: `https://i.pravatar.cc/120?img=${(i % 70) + 1}`,
+    avatarColor: null,
+    fields: [disciplines[i % disciplines.length]!],
+  }));
 }
 
 export function mockProject(id: string): Project {
