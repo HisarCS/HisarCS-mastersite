@@ -78,15 +78,51 @@ Commands: `npm run dev` (Next dev) · `npm run build` (needs `NEXT_PUBLIC_BASE_P
   `app/member/page.tsx`. Tests: `memberState.test.ts` + backfilled `mark.test.ts`
   (36 unit tests total). Signed-out screen verified in browser; auth flow needs a
   real GitHub session to exercise live.
-- **4b** — onboarding form (name, graduation year w/ validation, GitHub locked,
-  fields/interest chips → create/complete profile). Original: member.html §onboarding.
-- **4c** — dashboard: edit profile (name/bio/fields), publish toggle
-  (`is_published`, needs grad year), avatar color swatches, projects list.
-- **4d** — uploads: avatar (optimizeImage 512, avatar-512/128), resume PDF — to the
-  `avatars`/`resumes` buckets. `optimizeImage`/`UPLOAD_SPECS`/`checkFile` already in
-  `lib/util/media.ts`. `purgeMyStorage` (list+remove) belongs here too.
-- **4e** — delete account: typed-GitHub-handle confirm → `purgeMyStorage()` then
-  `delete_my_account` RPC → signOutLocal. Original: member.html §delete.
+**Where things are (resume map).** Old source is `member.html` (1178 lines; DO NOT
+delete until Phase 4 done). Screens markup: signedout 159, verifyfail 176, notmember
+199, onboarding 220-246, dashboard 249-405 (danger-zone/delete modal ~340-405). Script
+function → line: `createMinimalProfile` 559 (ported), `loadFields` 628, `buildChips`
+634, `makeChip` 672, `deleteField` 696, `makeAddChip` 719, `createProfile` 773,
+`syncTags` 821, `fillDashboard` 831, `renderPublishState` 850, `setPublished` 858,
+`renderAvatarTile` 881, `saveProfile` 898, `loadProjects` 929, avatar color swatch
+click ~960, `uploadAvatar` 971, `uploadResume` 1007, `importGithubAvatar` 1034,
+`resetToInitials` 1060, `checkYear` 1067, `checkSlug` 1086, `purgeMyStorage` 1112,
+`tryDelete`/delete ~1140. **Read the specific range per sub-step; don't reload the
+whole file.** New data fns go in `lib/data/profile.ts` (create it); UI in
+`components/member/` sub-components rendered by `MemberArea` for screen==='onboarding'
+/'dashboard'. `optimizeImage`/`checkFile`/`UPLOAD_SPECS` already in `lib/util/media.ts`.
+
+- **4b — onboarding** (member.html 220-246 markup, 773-830 + 634-771 + 1067-1085 logic).
+  Form: full name, graduation year (`checkYear` — 4 digits, ≥2008-ish, sets cohort),
+  GitHub (locked, from login), interest chips. Chips = `fields` table (id,name,created_by);
+  typing a new one is STAGED then created on submit with dedupe (`insert` →on-conflict
+  `select ilike name`). `createProfile`: update people row (full_name, graduation_year),
+  create staged fields, `syncTags` (person_fields insert/delete diff), then → dashboard.
+  Add data fns: `updateMyProfile(id, {...})`, `listFields()`, `createField(name)`,
+  `syncPersonFields(personId, fieldIds)`. Consider a unit test for the field-diff logic.
+- **4c — dashboard** (member.html 249-339 markup, 831-928 + 960-970 logic). Draft
+  banner + publish toggle (`setPublished` → people.update is_published; needs grad year;
+  `people_published_needs_year` CHECK enforces). Edit name/bio/fields; save
+  (`saveProfile` → people.update + syncTags). Avatar tile with 6 color swatches
+  (people.avatar_color; picking a color clears avatar_url). Projects list (`loadProjects`
+  → project_members→projects for this person; "new project" is a stub in the original).
+  public_id edit uses `checkSlug` + RPC `is_public_id_available`.
+- **4d — uploads** (member.html 971-1059). Avatar: `optimizeImage(file,512,{square:true})`
+  + a 128 thumb → `avatars` bucket at `${userId}/avatar-512.jpg` & `avatar-128.jpg`
+  (upsert, cacheControl 31536000, contentType image/jpeg) → people.update avatar_url
+  (append `?v=Date.now()`). Resume: PDF → `resumes` bucket `${userId}/resume.pdf`
+  (upsert) → people.update resume_url. `importGithubAvatar` (from session avatar_url),
+  `resetToInitials` (clear avatar_url). Add `lib/data/storage.ts` (uploadAvatar,
+  uploadResume, purgeMyStorage). NOTE storage RLS gates on `is_org_member()` (ADR-0017).
+- **4e — delete account** (member.html 340-405 markup, 1112-1164). Danger zone → modal
+  → confirm by typing GitHub handle (case-insensitive, tolerate leading @; use plain
+  toLowerCase NOT Turkish locale — see the fix already made in old member.html). Flow:
+  `purgeMyStorage()` (list+remove avatars/resumes — SQL can't delete storage, migration
+  0003/0004) THEN `sb.rpc('delete_my_account')` THEN `signOutLocal()` → signedout.
+  Reuse `signOutLocal` from `lib/data/auth.ts`.
+
+After 4e: smoke-test the full member flow with a real GitHub session against the
+deployed function, then do the final cleanup and merge to main.
 
 ### Final cleanup (after Phase 4)
 - Delete old root HTML (`index/person/project/member.html`), `config.js`, `vendor/`,
