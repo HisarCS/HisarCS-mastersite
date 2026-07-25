@@ -46,11 +46,11 @@ Commands: `npm run dev` (Next dev) · `npm run build` (needs `NEXT_PUBLIC_BASE_P
 ## Remaining work
 
 ### Phase 3 (rest) — the carousel feature (the main ask)
-- **3b** — `Members`/`Projects` mode toggles in the homepage nav + a mode store
-  (observable/`useState` in `Home`, or `lib/homepage/store.ts`). Fetch projects
-  list too (need a `listProjects()` in `data/projects.ts` — directory query).
-- **3c** — carousel: pixels → cards. Build **cross-fade** first (resilient baseline).
-  Layout adapts: desktop multi-card, mobile single-card swipe.
+- **3b + 3c DONE** (not yet committed at time of writing / see git log) — mode
+  toggles (`Members`/`Projects`) in `Home` with `useState` mode + Esc-to-close;
+  `listProjects()`/`mockProjects()` added; generic `components/Carousel.tsx`
+  (cross-fade overlay, prev/next paging, responsive card width, cards → detail
+  pages). Verified: Members carousel renders with avatars + name + cohort·field.
 - **3d** — card → inline **modal** over dimmed mark, reusing `PersonView`/`ProjectView`
   (they already take an `id` prop — decoupled on purpose). Prev/next/back controls.
 - **3e** — **FLIP morph** as progressive enhancement (Web Animations API), gated by

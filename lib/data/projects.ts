@@ -1,7 +1,29 @@
 import { getSupabase } from '../supabase';
-import type { Project } from '../domain/types';
+import type { Project, ProjectCard } from '../domain/types';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
+
+/** All published projects for the homepage carousel. Empty on no backend. */
+export async function listProjects(): Promise<ProjectCard[]> {
+  const sb = getSupabase();
+  if (!sb) return [];
+  let data: any, error: any;
+  try {
+    ({ data, error } = await sb
+      .from('projects')
+      .select('id, public_id, title, avatar_url')
+      .eq('is_published', true));
+  } catch {
+    return [];
+  }
+  if (error || !data) return [];
+  return data.map((r: any) => ({
+    id: r.id,
+    publicId: r.public_id,
+    title: r.title,
+    avatarUrl: r.avatar_url,
+  }));
+}
 
 /** Public URL for a file in the project-files bucket ('#' with no backend). */
 export function projectFileUrl(storagePath: string): string {

@@ -1,4 +1,4 @@
-import type { Member, MemberCard, Project } from '../domain/types';
+import type { Member, MemberCard, Project, ProjectCard } from '../domain/types';
 import { cohortFor } from '../util/date';
 
 /**
@@ -124,6 +124,30 @@ export function mockMembers(): MemberCard[] {
     avatarUrl: `https://i.pravatar.cc/120?img=${(i % 70) + 1}`,
     avatarColor: null,
     fields: [disciplines[i % disciplines.length]!],
+  }));
+}
+
+/** Local-dev mock project directory for the homepage Projects carousel. */
+export function mockProjects(): ProjectCard[] {
+  const titles = [
+    'Solar Lemon Press',
+    'Parse',
+    'Otto',
+    'Automata Loom',
+    'Dancar',
+    'Pomelo',
+    'Testudo',
+    'Parametrix',
+    'Reef Sensor',
+    'Kinetic Type',
+    'Foldform',
+    'Tide Clock',
+  ];
+  return titles.map((title, i) => ({
+    id: `proj${i + 1}`,
+    publicId: mockSlug(title),
+    title,
+    avatarUrl: null,
   }));
 }
 

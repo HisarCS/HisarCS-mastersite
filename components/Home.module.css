@@ -30,6 +30,24 @@
   color: var(--ink);
 }
 
+/* Members/Projects mode toggles — styled identically to the nav links, with the
+   active mode marked in the accent color. */
+.navBtn {
+  font: inherit;
+  font-size: 13px;
+  color: var(--muted);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+.navBtn:hover {
+  color: var(--ink);
+}
+.navBtn.active {
+  color: var(--accent);
+}
+
 .footer {
   position: fixed;
   bottom: 0;

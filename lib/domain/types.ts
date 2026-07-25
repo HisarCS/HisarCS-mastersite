@@ -14,6 +14,14 @@ export interface MemberCard {
   fields: string[];
 }
 
+/** Directory card for a project (homepage Projects carousel). */
+export interface ProjectCard {
+  id: string;
+  publicId: string;
+  title: string;
+  avatarUrl: string | null;
+}
+
 /** A project reference shown on a member's profile. */
 export interface MemberProjectRef {
   publicId: string;

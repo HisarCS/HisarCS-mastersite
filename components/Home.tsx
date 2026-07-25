@@ -1,31 +1,39 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { listMembers } from '@/lib/data/members';
-import { mockMembers } from '@/lib/data/mock';
+import { listProjects } from '@/lib/data/projects';
+import { mockMembers, mockProjects } from '@/lib/data/mock';
 import { currentEnv } from '@/lib/env';
-import type { MemberCard } from '@/lib/domain/types';
+import { hashStr } from '@/lib/util/hash';
+import type { MemberCard, ProjectCard } from '@/lib/domain/types';
 import { PixelMark } from './PixelMark';
+import { Carousel, type CarouselItem } from './Carousel';
 import styles from './Home.module.css';
 
 // Research is a static public/ file, so its link needs basePath prepended.
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
+const FALLBACK_COLORS = ['#e8542f', '#2f6fe8', '#28a06d', '#c4a11f', '#9048c8', '#d2447e'];
+const colorFor = (id: string) => FALLBACK_COLORS[hashStr(id) % FALLBACK_COLORS.length]!;
 
-/** Homepage shell. Phase 3a: the pixel mark. Members/Projects mode toggles +
- *  the carousel land in the next sub-steps. */
+type Mode = 'mark' | 'members' | 'projects';
+
+/** Homepage shell: the pixel mark plus the Members/Projects carousel modes. */
 export function Home() {
   const [members, setMembers] = useState<MemberCard[]>([]);
+  const [projects, setProjects] = useState<ProjectCard[]>([]);
+  const [mode, setMode] = useState<Mode>('mark');
 
   useEffect(() => {
-    // full-screen stage → no page scroll while on the homepage
-    document.body.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden'; // full-screen stage → no page scroll
     let alive = true;
     void (async () => {
-      const list = await listMembers();
+      const [m, p] = await Promise.all([listMembers(), listProjects()]);
       if (!alive) return;
-      // production renders an honest ink-only mark when empty; local uses mock
-      setMembers(list.length ? list : currentEnv() === 'local' ? mockMembers() : []);
+      const local = currentEnv() === 'local';
+      setMembers(m.length ? m : local ? mockMembers() : []);
+      setProjects(p.length ? p : local ? mockProjects() : []);
     })();
     return () => {
       alive = false;
@@ -33,13 +41,60 @@ export function Home() {
     };
   }, []);
 
+  // Esc closes a carousel mode back to the mark
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMode('mark');
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  const items: CarouselItem[] = useMemo(() => {
+    if (mode === 'members') {
+      return members.map((m) => ({
+        id: m.id,
+        title: m.name,
+        subtitle: `${m.cohort === 'alumni' ? 'Alumni' : 'Student'} · ${m.fields[0] || 'Maker'}`,
+        avatarUrl: m.avatarUrl,
+        color: m.avatarColor || colorFor(m.id),
+        href: `/person?id=${encodeURIComponent(m.publicId)}`,
+      }));
+    }
+    if (mode === 'projects') {
+      return projects.map((p) => ({
+        id: p.id,
+        title: p.title,
+        subtitle: 'ideaLab project',
+        avatarUrl: p.avatarUrl,
+        color: colorFor(p.id),
+        href: `/project?id=${encodeURIComponent(p.publicId)}`,
+      }));
+    }
+    return [];
+  }, [mode, members, projects]);
+
+  const toggle = (m: Mode) => setMode((cur) => (cur === m ? 'mark' : m));
+
   return (
     <>
       <header className={styles.header}>
         <nav className={styles.nav}>
-          <Link href="/" className={styles.wordmark}>
+          <Link href="/" className={styles.wordmark} onClick={() => setMode('mark')}>
             idea<span>Lab</span>
           </Link>
+          <button
+            className={`${styles.navBtn} ${mode === 'members' ? styles.active : ''}`}
+            onClick={() => toggle('members')}
+          >
+            Members
+          </button>
+          <button
+            className={`${styles.navBtn} ${mode === 'projects' ? styles.active : ''}`}
+            onClick={() => toggle('projects')}
+          >
+            Projects
+          </button>
           <a href={`${BASE}/research.html`} className={styles.link}>
             Research
           </a>
@@ -50,6 +105,8 @@ export function Home() {
       </header>
 
       <PixelMark members={members} />
+
+      {mode !== 'mark' && <Carousel items={items} label={mode} />}
 
       <footer className={styles.footer}>
         <div>Hisar School · ideaLab</div>
