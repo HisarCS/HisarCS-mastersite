@@ -103,10 +103,10 @@ export async function verifyOrgMembership(): Promise<{ verdict: Verdict; reason:
   }
 }
 
-const PROFILE_SELECT =
+export const PROFILE_SELECT =
   'id, public_id, full_name, graduation_year, github_username, bio, avatar_url, avatar_color, resume_url, is_published, person_fields(field_id)';
 
-function mapProfile(d: any): MyProfile {
+export function mapProfile(d: any): MyProfile {
   return {
     id: d.id,
     publicId: d.public_id,

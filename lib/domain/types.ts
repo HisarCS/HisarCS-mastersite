@@ -14,6 +14,13 @@ export interface MemberCard {
   fields: string[];
 }
 
+/** An interest field / tag (from the `fields` table). */
+export interface Field {
+  id: number;
+  name: string;
+  createdBy: string | null;
+}
+
 /** The signed-in member's own profile (member area — editable). */
 export interface MyProfile {
   id: string;

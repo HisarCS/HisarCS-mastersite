@@ -92,7 +92,14 @@ whole file.** New data fns go in `lib/data/profile.ts` (create it); UI in
 `components/member/` sub-components rendered by `MemberArea` for screen==='onboarding'
 /'dashboard'. `optimizeImage`/`checkFile`/`UPLOAD_SPECS` already in `lib/util/media.ts`.
 
-- **4b — onboarding** (member.html 220-246 markup, 773-830 + 634-771 + 1067-1085 logic).
+- **4b DONE** — `components/member/Onboarding.tsx` (+ .module.css), `lib/data/profile.ts`
+  (listFields, createField, deleteField, completeOnboarding, syncPersonFields),
+  `lib/util/year.ts`, `lib/domain/fields.ts` (`diffFieldIds`, tested). Staged-fields
+  flow + year validation + chip select. Wired into `MemberArea` (keeps `profile` state,
+  renders Onboarding on the onboarding screen, `onComplete=resolve`). Tests:
+  `onboarding.test.ts` (year + diffFieldIds). `mapProfile`/`PROFILE_SELECT` now exported
+  from auth.ts. Needs a real GitHub session to exercise live. Original ref below:
+- 4b source (member.html 220-246 markup, 773-830 + 634-771 + 1067-1085 logic).
   Form: full name, graduation year (`checkYear` — 4 digits, ≥2008-ish, sets cohort),
   GitHub (locked, from login), interest chips. Chips = `fields` table (id,name,created_by);
   typing a new one is STAGED then created on submit with dedupe (`insert` →on-conflict

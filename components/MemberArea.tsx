@@ -13,6 +13,7 @@ import {
 } from '@/lib/data/auth';
 import type { MemberScreen } from '@/lib/domain/memberState';
 import type { MyProfile } from '@/lib/domain/types';
+import { Onboarding } from './member/Onboarding';
 import styles from './MemberArea.module.css';
 
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
@@ -24,7 +25,7 @@ const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
  */
 export function MemberArea() {
   const [screen, setScreen] = useState<MemberScreen>('loading');
-  const [, setProfile] = useState<MyProfile | null>(null);
+  const [profile, setProfile] = useState<MyProfile | null>(null);
   const [ghLogin, setGhLogin] = useState('you');
   const [reason, setReason] = useState('');
   const [signinHint, setSigninHint] = useState('');
@@ -193,16 +194,17 @@ export function MemberArea() {
           </div>
         )}
 
-        {(screen === 'onboarding' || screen === 'dashboard') && (
+        {screen === 'onboarding' && profile && (
+          <Onboarding profile={profile} ghLogin={ghLogin} onComplete={resolve} />
+        )}
+
+        {screen === 'dashboard' && (
           <div className={styles.panel}>
             <h1>
-              {screen === 'onboarding' ? 'Welcome to ideaLab ' : 'Your dashboard '}
-              <span className={styles.accent}>.)</span>
+              Your dashboard <span className={styles.accent}>.)</span>
             </h1>
             <p className={styles.sub}>
-              Signed in as <strong>@{ghLogin}</strong>.{' '}
-              {screen === 'onboarding' ? 'Onboarding' : 'The dashboard'} UI lands in the next
-              sub-step.{' '}
+              Signed in as <strong>@{ghLogin}</strong>. The dashboard UI lands in 4c.{' '}
               <button className={styles.linkBtn} onClick={() => void signOutLocal().then(resolve)}>
                 sign out
               </button>
