@@ -106,3 +106,44 @@ export interface Project {
   links: ProjectLink[];
   files: ProjectFile[];
 }
+
+// ---------------------------------------------------------------------------
+// Research — curated, editorial write-ups (static, in-app). Distinct from the
+// member-created DB "research" entries (the renamed projects infra): these are
+// long-form articles rendered from preserved HTML, with a structured metadata
+// layer on top.
+// ---------------------------------------------------------------------------
+
+/** An author of a research entry — a site member (linked) or plain text. */
+export interface ResearchAuthor {
+  name: string;
+  /** public_id of a site member → links to /person?id=; omit for plain text. */
+  memberId?: string;
+}
+
+/** A resource/file attached to a research entry. */
+export interface ResearchResource {
+  label: string;
+  url: string;
+  kind?: 'pdf' | 'link' | 'image' | 'file';
+}
+
+/** A curated research entry. Everything here is dev-editable in lib/data/research.ts. */
+export interface ResearchItem {
+  slug: string; // URL id (/research?id=<slug>)
+  title: string;
+  venue?: string;
+  summary: string; // card + meta description
+  thumb?: string; // card image (asset path, basePath-prefixed)
+  authors: ResearchAuthor[];
+  tags: string[];
+  startDate?: string; // ISO date or year
+  endDate?: string;
+  location?: string;
+  resources: ResearchResource[];
+  /** Optional custom-layout key resolved by the view registry; default renders
+   *  the preserved article body. */
+  view?: string;
+  /** Path to the preserved write-up HTML; defaults to research/<slug>.html. */
+  contentSrc?: string;
+}
