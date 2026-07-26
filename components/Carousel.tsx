@@ -12,7 +12,7 @@ export interface CarouselItem {
   avatarUrl: string | null;
   color: string;
   href: string; // kept for accessibility / middle-click / future deep-link
-  kind: 'member' | 'project';
+  kind: 'member' | 'project' | 'research';
   detailId: string; // public_id passed to the detail view in the modal
 }
 

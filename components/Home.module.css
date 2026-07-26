@@ -30,7 +30,7 @@
   color: var(--ink);
 }
 
-/* Members/Projects mode toggles — styled identically to the nav links, with the
+/* Members/Research mode toggles — styled identically to the nav links, with the
    active mode marked in the accent color. */
 .navBtn {
   font: inherit;
@@ -46,6 +46,33 @@
 }
 .navBtn.active {
   color: var(--accent);
+}
+
+/* Explicit exit from a carousel mode back to the mark — a clear, always-visible
+   control (Esc also works, but isn't discoverable). */
+.exit {
+  position: fixed;
+  top: 20px;
+  right: 36px;
+  z-index: 21;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--bg);
+  background: var(--ink);
+  border: none;
+  padding: 8px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+}
+.exit:hover {
+  background: var(--accent);
+}
+@media (max-width: 560px) {
+  .exit {
+    right: 20px;
+  }
 }
 
 .footer {

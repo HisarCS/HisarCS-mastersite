@@ -2,6 +2,7 @@
 
 import { PersonView } from './PersonView';
 import { ProjectView } from './ProjectView';
+import { ResearchView } from './ResearchView';
 import type { CarouselItem } from './Carousel';
 import styles from './DetailModal.module.css';
 
@@ -53,6 +54,8 @@ export function DetailModal({
         <div className={styles.body}>
           {item.kind === 'member' ? (
             <PersonView id={item.detailId} embedded />
+          ) : item.kind === 'research' ? (
+            <ResearchView id={item.detailId} embedded />
           ) : (
             <ProjectView id={item.detailId} embedded />
           )}

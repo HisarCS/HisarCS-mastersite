@@ -3,45 +3,44 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { listMembers } from '@/lib/data/members';
-import { listProjects } from '@/lib/data/projects';
-import { mockMembers, mockProjects } from '@/lib/data/mock';
+import { listResearch } from '@/lib/data/research';
+import { mockMembers } from '@/lib/data/mock';
 import { currentEnv } from '@/lib/env';
 import { pickTransition } from '@/lib/homepage/motion';
 import { hashStr } from '@/lib/util/hash';
-import type { MemberCard, ProjectCard } from '@/lib/domain/types';
+import type { MemberCard } from '@/lib/domain/types';
 import { PixelMark } from './PixelMark';
 import { Carousel, type CarouselItem } from './Carousel';
 import { DetailModal } from './DetailModal';
 import styles from './Home.module.css';
 
-// Research is a static public/ file, so its link needs basePath prepended.
-const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
 const FALLBACK_COLORS = ['#e8542f', '#2f6fe8', '#28a06d', '#c4a11f', '#9048c8', '#d2447e'];
 const colorFor = (id: string) => FALLBACK_COLORS[hashStr(id) % FALLBACK_COLORS.length]!;
 
-type Mode = 'mark' | 'members' | 'projects';
+type Mode = 'mark' | 'members' | 'research';
 
-/** Homepage: the pixel mark, the Members/Projects carousel modes, and the inline
- *  detail modal (card → full profile with prev/next). */
+/** Homepage: the pixel mark, the Members/Research carousel modes, and the inline
+ *  detail modal (card → full profile/write-up with prev/next). */
 export function Home() {
   const [members, setMembers] = useState<MemberCard[]>([]);
-  const [projects, setProjects] = useState<ProjectCard[]>([]);
   const [mode, setMode] = useState<Mode>('mark');
   const [selected, setSelected] = useState<number | null>(null); // card open in the modal
   const [flip, setFlip] = useState(false); // FLIP vs cross-fade, decided client-side
   const [pendingDetail, setPendingDetail] = useState<string | null>(null); // detail id from the hash, awaiting items
   const mounted = useRef(false);
 
+  // Curated research is static content — no fetch needed.
+  const research = useMemo(() => listResearch(), []);
+
   useEffect(() => {
     document.body.style.overflow = 'hidden'; // full-screen stage → no page scroll
     setFlip(pickTransition() === 'flip');
     let alive = true;
     void (async () => {
-      const [m, p] = await Promise.all([listMembers(), listProjects()]);
+      const m = await listMembers();
       if (!alive) return;
       const local = currentEnv() === 'local';
       setMembers(m.length ? m : local ? mockMembers() : []);
-      setProjects(p.length ? p : local ? mockProjects() : []);
     })();
     return () => {
       alive = false;
@@ -62,20 +61,20 @@ export function Home() {
         detailId: m.publicId,
       }));
     }
-    if (mode === 'projects') {
-      return projects.map((p) => ({
-        id: p.id,
-        title: p.title,
-        subtitle: 'ideaLab project',
-        avatarUrl: p.avatarUrl,
-        color: colorFor(p.id),
-        href: `/project?id=${encodeURIComponent(p.publicId)}`,
-        kind: 'project',
-        detailId: p.publicId,
+    if (mode === 'research') {
+      return research.map((r) => ({
+        id: r.slug,
+        title: r.title,
+        subtitle: r.venue ?? 'Research',
+        avatarUrl: r.thumb ?? null,
+        color: colorFor(r.slug),
+        href: `/research?id=${encodeURIComponent(r.slug)}`,
+        kind: 'research',
+        detailId: r.slug,
       }));
     }
     return [];
-  }, [mode, members, projects]);
+  }, [mode, members, research]);
 
   // Keyboard: modal open → Esc closes, ←/→ step cards; carousel mode (no modal)
   // → Esc returns to the mark. Centralized so it composes with the mode state.
@@ -94,12 +93,12 @@ export function Home() {
     return () => window.removeEventListener('keydown', onKey);
   }, [selected, mode, items.length]);
 
-  // --- hash routing (3f): #members · #members/<public_id> · #projects/<public_id> ---
+  // --- hash routing: #members · #members/<public_id> · #research/<slug> ---
   // hash → state: initial deep-link + browser back/forward (popstate).
   useEffect(() => {
     const apply = () => {
       const [m, detail] = window.location.hash.replace(/^#/, '').split('/');
-      if (m === 'members' || m === 'projects') {
+      if (m === 'members' || m === 'research') {
         setMode(m);
         setPendingDetail(detail ?? null);
         if (!detail) setSelected(null);
@@ -161,14 +160,11 @@ export function Home() {
             Members
           </button>
           <button
-            className={`${styles.navBtn} ${mode === 'projects' ? styles.active : ''}`}
-            onClick={() => switchMode('projects')}
+            className={`${styles.navBtn} ${mode === 'research' ? styles.active : ''}`}
+            onClick={() => switchMode('research')}
           >
-            Projects
-          </button>
-          <a href={`${BASE}/research.html`} className={styles.link}>
             Research
-          </a>
+          </button>
           <Link href="/member" className={styles.link}>
             One of Us
           </Link>
@@ -178,7 +174,19 @@ export function Home() {
       <PixelMark members={members} />
 
       {mode !== 'mark' && (
-        <Carousel items={items} label={mode} onSelect={setSelected} flip={flip} />
+        <>
+          <button
+            className={styles.exit}
+            onClick={() => {
+              setSelected(null);
+              setMode('mark');
+            }}
+            aria-label="Exit and return to the mark"
+          >
+            ✕ Exit
+          </button>
+          <Carousel items={items} label={mode} onSelect={setSelected} flip={flip} />
+        </>
       )}
 
       {selected !== null && (
