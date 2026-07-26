@@ -1,10 +1,25 @@
 # Next.js migration — status & resume guide
 
-Working branch: **`nextjs-migration`** (do NOT merge to `main` until Phase 4 done;
-`main` is the live static site + the deploy workflow trigger). Nothing pushed.
+Working branch: **`nextjs-migration`**. `main` is the live static site + the deploy
+workflow trigger. Nothing pushed. **Phases 0–4 COMPLETE + final cleanup done.** The
+only things left before merge: (1) a live GitHub-session smoke test of auth/upload/
+delete against the deployed `verify-org-member` function, (2) merge → `main`.
 
-Commands: `npm run dev` (Next dev) · `npm run build` (needs `NEXT_PUBLIC_BASE_PATH=/HisarCS-mastersite`) ·
-`npm run typecheck` · `npm run test:unit` (24 tests) · local Supabase: `npm run stack`.
+Commands: `npm run dev` · `npm run build` (needs `NEXT_PUBLIC_BASE_PATH=/HisarCS-mastersite`) ·
+`npm run check` (format + **lint** + typecheck + unit, 37 tests) · local Supabase: `npm run stack`.
+
+## Final cleanup DONE (this commit)
+
+Deleted the old static site now that Next fully replaces it: `index/person/project/
+member.html`, `config.js`, `vendor/supabase.js`, the redundant `tests/unit/config.test.js`
+(its esc/safeUrl/thumbUrl/checkFile coverage lives in `lib.test.ts`), the old Playwright
+e2e (`tests/e2e.spec.js` + `playwright.config.js`, tied to `config.js`), and the dead
+`types/globals.d.ts`. Dropped `@playwright/test`; `test` script now runs vitest. Added a
+Next-aware flat ESLint config (`eslint.config.mjs`, FlatCompat → `next/core-web-vitals`
+
+- `next/typescript`, ignores `supabase/`); `lint` runs `eslint .` and is now part of
+  `check`. `research.html`/`research/*` stay in `public/` (still linked). FOLLOW-UP: e2e
+  coverage could be re-added against the Next app (was deleted, not ported).
 
 ## Done (committed)
 
@@ -39,13 +54,14 @@ Commands: `npm run dev` (Next dev) · `npm run build` (needs `NEXT_PUBLIC_BASE_P
 4. **Homepage body scroll**: `Home.tsx` sets `document.body.style.overflow='hidden'`
    on mount, restores on unmount (full-screen stage).
 5. **Edge function** (`verify-org-member`) already deployed with `verify_jwt=false`
-   + CORS; unrelated to this branch's frontend.
+   - CORS; unrelated to this branch's frontend.
 6. Nav redesign (Research/One of Us next to wordmark, no arrows) is in `SiteHeader`
    (inner pages) and `Home` (homepage). Members/Projects toggles are Phase 3b.
 
 ## Remaining work
 
 ### Phase 3 (rest) — the carousel feature (the main ask)
+
 - **3b + 3c DONE** (not yet committed at time of writing / see git log) — mode
   toggles (`Members`/`Projects`) in `Home` with `useState` mode + Esc-to-close;
   `listProjects()`/`mockProjects()` added; generic `components/Carousel.tsx`
@@ -70,6 +86,7 @@ Commands: `npm run dev` (Next dev) · `npm run build` (needs `NEXT_PUBLIC_BASE_P
 **PHASE 3 COMPLETE.** The full carousel feature works end-to-end.
 
 ### Phase 4 — member area (auth) — LAST, riskiest (in progress)
+
 - **4a DONE** — auth foundation: `lib/domain/memberState.ts` (`deriveMemberScreen`,
   the tested state-machine spec), `lib/data/auth.ts` (getAuthUser, onAuthChange,
   signInWithGitHub, signOutLocal `scope:'local'`, verifyOrgMembership invoke,
@@ -78,19 +95,19 @@ Commands: `npm run dev` (Next dev) · `npm run build` (needs `NEXT_PUBLIC_BASE_P
   `app/member/page.tsx`. Tests: `memberState.test.ts` + backfilled `mark.test.ts`
   (36 unit tests total). Signed-out screen verified in browser; auth flow needs a
   real GitHub session to exercise live.
-**Where things are (resume map).** Old source is `member.html` (1178 lines; DO NOT
-delete until Phase 4 done). Screens markup: signedout 159, verifyfail 176, notmember
-199, onboarding 220-246, dashboard 249-405 (danger-zone/delete modal ~340-405). Script
-function → line: `createMinimalProfile` 559 (ported), `loadFields` 628, `buildChips`
-634, `makeChip` 672, `deleteField` 696, `makeAddChip` 719, `createProfile` 773,
-`syncTags` 821, `fillDashboard` 831, `renderPublishState` 850, `setPublished` 858,
-`renderAvatarTile` 881, `saveProfile` 898, `loadProjects` 929, avatar color swatch
-click ~960, `uploadAvatar` 971, `uploadResume` 1007, `importGithubAvatar` 1034,
-`resetToInitials` 1060, `checkYear` 1067, `checkSlug` 1086, `purgeMyStorage` 1112,
-`tryDelete`/delete ~1140. **Read the specific range per sub-step; don't reload the
-whole file.** New data fns go in `lib/data/profile.ts` (create it); UI in
-`components/member/` sub-components rendered by `MemberArea` for screen==='onboarding'
-/'dashboard'. `optimizeImage`/`checkFile`/`UPLOAD_SPECS` already in `lib/util/media.ts`.
+  **Where things are (resume map).** Old source is `member.html` (1178 lines; DO NOT
+  delete until Phase 4 done). Screens markup: signedout 159, verifyfail 176, notmember
+  199, onboarding 220-246, dashboard 249-405 (danger-zone/delete modal ~340-405). Script
+  function → line: `createMinimalProfile` 559 (ported), `loadFields` 628, `buildChips`
+  634, `makeChip` 672, `deleteField` 696, `makeAddChip` 719, `createProfile` 773,
+  `syncTags` 821, `fillDashboard` 831, `renderPublishState` 850, `setPublished` 858,
+  `renderAvatarTile` 881, `saveProfile` 898, `loadProjects` 929, avatar color swatch
+  click ~960, `uploadAvatar` 971, `uploadResume` 1007, `importGithubAvatar` 1034,
+  `resetToInitials` 1060, `checkYear` 1067, `checkSlug` 1086, `purgeMyStorage` 1112,
+  `tryDelete`/delete ~1140. **Read the specific range per sub-step; don't reload the
+  whole file.** New data fns go in `lib/data/profile.ts` (create it); UI in
+  `components/member/` sub-components rendered by `MemberArea` for screen==='onboarding'
+  /'dashboard'. `optimizeImage`/`checkFile`/`UPLOAD_SPECS` already in `lib/util/media.ts`.
 
 - **4b DONE** — `components/member/Onboarding.tsx` (+ .module.css), `lib/data/profile.ts`
   (listFields, createField, deleteField, completeOnboarding, syncPersonFields),
@@ -132,12 +149,12 @@ whole file.** New data fns go in `lib/data/profile.ts` (create it); UI in
   and passes `userId`/`ghLogin`/`ghAvatarUrl` to Dashboard. No new pure logic → no new
   unit test (storage fns are I/O wrappers). Original ref below:
 - 4d source (member.html 971-1059). Avatar: `optimizeImage(file,512,{square:true})`
-  + a 128 thumb → `avatars` bucket at `${userId}/avatar-512.jpg` & `avatar-128.jpg`
-  (upsert, cacheControl 31536000, contentType image/jpeg) → people.update avatar_url
-  (append `?v=Date.now()`). Resume: PDF → `resumes` bucket `${userId}/resume.pdf`
-  (upsert) → people.update resume_url. `importGithubAvatar` (from session avatar_url),
-  `resetToInitials` (clear avatar_url). Add `lib/data/storage.ts` (uploadAvatar,
-  uploadResume, purgeMyStorage). NOTE storage RLS gates on `is_org_member()` (ADR-0017).
+  - a 128 thumb → `avatars` bucket at `${userId}/avatar-512.jpg` & `avatar-128.jpg`
+    (upsert, cacheControl 31536000, contentType image/jpeg) → people.update avatar_url
+    (append `?v=Date.now()`). Resume: PDF → `resumes` bucket `${userId}/resume.pdf`
+    (upsert) → people.update resume_url. `importGithubAvatar` (from session avatar_url),
+    `resetToInitials` (clear avatar_url). Add `lib/data/storage.ts` (uploadAvatar,
+    uploadResume, purgeMyStorage). NOTE storage RLS gates on `is_org_member()` (ADR-0017).
 - **4e DONE** — `components/member/DangerZone.tsx` (+ .module.css): danger panel +
   confirm modal (type GitHub handle, Cancel/Delete forever, busy-locked). Matching via
   `lib/util/handle.ts` `handlesMatch`/`normalizeHandle` (trim, drop @, PLAIN toLowerCase
@@ -150,6 +167,7 @@ whole file.** New data fns go in `lib/data/profile.ts` (create it); UI in
 flow with a real GitHub session against the deployed function, then final cleanup + merge.
 
 ### Final cleanup (after Phase 4)
+
 - Delete old root HTML (`index/person/project/member.html`), `config.js`, `vendor/`,
   old `tests/unit/config.test.js`, `tests/e2e.spec.js` (or port e2e to Next).
 - ESLint flat config for Next (`next lint` / eslint-config-next) — currently the

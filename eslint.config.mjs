@@ -1,33 +1,17 @@
-import js from '@eslint/js';
-import globals from 'globals';
+import { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { FlatCompat } from '@eslint/eslintrc';
 
-export default [
+// Flat config bridging Next's shareable configs (still eslintrc-style) via
+// FlatCompat. `supabase/` (Deno edge functions) and build/static output are
+// excluded — they have their own toolchain / aren't ours to lint.
+const compat = new FlatCompat({ baseDirectory: dirname(fileURLToPath(import.meta.url)) });
+
+const config = [
   {
-    ignores: [
-      'node_modules/**',
-      'vendor/**',
-      'test-results/**',
-      'playwright-report/**',
-      'supabase/**',
-    ],
+    ignores: ['.next/**', 'out/**', 'node_modules/**', 'supabase/**', 'public/**', 'next-env.d.ts'],
   },
-  js.configs.recommended,
-  {
-    files: ['**/*.js', '**/*.mjs'],
-    languageOptions: {
-      ecmaVersion: 2022,
-      sourceType: 'module',
-      globals: { ...globals.browser, ...globals.node },
-    },
-    rules: {
-      'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
-      'no-var': 'error',
-      'prefer-const': 'warn',
-      eqeqeq: ['error', 'smart'],
-    },
-  },
-  {
-    files: ['tests/**/*.js', 'playwright.config.js'],
-    languageOptions: { globals: { ...globals.node } },
-  },
+  ...compat.extends('next/core-web-vitals', 'next/typescript'),
 ];
+
+export default config;
