@@ -1,0 +1,128 @@
+.panel {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 28px;
+  margin-bottom: 22px;
+}
+.panel h2 {
+  font-size: 15px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 14px;
+  font-weight: 600;
+}
+.danger {
+  border-color: rgba(192, 57, 43, 0.35);
+  background: rgba(192, 57, 43, 0.04);
+}
+.danger h2 {
+  color: var(--danger);
+}
+.sub {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+.hintBad {
+  color: var(--danger);
+}
+
+.btnDanger {
+  font: inherit;
+  font-size: 14.5px;
+  font-weight: 600;
+  padding: 11px 20px;
+  border-radius: 11px;
+  cursor: pointer;
+  border: 1.5px solid var(--danger);
+  background: none;
+  color: var(--danger);
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+.btnDanger:hover:not(:disabled) {
+  background: var(--danger);
+  color: #fff;
+}
+.btnDanger:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.btnGhost {
+  font: inherit;
+  font-size: 14.5px;
+  font-weight: 600;
+  padding: 11px 20px;
+  border-radius: 11px;
+  cursor: pointer;
+  background: none;
+  border: 1.5px solid var(--line);
+  color: var(--ink);
+}
+.btnGhost:hover:not(:disabled) {
+  border-color: var(--ink);
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 20, 20, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 50;
+}
+.modal {
+  background: var(--card);
+  border-radius: 18px;
+  padding: 30px;
+  max-width: 440px;
+  width: 100%;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
+}
+.modal h3 {
+  font-size: 20px;
+  letter-spacing: -0.02em;
+  margin-bottom: 10px;
+}
+.list {
+  margin: 0 0 18px 18px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.7;
+}
+.f {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  margin: 0 0 6px;
+}
+.modal input {
+  width: 100%;
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 14.5px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fbfaf7;
+  color: var(--ink);
+}
+.modal input.bad {
+  outline: 2px solid var(--danger);
+  border-color: transparent;
+}
+.modal input:focus {
+  outline: 2px solid var(--accent);
+  border-color: transparent;
+}
+.actions {
+  margin-top: 22px;
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}

@@ -2,11 +2,15 @@
   "name": "hisarcs-mastersite",
   "private": true,
   "scripts": {
-    "dev": "serve -l 3000 .",
+    "dev": "next dev",
+    "build": "next build",
+    "preview": "npx serve out -l 3000",
     "stack": "supabase start --network-id local-network",
     "stack:down": "supabase stop --no-backup",
     "stack:reset": "npm run stack:down && npm run stack",
-    "test": "playwright test -c tests/playwright.config.js",
+    "logs:edge": "bash scripts/edge-logs.sh",
+    "db:psql": "docker exec -it $(docker ps --format '{{.Names}}' | grep supabase_db | head -1) psql -U postgres -d postgres",
+    "test": "vitest run",
     "test:unit": "vitest run",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
@@ -15,10 +19,19 @@
     "check": "npm run format:check && npm run lint && npm run typecheck && npm run test:unit",
     "db:push": "supabase db push"
   },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.47.10",
+    "next": "^15.1.6",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
   "devDependencies": {
     "@eslint/js": "^9.13.0",
-    "@playwright/test": "^1.56.0",
+    "@types/node": "^22.10.7",
+    "@types/react": "^19.0.7",
+    "@types/react-dom": "^19.0.3",
     "eslint": "^9.13.0",
+    "eslint-config-next": "^15.1.6",
     "globals": "^15.11.0",
     "jsdom": "^25.0.1",
     "prettier": "^3.3.3",
