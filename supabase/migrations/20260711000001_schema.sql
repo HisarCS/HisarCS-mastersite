@@ -822,6 +822,15 @@ create table if not exists public.org_members (
   verified_at  timestamptz not null default now()
 );
 
+-- The verify-org-member Edge Function writes here as service_role. service_role
+-- bypasses RLS but still needs table GRANTs — and this table is created AFTER the
+-- blanket grants above, so it only inherits the `alter default privileges` ones
+-- (set for anon/authenticated, not service_role). Hosted Supabase auto-grants
+-- service_role platform-wide, but the local CLI does not, so writes fail locally
+-- with "permission denied for table org_members". Grant it explicitly (a no-op
+-- on hosted, required locally).
+grant select, insert, update, delete on public.org_members to service_role;
+
 alter table public.org_members enable row level security;
 
 -- normalize case/whitespace on insert (reuses the admin allowlist's normalizer)

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
 import {
   createField,
   isPublicIdAvailable,
@@ -15,6 +16,7 @@ import { setAvatarUrl, uploadAvatar, uploadResume } from '@/lib/data/storage';
 import { DangerZone } from './DangerZone';
 import { cleanYearInput, gradYearMax, GRAD_YEAR_MIN, isValidGradYear } from '@/lib/util/year';
 import { thumbUrl } from '@/lib/util/media';
+import { safeUrl } from '@/lib/util/html';
 import type { Field, MyProfile, MyProjectSummary } from '@/lib/domain/types';
 import styles from './Dashboard.module.css';
 
@@ -331,7 +333,12 @@ export function Dashboard({
             Upload PDF
           </button>
           {resume && (
-            <a className={styles.btnGhost} href={resume} target="_blank" rel="noopener noreferrer">
+            <a
+              className={styles.btnGhost}
+              href={safeUrl(resume)}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               View current
             </a>
           )}
@@ -421,7 +428,7 @@ export function Dashboard({
           <div className={styles.sub}>No projects yet — start one below.</div>
         ) : (
           projects.map((p) => (
-            <a
+            <Link
               key={p.publicId}
               className={styles.proj}
               href={`/project?id=${encodeURIComponent(p.publicId)}`}
@@ -432,7 +439,7 @@ export function Dashboard({
               <span className={`${styles.badge} ${p.isPublished ? styles.live : styles.draft}`}>
                 {p.isPublished ? 'Published' : 'Draft'}
               </span>
-            </a>
+            </Link>
           ))
         )}
       </div>

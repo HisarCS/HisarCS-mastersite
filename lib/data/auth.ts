@@ -180,6 +180,12 @@ export async function createMinimalProfile(u: AuthUser): Promise<MyProfile | nul
       .select(PROFILE_SELECT)
       .single();
     if (error || !data) {
+      // Idempotent: onAuthChange fires INITIAL_SESSION *and* SIGNED_IN on login,
+      // so two resolve() calls can race here — the loser gets 23505 on
+      // people_user_id_key. That's not a failure; return the row the winner made.
+      if (error && String((error as { code?: string }).code) === '23505') {
+        return getMyProfile(u.userId);
+      }
       if (error) console.error('ideaLab: minimal profile insert failed', error);
       return null;
     }

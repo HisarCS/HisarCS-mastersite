@@ -64,7 +64,24 @@ Deno.serve(async (req) => {
 
     return json({ login, org: ORG, state, member: isMember });
   } catch (e) {
-    console.error('verify-org-member:', e);
-    return json({ error: String(e instanceof Error ? e.message : e) }, 500);
+    // Never collapse to "[object Object]": Supabase/PostgREST errors are plain
+    // objects with a `.message`, so pull that out before falling back to JSON.
+    const msg =
+      e instanceof Error
+        ? e.message
+        : e && typeof e === 'object'
+          ? ((e as { message?: string }).message ?? JSON.stringify(e))
+          : String(e);
+    // One structured, greppable line so `npm run logs:edge` shows the full cause
+    // (message + stack) even when the client only sees the short `error`.
+    console.error(
+      JSON.stringify({
+        fn: 'verify-org-member',
+        level: 'error',
+        message: msg,
+        stack: e instanceof Error ? e.stack : undefined,
+      }),
+    );
+    return json({ error: msg }, 500);
   }
 });
