@@ -1,14 +1,13 @@
 'use client';
 
 import { PersonView } from './PersonView';
-import { ProjectView } from './ProjectView';
 import { ResearchView } from './ResearchView';
 import type { CarouselItem } from './Carousel';
 import styles from './DetailModal.module.css';
 
 /**
  * Inline detail over the dimmed carousel — the selected card's full profile
- * (reusing PersonView/ProjectView, header omitted), with prev/next through the
+ * (reusing PersonView/ResearchView, header omitted), with prev/next through the
  * carousel and back-to-carousel. Keyboard (Esc / ← / →) is handled in Home so
  * it composes with the mode state.
  */
@@ -54,10 +53,8 @@ export function DetailModal({
         <div className={styles.body}>
           {item.kind === 'member' ? (
             <PersonView id={item.detailId} embedded />
-          ) : item.kind === 'research' ? (
-            <ResearchView id={item.detailId} embedded />
           ) : (
-            <ProjectView id={item.detailId} embedded />
+            <ResearchView id={item.detailId} embedded />
           )}
         </div>
       </div>

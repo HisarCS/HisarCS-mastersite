@@ -6,7 +6,7 @@ import {
   createField,
   isPublicIdAvailable,
   listFields,
-  listMyProjects,
+  listMyResearch,
   setAvatarColor,
   setPublished,
   syncPersonFields,
@@ -17,7 +17,7 @@ import { DangerZone } from './DangerZone';
 import { cleanYearInput, gradYearMax, GRAD_YEAR_MIN, isValidGradYear } from '@/lib/util/year';
 import { thumbUrl } from '@/lib/util/media';
 import { safeUrl } from '@/lib/util/html';
-import type { Field, MyProfile, MyProjectSummary } from '@/lib/domain/types';
+import type { Field, MyProfile, MyResearchSummary } from '@/lib/domain/types';
 import styles from './Dashboard.module.css';
 
 const PALETTE = ['#e8542f', '#2f6fe8', '#28a06d', '#c4a11f', '#9048c8', '#d2447e'];
@@ -31,9 +31,9 @@ const initialsOf = (s: string) =>
 
 /**
  * Dashboard (4c/4d) — edit profile, publish toggle, interest fields, avatar
- * (color / upload / GitHub import), resume upload, projects list. Account
+ * (color / upload / GitHub import), resume upload, research list. Account
  * deletion is 4e. Mirrors member.html fillDashboard/saveProfile/setPublished/
- * loadProjects/uploadAvatar/uploadResume/importGithubAvatar.
+ * loadResearch/uploadAvatar/uploadResume/importGithubAvatar.
  */
 export function Dashboard({
   profile,
@@ -56,7 +56,7 @@ export function Dashboard({
   const [fields, setFields] = useState<Field[]>([]);
   const [selected, setSelected] = useState<Set<number>>(new Set(profile.fieldIds));
   const [newField, setNewField] = useState('');
-  const [projects, setProjects] = useState<MyProjectSummary[]>([]);
+  const [research, setResearch] = useState<MyResearchSummary[]>([]);
   const [saveHint, setSaveHint] = useState('');
   const [pubHint, setPubHint] = useState('');
   const [slugHint, setSlugHint] = useState('');
@@ -69,7 +69,7 @@ export function Dashboard({
 
   useEffect(() => {
     void listFields().then(setFields);
-    void listMyProjects(profile.id).then(setProjects);
+    void listMyResearch(profile.id).then(setResearch);
   }, [profile.id]);
 
   const yearNum = parseInt(year, 10);
@@ -423,15 +423,15 @@ export function Dashboard({
       </div>
 
       <div className={styles.panel}>
-        <h2>My projects</h2>
-        {projects.length === 0 ? (
-          <div className={styles.sub}>No projects yet — start one below.</div>
+        <h2>My research</h2>
+        {research.length === 0 ? (
+          <div className={styles.sub}>No research yet — start one below.</div>
         ) : (
-          projects.map((p) => (
+          research.map((p) => (
             <Link
               key={p.publicId}
               className={styles.proj}
-              href={`/project?id=${encodeURIComponent(p.publicId)}`}
+              href={`/research?id=${encodeURIComponent(p.publicId)}`}
             >
               <div className={styles.pav}>{initialsOf(p.title)}</div>
               <div className={styles.pt}>{p.title}</div>

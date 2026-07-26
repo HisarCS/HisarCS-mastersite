@@ -1,15 +1,10 @@
 import Link from 'next/link';
 import styles from './SiteHeader.module.css';
 
-// Research is served as a static file from public/ (colleague's content, kept
-// as-is), so it needs the basePath prepended manually — unlike Next <Link>,
-// which does that automatically for real routes.
-const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
-
 /**
- * Site-wide header. Per the nav redesign: Research and One of Us sit next to the
- * ideaLab wordmark (grouped left), no arrows. The homepage adds the
- * Members/Projects mode toggles on top of this in Phase 3.
+ * Site-wide header. Research and One of Us sit next to the ideaLab wordmark
+ * (grouped left), no arrows. The homepage adds the Members/Research mode toggles
+ * on top of this.
  */
 export function SiteHeader() {
   return (
@@ -18,9 +13,9 @@ export function SiteHeader() {
         <Link href="/" className={styles.wordmark}>
           idea<span>Lab</span>
         </Link>
-        <a href={`${BASE}/research.html`} className={styles.link}>
+        <Link href="/research" className={styles.link}>
           Research
-        </a>
+        </Link>
         <Link href="/member" className={styles.link}>
           One of Us
         </Link>

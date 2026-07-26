@@ -1,11 +1,12 @@
 import { Suspense } from 'react';
-import { ProjectRoute } from '@/components/ProjectRoute';
+import { ProjectRedirect } from '@/components/ProjectRedirect';
 
-// Single static page; client-fetches /project?id=<public_id> for any id.
+// Deprecated route. "Projects" are now "Research"; this redirects old links to
+// /research?id=<id>. (Kept as a static page so existing bookmarks resolve.)
 export default function ProjectPage() {
   return (
     <Suspense>
-      <ProjectRoute />
+      <ProjectRedirect />
     </Suspense>
   );
 }

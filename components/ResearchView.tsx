@@ -6,8 +6,8 @@ import { getResearchItem, researchContentSrc } from '@/lib/data/research';
 import { safeUrl } from '@/lib/util/html';
 import type { ResearchItem } from '@/lib/domain/types';
 import { SiteHeader } from './SiteHeader';
-import { Unavailable } from './Unavailable';
 import { ResearchArticle } from './ResearchArticle';
+import { ResearchEntryView } from './ResearchEntryView';
 import styles from './ResearchView.module.css';
 
 /**
@@ -32,13 +32,10 @@ export function ResearchView({ id, embedded = false }: { id: string; embedded?: 
     if (item) document.title = `${item.title} — ideaLab`;
   }, [item]);
 
+  // Not a curated write-up → treat the slug as a member-created (DB) research
+  // entry. This is how /research?id= unifies both kinds of research.
   if (!item) {
-    return (
-      <Unavailable
-        heading="This research isn’t available"
-        detail="It may have been moved or the link may be mistyped."
-      />
-    );
+    return <ResearchEntryView id={id} embedded={embedded} />;
   }
 
   const Custom = item.view ? RESEARCH_VIEWS[item.view] : undefined;

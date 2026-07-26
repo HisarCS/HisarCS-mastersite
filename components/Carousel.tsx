@@ -12,7 +12,7 @@ export interface CarouselItem {
   avatarUrl: string | null;
   color: string;
   href: string; // kept for accessibility / middle-click / future deep-link
-  kind: 'member' | 'project' | 'research';
+  kind: 'member' | 'research';
   detailId: string; // public_id passed to the detail view in the modal
 }
 
@@ -25,7 +25,7 @@ const initials = (s: string) =>
     .toUpperCase();
 
 /**
- * Cross-fade carousel of cards for the homepage Members/Projects modes. This is
+ * Cross-fade carousel of cards for the homepage Members/Research modes. This is
  * the resilient baseline (opacity only); the FLIP morph enhancement (3e) and the
  * inline detail modal (3d) layer on top later. Cards currently link to the
  * detail pages.

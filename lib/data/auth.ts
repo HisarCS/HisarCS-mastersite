@@ -143,7 +143,7 @@ export async function getMyProfile(userId: string): Promise<MyProfile | null> {
 /**
  * Permanently delete the signed-in member's account. Purges storage first (SQL
  * can't remove storage objects — migration 0003), then the RPC erases the person
- * row + tags + memberships + solo projects + the auth user, then signs out
+ * row + tags + memberships + solo research + the auth user, then signs out
  * locally (the server session is already gone). Returns an error message or null.
  */
 export async function deleteMyAccount(userId: string): Promise<string | null> {

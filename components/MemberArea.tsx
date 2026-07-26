@@ -17,8 +17,6 @@ import { Onboarding } from './member/Onboarding';
 import { Dashboard } from './member/Dashboard';
 import styles from './MemberArea.module.css';
 
-const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
-
 /**
  * Member area — auth + routing state machine (see lib/domain/memberState.ts for
  * the tested spec). Phase 4a: sign-in, org-membership gate, and the signed-out /
@@ -95,9 +93,9 @@ export function MemberArea() {
       <Link href="/" className={styles.wordmark}>
         idea<span>Lab</span>
       </Link>
-      <a href={`${BASE}/research.html`} className={styles.research}>
+      <Link href="/research" className={styles.research}>
         Research
-      </a>
+      </Link>
       {(screen === 'onboarding' || screen === 'dashboard') && (
         <span className={styles.session}>
           signed in as <strong>@{ghLogin}</strong>
@@ -135,7 +133,7 @@ export function MemberArea() {
               <h1>Member sign in</h1>
               <p className={styles.sub}>
                 For ideaLab students and alumni. Sign in with GitHub to create and manage your
-                profile and projects.
+                profile and research.
               </p>
               <button className={styles.ghBtn} onClick={doSignIn}>
                 <svg viewBox="0 0 16 16" aria-hidden="true">
