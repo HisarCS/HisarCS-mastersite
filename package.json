@@ -8,6 +8,8 @@
     "stack": "supabase start --network-id local-network",
     "stack:down": "supabase stop --no-backup",
     "stack:reset": "npm run stack:down && npm run stack",
+    "logs:edge": "bash scripts/edge-logs.sh",
+    "db:psql": "docker exec -it $(docker ps --format '{{.Names}}' | grep supabase_db | head -1) psql -U postgres -d postgres",
     "test": "vitest run",
     "test:unit": "vitest run",
     "typecheck": "tsc --noEmit",
