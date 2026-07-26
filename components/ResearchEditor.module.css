@@ -1,0 +1,266 @@
+.main {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 8px 24px 96px;
+}
+
+.topRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.back {
+  font-size: 13px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.back:hover {
+  color: var(--ink);
+}
+.badge {
+  display: inline-block;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  padding: 4px 9px;
+  border-radius: 99px;
+}
+.badge.draft {
+  background: rgba(196, 161, 31, 0.15);
+  color: #8a7414;
+}
+.badge.live {
+  background: rgba(40, 160, 109, 0.13);
+  color: var(--ok);
+}
+
+.h1 {
+  font-size: 30px;
+  letter-spacing: -0.02em;
+  margin-bottom: 6px;
+}
+.sub {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.sub code {
+  font-size: 13px;
+}
+.sub a {
+  color: var(--accent);
+}
+.ok {
+  color: var(--ok);
+}
+.bad {
+  color: var(--danger);
+}
+
+.panel {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 24px;
+  margin-top: 22px;
+}
+.panel h2 {
+  font-size: 15px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin-bottom: 14px;
+  font-weight: 600;
+}
+.danger {
+  border-color: rgba(192, 57, 43, 0.35);
+  background: rgba(192, 57, 43, 0.04);
+}
+.danger h2 {
+  color: var(--danger);
+}
+
+.f {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  margin: 16px 0 6px;
+}
+.f:first-child {
+  margin-top: 0;
+}
+.panel input,
+.panel textarea {
+  width: 100%;
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 14.5px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fbfaf7;
+  color: var(--ink);
+}
+.panel textarea {
+  resize: vertical;
+  min-height: 110px;
+}
+.panel input:focus,
+.panel textarea:focus {
+  outline: 2px solid var(--accent);
+  border-color: transparent;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+  align-items: center;
+}
+.chip {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 13px;
+  border-radius: 99px;
+  border: 1.5px solid var(--line);
+  background: none;
+  cursor: pointer;
+  color: var(--ink);
+  transition: all 0.12s ease;
+}
+.chip.on {
+  background: var(--ink);
+  color: var(--bg);
+  border-color: var(--ink);
+}
+.addField {
+  width: 170px !important;
+  padding: 6px 12px !important;
+  font-size: 13px !important;
+  border-radius: 99px !important;
+  border: 1.5px dashed var(--muted) !important;
+}
+
+.actions {
+  margin-top: 22px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.btn {
+  font: inherit;
+  font-size: 14.5px;
+  font-weight: 600;
+  padding: 11px 20px;
+  border-radius: 11px;
+  cursor: pointer;
+  border: none;
+  background: var(--ink);
+  color: var(--bg);
+}
+.btn:hover:not(:disabled) {
+  background: var(--accent);
+}
+.btn:disabled,
+.btnGhost:disabled,
+.btnDanger:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.btnGhost {
+  font: inherit;
+  font-size: 14.5px;
+  font-weight: 600;
+  padding: 11px 20px;
+  border-radius: 11px;
+  cursor: pointer;
+  background: none;
+  border: 1.5px solid var(--line);
+  color: var(--ink);
+}
+.btnGhost:hover:not(:disabled) {
+  border-color: var(--ink);
+}
+.btnDanger {
+  font: inherit;
+  font-size: 14.5px;
+  font-weight: 600;
+  padding: 11px 20px;
+  border-radius: 11px;
+  cursor: pointer;
+  border: 1.5px solid var(--danger);
+  background: none;
+  color: var(--danger);
+}
+.btnDanger:hover:not(:disabled) {
+  background: var(--danger);
+  color: #fff;
+}
+
+.linkRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+.linkRow:last-of-type {
+  border-bottom: none;
+}
+.ll {
+  font-weight: 600;
+  font-size: 14.5px;
+}
+.lu {
+  color: var(--muted);
+  font-size: 13px;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.remove {
+  font: inherit;
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 4px 6px;
+}
+.remove:hover:not(:disabled) {
+  color: var(--danger);
+}
+.linkAdd {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+.linkAdd input {
+  flex: 1;
+  min-width: 160px;
+}
+
+.loading {
+  min-height: 50vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.spinner {
+  width: 26px;
+  height: 26px;
+  border: 3px solid var(--line);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
