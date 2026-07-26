@@ -216,7 +216,9 @@ local server — use the deployed URL.
 
 ## ADR-0011 — Vendored supabase-js, no third-party CDN at runtime
 
-**Status:** Accepted
+**Status:** Superseded by the Next.js migration — `@supabase/supabase-js` is now
+an npm dependency bundled into the static export, which preserves the intent
+(no third-party CDN at runtime, everything served same-origin).
 
 **Context:** Loading the client from `cdn.jsdelivr.net` created a single point of
 failure (networks that filter CDNs broke the whole site) and disclosed every
@@ -234,7 +236,9 @@ Cost: the vendored file is updated manually on version bumps.
 
 ## ADR-0012 — Extensionless URLs via the static server's clean-URL support
 
-**Status:** Accepted
+**Status:** Superseded by the Next.js migration — routes are directory-style
+(`trailingSlash: true`, e.g. `/person/?id=…`) emitted by `output: 'export'`.
+The outcome is the same: no `.html` in URLs, `?id=` query routing preserved.
 
 **Context:** Want `/person?id=…` rather than `/person.html?id=…`, on a static host
 with no rewrite engine.
@@ -271,7 +275,9 @@ canvas APIs.
 
 ## ADR-0014 — No build step; types via JSDoc + `tsc --checkJs`, native ES modules
 
-**Status:** Accepted
+**Status:** Superseded by the Next.js migration — the site now has a build step
+(`next build` → static `out/`) and real TypeScript. The type-safety goal stands;
+the means changed once a framework was adopted.
 
 **Context:** The engineering-quality refactor needs type safety, a module system,
 shared code, and unit tests. The default reach is TypeScript + a bundler (Vite),
@@ -391,3 +397,69 @@ load — a strictly smaller window than the cron's, and RLS still attributes eve
 write to a GitHub login the whole time. The cost is a dependency on the GitHub
 App's private key living as a Supabase secret, and one GitHub API call per
 active-and-stale member. See §9 of the README for the deploy/secrets runbook.
+
+---
+
+## ADR-0018 — "Projects" and "Research" merged into one concept: Research
+
+**Status:** Accepted 2026-07-26
+
+**Context:** The site had grown two parallel concepts for the same underlying
+thing — work produced in the lab:
+
+- **Projects** — a DB-backed, member-created feature (`projects` + four child
+  tables, `/project?id=`, a homepage carousel, a dashboard list). Fully built,
+  but with almost no real content.
+- **Research** — eight curated, editorial write-ups living as large standalone
+  static HTML pages (`public/research.html` listing `public/research/<slug>.html`),
+  outside the app entirely.
+
+Two names for one idea meant two navigation entries, two data paths, and a
+constant question of where a given piece of work belonged. The lab's own word
+for its output is "research".
+
+**Decision:** One user-facing concept, **Research**, with two content sources
+behind it.
+
+- **Curated research is static, in-app content.** `ResearchItem`
+  (`lib/domain/types.ts`) gives the eight write-ups a real schema — authors
+  (plain text _or_ linked to a site member), tags, start/end date, location, and
+  resources — edited in `lib/data/research.ts`. The long-form bodies stay exactly
+  as authored: `ResearchArticle` fetches the original HTML and injects its
+  `<style>` + body into a **Shadow DOM**, so each write-up keeps its own layout,
+  fully isolated from site styles. Zero content was rewritten or lost. Items may
+  opt into a bespoke React layout via a `view` key resolved by a small registry.
+- **The member-created feature was renamed, not retired.** Migration
+  `20260726120000_rename_projects_to_research.sql` renames `projects` →
+  `research`, the four child tables, their `project_id` → `research_id` columns,
+  and the `project-files` storage bucket → `research-files`. `ALTER ... RENAME`
+  carries FKs, indexes, triggers, and RLS policies automatically (they bind by
+  object id); only function _bodies_ and the bucket-id _string_ name their
+  targets textually, so those are recreated. Helper and policy **names** are
+  deliberately unchanged (e.g. `is_project_editor`) — renaming them would force
+  every dependent policy to be rebuilt for no functional gain, and they never
+  surface in the UI.
+- **`/research?id=<id>` resolves both**: a curated slug renders the write-up; any
+  other id is looked up as a member-created entry. `/project?id=` remains as a
+  deprecating redirect so existing links keep working.
+
+**Browsing moved from a homepage mode to real pages.** The Members/Research
+carousel was an in-place transformation of the homepage mark, which meant the
+directories had no URLs of their own, cards opened a modal instead of a page,
+and the header's contents changed depending on where you were (on `/member`,
+"Members" simply did not exist). `/members` and `/research` are now ordinary
+card-grid pages behind one shared `SiteHeader`; each card links to its own
+detail page. The `.)` pixel mark remains the homepage as static art, its pixels
+still linking to profiles. The carousel, detail modal, and FLIP motion code were
+deleted.
+
+**Consequences:** One concept, one nav entry, one detail route. Curated work
+gains structured metadata without a migration or RLS exposure, and stays
+editable by developers in one file. The DB rename is data-preserving but must be
+deployed **together** with the frontend — the live site queries the new table
+names, so `supabase db push` and the Pages deploy belong in the same window
+(downtime is acceptable for this site). Storage's `protect_delete` forbids
+deleting buckets from SQL, so the old empty `project-files` bucket is left
+behind, policy-less and inert, to be removed via Studio. Two names now live in
+the codebase — `research` (curated, static) and `researchEntries` (member,
+DB-backed) — which is the one wrinkle this merge introduces.

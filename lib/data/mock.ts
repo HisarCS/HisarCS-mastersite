@@ -1,4 +1,4 @@
-import type { Member, MemberCard, Project, ProjectCard } from '../domain/types';
+import type { Member, MemberCard, ResearchEntry, ResearchEntryCard } from '../domain/types';
 import { cohortFor } from '../util/date';
 
 /**
@@ -53,7 +53,7 @@ export function mockPerson(id: string): Member {
     avatarColor: null,
     resumeUrl: null,
     githubUsername: null,
-    projects: [],
+    research: [],
   };
 }
 
@@ -127,8 +127,8 @@ export function mockMembers(): MemberCard[] {
   }));
 }
 
-/** Local-dev mock project directory for the homepage Projects carousel. */
-export function mockProjects(): ProjectCard[] {
+/** Local-dev mock directory of member-created research entries. */
+export function mockResearchEntries(): ResearchEntryCard[] {
   const titles = [
     'Solar Lemon Press',
     'Parse',
@@ -151,17 +151,17 @@ export function mockProjects(): ProjectCard[] {
   }));
 }
 
-export function mockProject(id: string): Project {
-  const title = id ? titleize(id) : 'Untitled Project';
+export function mockResearchEntry(id: string): ResearchEntry {
+  const title = id ? titleize(id) : 'Untitled Research';
   return {
     dbId: '',
-    publicId: id || 'project',
+    publicId: id || 'research',
     title,
     published: true,
     avatarUrl: null,
     fields: [],
     members: [],
-    description: 'Preview — connect the site to Supabase to load this project.',
+    description: 'Preview — connect the site to Supabase to load this research.',
     links: [],
     files: [],
   };

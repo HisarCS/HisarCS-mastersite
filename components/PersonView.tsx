@@ -130,13 +130,13 @@ export function PersonView({ id, embedded = false }: { id: string; embedded?: bo
         </div>
 
         <section>
-          <h2 className={styles.h2}>Projects</h2>
-          {p.projects.length ? (
-            p.projects.map((pr) => (
+          <h2 className={styles.h2}>Research</h2>
+          {p.research.length ? (
+            p.research.map((pr) => (
               <Link
                 key={pr.publicId}
                 className={styles.proj}
-                href={`/project?id=${encodeURIComponent(pr.publicId)}`}
+                href={`/research?id=${encodeURIComponent(pr.publicId)}`}
               >
                 <div className={styles.pav}>
                   {pr.title
@@ -147,12 +147,12 @@ export function PersonView({ id, embedded = false }: { id: string; embedded?: bo
                 </div>
                 <div>
                   <div className={styles.pt}>{pr.title}</div>
-                  <div className={styles.pm}>ideaLab project</div>
+                  <div className={styles.pm}>ideaLab research</div>
                 </div>
               </Link>
             ))
           ) : (
-            <div className={styles.empty}>No published projects yet.</div>
+            <div className={styles.empty}>No published research yet.</div>
           )}
         </section>
       </main>

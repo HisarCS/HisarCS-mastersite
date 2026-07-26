@@ -36,23 +36,23 @@ export interface MyProfile {
   fieldIds: number[];
 }
 
-/** A project the signed-in member belongs to (dashboard list). */
-export interface MyProjectSummary {
+/** A member-created research entry the signed-in member belongs to (dashboard list). */
+export interface MyResearchSummary {
   publicId: string;
   title: string;
   isPublished: boolean;
 }
 
-/** Directory card for a project (homepage Projects carousel). */
-export interface ProjectCard {
+/** Directory card for a member-created research entry. */
+export interface ResearchEntryCard {
   id: string;
   publicId: string;
   title: string;
   avatarUrl: string | null;
 }
 
-/** A project reference shown on a member's profile. */
-export interface MemberProjectRef {
+/** A research reference shown on a member's profile. */
+export interface MemberResearchRef {
   publicId: string;
   title: string;
 }
@@ -69,23 +69,23 @@ export interface Member {
   resumeUrl: string | null;
   githubUsername: string | null;
   fields: string[];
-  projects: MemberProjectRef[];
+  research: MemberResearchRef[];
 }
 
-export interface ProjectMemberRef {
+export interface ResearchMemberRef {
   publicId: string;
   name: string;
   role: string;
   color: string | null;
 }
 
-export interface ProjectLink {
+export interface ResearchLink {
   label: string;
   url: string;
   sortOrder: number;
 }
 
-export interface ProjectFile {
+export interface ResearchFile {
   id: string;
   storagePath: string;
   kind: string;
@@ -93,8 +93,8 @@ export interface ProjectFile {
   sortOrder: number;
 }
 
-/** Full project — the project page. */
-export interface Project {
+/** Full member-created research entry — the DB-backed research page. */
+export interface ResearchEntry {
   dbId: string;
   publicId: string;
   title: string;
@@ -102,7 +102,48 @@ export interface Project {
   avatarUrl: string | null;
   published: boolean;
   fields: string[];
-  members: ProjectMemberRef[];
-  links: ProjectLink[];
-  files: ProjectFile[];
+  members: ResearchMemberRef[];
+  links: ResearchLink[];
+  files: ResearchFile[];
+}
+
+// ---------------------------------------------------------------------------
+// Research — curated, editorial write-ups (static, in-app). Distinct from the
+// member-created DB "research" entries (the renamed projects infra): these are
+// long-form articles rendered from preserved HTML, with a structured metadata
+// layer on top.
+// ---------------------------------------------------------------------------
+
+/** An author of a research entry — a site member (linked) or plain text. */
+export interface ResearchAuthor {
+  name: string;
+  /** public_id of a site member → links to /person?id=; omit for plain text. */
+  memberId?: string;
+}
+
+/** A resource/file attached to a research entry. */
+export interface ResearchResource {
+  label: string;
+  url: string;
+  kind?: 'pdf' | 'link' | 'image' | 'file';
+}
+
+/** A curated research entry. Everything here is dev-editable in lib/data/research.ts. */
+export interface ResearchItem {
+  slug: string; // URL id (/research?id=<slug>)
+  title: string;
+  venue?: string;
+  summary: string; // card + meta description
+  thumb?: string; // card image (asset path, basePath-prefixed)
+  authors: ResearchAuthor[];
+  tags: string[];
+  startDate?: string; // ISO date or year
+  endDate?: string;
+  location?: string;
+  resources: ResearchResource[];
+  /** Optional custom-layout key resolved by the view registry; default renders
+   *  the preserved article body. */
+  view?: string;
+  /** Path to the preserved write-up HTML; defaults to research/<slug>.html. */
+  contentSrc?: string;
 }

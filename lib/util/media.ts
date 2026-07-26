@@ -29,14 +29,14 @@ export const UPLOAD_SPECS = {
     maxDim: 512,
     label: 'JPEG, PNG or WebP up to 10 MB',
   },
-  projectImage: {
+  researchImage: {
     accept: ['image/jpeg', 'image/png', 'image/webp'],
     maxMB: 15,
     maxDim: 1600,
     label: 'images: JPEG/PNG/WebP up to 15 MB',
   },
   resume: { accept: ['application/pdf'], maxMB: 5, label: 'PDF up to 5 MB' },
-  projectPdf: { accept: ['application/pdf'], maxMB: 10, label: 'PDFs up to 10 MB' },
+  researchPdf: { accept: ['application/pdf'], maxMB: 10, label: 'PDFs up to 10 MB' },
 } satisfies Record<string, UploadSpec>;
 
 /** Validate a picked file against a spec. Returns an error string, or null. */

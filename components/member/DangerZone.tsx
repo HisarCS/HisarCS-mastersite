@@ -48,7 +48,7 @@ export function DangerZone({ userId, handle }: { userId: string; handle: string 
       <h2>Danger zone</h2>
       <p className={styles.sub}>
         Deleting your account permanently erases your profile, your place on the homepage, your
-        interest tags and project memberships, projects where you&apos;re the only member, and your
+        interest tags and research memberships, research where you&apos;re the only member, and your
         GitHub login link. This cannot be undone.
       </p>
       <button className={styles.btnDanger} onClick={() => setOpen(true)}>
@@ -62,8 +62,8 @@ export function DangerZone({ userId, handle }: { userId: string; handle: string 
             <p className={styles.sub}>This permanently erases:</p>
             <ul className={styles.list}>
               <li>your profile and its place on the homepage</li>
-              <li>your interest tags and project memberships</li>
-              <li>projects where you are the only member</li>
+              <li>your interest tags and research memberships</li>
+              <li>research where you are the only member</li>
               <li>your GitHub login link</li>
             </ul>
             <label className={styles.f}>

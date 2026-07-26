@@ -46,31 +46,31 @@ from (select id, row_number() over (order by public_id) as rn from public.people
 join public.fields f
   on f.id = ((p.rn - 1) % 10) + 1 or f.id = (p.rn % 10) + 1;
 
--- -------------------------------------------------------- sample projects ----
-insert into public.projects (public_id, title, description, is_published, created_by) values
+-- ------------------------------------------------------- sample research ----
+insert into public.research (public_id, title, description, is_published, created_by) values
   ('pixel-wall', 'Pixel Wall',
    'A 4×6 meter interactive LED wall in the lab''s entrance. Each tile is a shift-registered RGB module driven by an ESP32 mesh; the wall mirrors the homepage — every lab member gets a pixel.',
    true, (select id from public.people where public_id = 'ipek-dogan')),
   ('seed-garden', 'Seed Garden',
    'Self-watering planter grid with moisture telemetry, grown from the biodesign bench.',
    false, (select id from public.people where public_id = 'ipek-dogan'));
--- (the after-insert trigger already added each creator to project_members)
+-- (the after-insert trigger already added each creator to research_members)
 
-insert into public.project_members (project_id, person_id, role)
+insert into public.research_members (research_id, person_id, role)
 select pr.id, pe.id, v.role
 from (values ('pixel-wall', 'elif-demir', 'Electronics'),
              ('pixel-wall', 'arda-gunes', 'Firmware')) as v(pslug, mslug, role)
-join public.projects pr on pr.public_id = v.pslug
+join public.research pr on pr.public_id = v.pslug
 join public.people pe on pe.public_id = v.mslug;
 
-insert into public.project_fields (project_id, field_id)
+insert into public.research_fields (research_id, field_id)
 select pr.id, f.id
-from public.projects pr
+from public.research pr
 join public.fields f on (pr.public_id, f.name) in
   (('pixel-wall', 'Electronics'), ('pixel-wall', 'CS & AI'), ('seed-garden', 'Biodesign'));
 
-insert into public.project_links (project_id, label, url)
+insert into public.research_links (research_id, label, url)
 select pr.id, v.label, v.url
 from (values ('pixel-wall', 'GitHub repo', 'https://github.com/HisarCS/pixel-wall'),
              ('pixel-wall', 'Build log',   'https://example.com/blog/pixel-wall')) as v(pslug, label, url)
-join public.projects pr on pr.public_id = v.pslug;
+join public.research pr on pr.public_id = v.pslug;

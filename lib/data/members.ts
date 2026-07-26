@@ -42,7 +42,7 @@ export async function getMember(publicId: string): Promise<Member | null> {
       .select(
         `public_id, full_name, graduation_year, bio, avatar_url, avatar_color,
        resume_url, github_username, fields!person_fields(name),
-       project_members(role, projects(public_id, title, is_published))`,
+       research_members(role, research(public_id, title, is_published))`,
       )
       .eq('public_id', publicId)
       .single());
@@ -62,9 +62,9 @@ export async function getMember(publicId: string): Promise<Member | null> {
     resumeUrl: d.resume_url,
     githubUsername: d.github_username,
     fields: (d.fields ?? []).map((f: any) => f.name),
-    projects: (d.project_members ?? [])
-      .map((pm: any) => pm.projects)
-      .filter((pr: any) => pr && pr.is_published) // RLS hides drafts; belt & suspenders
-      .map((pr: any) => ({ publicId: pr.public_id, title: pr.title })),
+    research: (d.research_members ?? [])
+      .map((rm: any) => rm.research)
+      .filter((r: any) => r && r.is_published) // RLS hides drafts; belt & suspenders
+      .map((r: any) => ({ publicId: r.public_id, title: r.title })),
   };
 }

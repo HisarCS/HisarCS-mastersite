@@ -2,14 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { getProject, projectFileUrl } from '@/lib/data/projects';
-import { mockProject } from '@/lib/data/mock';
+import { getResearchEntry, researchFileUrl } from '@/lib/data/researchEntries';
+import { mockResearchEntry } from '@/lib/data/mock';
 import { currentEnv } from '@/lib/env';
 import { safeUrl } from '@/lib/util/html';
-import type { Project } from '@/lib/domain/types';
+import type { ResearchEntry } from '@/lib/domain/types';
 import { SiteHeader } from './SiteHeader';
 import { Unavailable } from './Unavailable';
-import styles from './ProjectView.module.css';
+import styles from './ResearchEntryView.module.css';
 
 const COLORS = ['#e8542f', '#2f6fe8', '#28a06d', '#c4a11f', '#9048c8', '#d2447e'];
 
@@ -25,20 +25,21 @@ const initials = (s: string) =>
 const colorFor = (s: string) =>
   COLORS[[...String(s)].reduce((a, c) => a + c.charCodeAt(0), 0) % COLORS.length]!;
 
-type State = { status: 'loading' } | { status: 'ok'; project: Project } | { status: 'missing' };
+type State = { status: 'loading' } | { status: 'ok'; entry: ResearchEntry } | { status: 'missing' };
 
-/** Public project page — read-only view. When `embedded` (homepage detail modal)
- *  the shared header is omitted. */
-export function ProjectView({ id, embedded = false }: { id: string; embedded?: boolean }) {
+/** Member-created research entry page (DB-backed). When `embedded` (homepage
+ *  detail modal) the shared header is omitted. Curated research is rendered by
+ *  ResearchView; this handles the member/DB entries. */
+export function ResearchEntryView({ id, embedded = false }: { id: string; embedded?: boolean }) {
   const [state, setState] = useState<State>({ status: 'loading' });
 
   useEffect(() => {
     let alive = true;
     void (async () => {
-      const project = await getProject(id);
+      const entry = await getResearchEntry(id);
       if (!alive) return;
-      if (project) setState({ status: 'ok', project });
-      else if (currentEnv() === 'local') setState({ status: 'ok', project: mockProject(id) });
+      if (entry) setState({ status: 'ok', entry });
+      else if (currentEnv() === 'local') setState({ status: 'ok', entry: mockResearchEntry(id) });
       else setState({ status: 'missing' });
     })();
     return () => {
@@ -47,7 +48,7 @@ export function ProjectView({ id, embedded = false }: { id: string; embedded?: b
   }, [id]);
 
   useEffect(() => {
-    if (state.status === 'ok') document.title = `${state.project.title} — ideaLab`;
+    if (state.status === 'ok') document.title = `${state.entry.title} — ideaLab`;
   }, [state]);
 
   if (state.status === 'loading') {
@@ -66,13 +67,13 @@ export function ProjectView({ id, embedded = false }: { id: string; embedded?: b
   if (state.status === 'missing') {
     return (
       <Unavailable
-        heading="This project isn’t available"
+        heading="This research isn’t available"
         detail="It may be a draft, may have been removed, or the link may be mistyped."
       />
     );
   }
 
-  const p = state.project;
+  const p = state.entry;
 
   return (
     <>
@@ -141,7 +142,7 @@ export function ProjectView({ id, embedded = false }: { id: string; embedded?: b
             <div className={styles.files}>
               {p.files.map((f) => {
                 const label = f.caption || String(f.storagePath).split('/').pop() || 'file';
-                const url = projectFileUrl(f.storagePath);
+                const url = researchFileUrl(f.storagePath);
                 return (
                   <a
                     key={f.id}

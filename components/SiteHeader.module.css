@@ -2,6 +2,10 @@
   max-width: 980px;
   margin: 0 auto;
   padding: 24px 36px;
+  /* sits above full-viewport overlays (the homepage pixel-mark stage is
+     fixed inset:0) so the nav stays clickable everywhere */
+  position: relative;
+  z-index: 40;
 }
 
 .nav {

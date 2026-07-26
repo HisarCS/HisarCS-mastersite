@@ -1,7 +1,7 @@
 import { getSupabase } from '../supabase';
 import { mapProfile, PROFILE_SELECT } from './auth';
 import { diffFieldIds } from '../domain/fields';
-import type { Field, MyProfile, MyProjectSummary } from '../domain/types';
+import type { Field, MyProfile, MyResearchSummary } from '../domain/types';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -166,15 +166,15 @@ export async function isPublicIdAvailable(candidate: string): Promise<boolean> {
   }
 }
 
-/** Projects the member belongs to (dashboard list). */
-export async function listMyProjects(personId: string): Promise<MyProjectSummary[]> {
+/** Research entries the member belongs to (dashboard list). */
+export async function listMyResearch(personId: string): Promise<MyResearchSummary[]> {
   const sb = getSupabase();
   if (!sb) return [];
   try {
     const { data, error } = await sb
-      .from('projects')
-      .select('public_id, title, is_published, project_members!inner(person_id)')
-      .eq('project_members.person_id', personId)
+      .from('research')
+      .select('public_id, title, is_published, research_members!inner(person_id)')
+      .eq('research_members.person_id', personId)
       .order('title');
     if (error || !data) return [];
     return data.map((p: any) => ({

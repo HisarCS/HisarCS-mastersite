@@ -35,8 +35,9 @@ Ensure Docker is running (`docker ps` should succeed).
 
 ## Tier 1 — UI, read-only pages, data layer (no auth)
 
-Covers the homepage pixel mark, Members/Projects carousels + detail modal, deep
-links, and the `/person?id=` / `/project?id=` pages against seeded data.
+Covers the homepage pixel mark, the `/members` and `/research` card-grid
+directories, and the `/person?id=` / `/research?id=` detail pages against seeded
+data.
 
 ```bash
 npm run stack     # start local Supabase (applies migrations + seed.sql)

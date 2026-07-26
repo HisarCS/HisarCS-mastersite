@@ -4,7 +4,7 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: 'ideaLab',
-  description: 'HisarCS ideaLab — makers, their profiles, and their projects.',
+  description: 'HisarCS ideaLab — makers, their profiles, and their research.',
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
