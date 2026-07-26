@@ -93,6 +93,9 @@ export function MemberArea() {
       <Link href="/" className={styles.wordmark}>
         idea<span>Lab</span>
       </Link>
+      <Link href="/members" className={styles.research}>
+        Members
+      </Link>
       <Link href="/research" className={styles.research}>
         Research
       </Link>

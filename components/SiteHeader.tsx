@@ -13,6 +13,9 @@ export function SiteHeader() {
         <Link href="/" className={styles.wordmark}>
           idea<span>Lab</span>
         </Link>
+        <Link href="/members" className={styles.link}>
+          Members
+        </Link>
         <Link href="/research" className={styles.link}>
           Research
         </Link>
