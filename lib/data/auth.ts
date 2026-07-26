@@ -1,4 +1,5 @@
 import { getSupabase } from '../supabase';
+import { purgeMyStorage } from './storage';
 import type { MyProfile } from '../domain/types';
 import type { Verdict } from '../domain/memberState';
 
@@ -137,6 +138,29 @@ export async function getMyProfile(userId: string): Promise<MyProfile | null> {
   } catch {
     return null;
   }
+}
+
+/**
+ * Permanently delete the signed-in member's account. Purges storage first (SQL
+ * can't remove storage objects — migration 0003), then the RPC erases the person
+ * row + tags + memberships + solo projects + the auth user, then signs out
+ * locally (the server session is already gone). Returns an error message or null.
+ */
+export async function deleteMyAccount(userId: string): Promise<string | null> {
+  const sb = getSupabase();
+  if (!sb) return 'no backend';
+  await purgeMyStorage(userId);
+  try {
+    const { error } = await sb.rpc('delete_my_account');
+    if (error) {
+      console.error('ideaLab: delete_my_account failed', error);
+      return error.message;
+    }
+  } catch (e: any) {
+    return e?.message ?? 'delete failed';
+  }
+  await signOutLocal();
+  return null;
 }
 
 /** Mint the minimal person row on a verified first login. RLS requires org

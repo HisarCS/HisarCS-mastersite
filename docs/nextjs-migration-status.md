@@ -138,15 +138,16 @@ whole file.** New data fns go in `lib/data/profile.ts` (create it); UI in
   (upsert) → people.update resume_url. `importGithubAvatar` (from session avatar_url),
   `resetToInitials` (clear avatar_url). Add `lib/data/storage.ts` (uploadAvatar,
   uploadResume, purgeMyStorage). NOTE storage RLS gates on `is_org_member()` (ADR-0017).
-- **4e — delete account** (member.html 340-405 markup, 1112-1164). Danger zone → modal
-  → confirm by typing GitHub handle (case-insensitive, tolerate leading @; use plain
-  toLowerCase NOT Turkish locale — see the fix already made in old member.html). Flow:
-  `purgeMyStorage()` (list+remove avatars/resumes — SQL can't delete storage, migration
-  0003/0004) THEN `sb.rpc('delete_my_account')` THEN `signOutLocal()` → signedout.
-  Reuse `signOutLocal` from `lib/data/auth.ts`.
+- **4e DONE** — `components/member/DangerZone.tsx` (+ .module.css): danger panel +
+  confirm modal (type GitHub handle, Cancel/Delete forever, busy-locked). Matching via
+  `lib/util/handle.ts` `handlesMatch`/`normalizeHandle` (trim, drop @, PLAIN toLowerCase
+  NOT Turkish locale) — pure + unit-tested (`tests/unit/handle.test.ts`, 6 tests).
+  `lib/data/auth.ts` gained `deleteMyAccount(userId)`: `purgeMyStorage` → rpc
+  `delete_my_account` → `signOutLocal` (bubbles onAuthChange → signed-out screen).
+  Rendered by Dashboard as the last panel (`handle = profile.githubUsername ?? ghLogin`).
 
-After 4e: smoke-test the full member flow with a real GitHub session against the
-deployed function, then do the final cleanup and merge to main.
+**PHASE 4 COMPLETE** (4a-4e). 47 unit tests green. After 4e: smoke-test the full member
+flow with a real GitHub session against the deployed function, then final cleanup + merge.
 
 ### Final cleanup (after Phase 4)
 - Delete old root HTML (`index/person/project/member.html`), `config.js`, `vendor/`,

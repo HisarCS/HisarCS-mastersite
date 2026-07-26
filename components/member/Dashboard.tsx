@@ -12,6 +12,7 @@ import {
   updateMyProfile,
 } from '@/lib/data/profile';
 import { setAvatarUrl, uploadAvatar, uploadResume } from '@/lib/data/storage';
+import { DangerZone } from './DangerZone';
 import { cleanYearInput, gradYearMax, GRAD_YEAR_MIN, isValidGradYear } from '@/lib/util/year';
 import { thumbUrl } from '@/lib/util/media';
 import type { Field, MyProfile, MyProjectSummary } from '@/lib/domain/types';
@@ -435,6 +436,8 @@ export function Dashboard({
           ))
         )}
       </div>
+
+      <DangerZone userId={userId} handle={profile.githubUsername ?? ghLogin} />
     </>
   );
 }
