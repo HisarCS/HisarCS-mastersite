@@ -33,3 +33,32 @@
 .link:hover {
   color: var(--ink);
 }
+
+/* Signed-in slot: the member's GitHub handle (→ their editable member page)
+   followed by Sign out. Replaces "One of Us" once a session exists. */
+.session {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+.handle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  text-decoration: none;
+}
+.handle:hover {
+  color: var(--accent);
+}
+.signOut {
+  font: inherit;
+  font-size: 13px;
+  color: var(--muted);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+.signOut:hover {
+  color: var(--ink);
+}

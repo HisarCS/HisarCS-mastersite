@@ -226,6 +226,22 @@
   border-color: var(--ink);
 }
 
+/* "start a new research entry" row at the foot of the My research panel */
+.newRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  flex-wrap: wrap;
+}
+.newRow input {
+  flex: 1;
+  min-width: 180px;
+  width: auto !important;
+}
+
 .proj {
   display: flex;
   align-items: center;

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   createField,
   isPublicIdAvailable,
@@ -13,6 +14,7 @@ import {
   updateMyProfile,
 } from '@/lib/data/profile';
 import { setAvatarUrl, uploadAvatar, uploadResume } from '@/lib/data/storage';
+import { createResearchEntry } from '@/lib/data/researchEntries';
 import { DangerZone } from './DangerZone';
 import { cleanYearInput, gradYearMax, GRAD_YEAR_MIN, isValidGradYear } from '@/lib/util/year';
 import { thumbUrl } from '@/lib/util/media';
@@ -48,6 +50,7 @@ export function Dashboard({
   ghLogin: string;
   ghAvatarUrl: string | null;
 }) {
+  const router = useRouter();
   const [name, setName] = useState(profile.fullName);
   const [bio, setBio] = useState(profile.bio);
   const [resume, setResume] = useState(profile.resumeUrl ?? '');
@@ -62,6 +65,8 @@ export function Dashboard({
   const [slugHint, setSlugHint] = useState('');
   const [avatarHint, setAvatarHint] = useState('');
   const [resumeHint, setResumeHint] = useState('');
+  const [newResearch, setNewResearch] = useState('');
+  const [researchHint, setResearchHint] = useState('');
   const [busy, setBusy] = useState(false);
   const slugTimer = useRef<number | undefined>(undefined);
   const avatarInput = useRef<HTMLInputElement>(null);
@@ -204,6 +209,27 @@ export function Dashboard({
       });
       setAvatarHint('✓ back to your initials tile');
     }
+  };
+
+  /** Create a draft research entry and go straight to its editor. The DB
+   *  generates the public_id and adds you as its first member. */
+  const startResearch = async () => {
+    const t = newResearch.trim();
+    if (!t) {
+      setResearchHint('✕ give it a title first');
+      return;
+    }
+    setBusy(true);
+    setResearchHint('creating…');
+    const { publicId, error } = await createResearchEntry(t, profile.id);
+    setBusy(false);
+    if (error || !publicId) {
+      setResearchHint(`✕ ${error ?? 'could not create'}`);
+      return;
+    }
+    setNewResearch('');
+    setResearchHint('');
+    router.push(`/research/edit?id=${encodeURIComponent(publicId)}`);
   };
 
   const onResumeFile = async (file: File | undefined) => {
@@ -431,7 +457,7 @@ export function Dashboard({
             <Link
               key={p.publicId}
               className={styles.proj}
-              href={`/research?id=${encodeURIComponent(p.publicId)}`}
+              href={`/research/edit?id=${encodeURIComponent(p.publicId)}`}
             >
               <div className={styles.pav}>{initialsOf(p.title)}</div>
               <div className={styles.pt}>{p.title}</div>
@@ -441,6 +467,28 @@ export function Dashboard({
               </span>
             </Link>
           ))
+        )}
+
+        <div className={styles.newRow}>
+          <input
+            value={newResearch}
+            onChange={(e) => setNewResearch(e.target.value)}
+            placeholder="New research title"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                void startResearch();
+              }
+            }}
+          />
+          <button className={styles.btn} onClick={() => void startResearch()} disabled={busy}>
+            + New research
+          </button>
+        </div>
+        {researchHint && (
+          <div className={`${styles.sub} ${researchHint.startsWith('✕') ? styles.bad : ''}`}>
+            {researchHint}
+          </div>
         )}
       </div>
 

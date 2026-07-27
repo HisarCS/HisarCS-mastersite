@@ -80,6 +80,7 @@ export interface ResearchMemberRef {
 }
 
 export interface ResearchLink {
+  id: string;
   label: string;
   url: string;
   sortOrder: number;
@@ -102,6 +103,8 @@ export interface ResearchEntry {
   avatarUrl: string | null;
   published: boolean;
   fields: string[];
+  /** field ids, for the editor's tag chips (names are in `fields`) */
+  fieldIds: number[];
   members: ResearchMemberRef[];
   links: ResearchLink[];
   files: ResearchFile[];

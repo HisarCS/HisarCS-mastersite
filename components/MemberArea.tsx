@@ -15,6 +15,7 @@ import type { MemberScreen } from '@/lib/domain/memberState';
 import type { MyProfile } from '@/lib/domain/types';
 import { Onboarding } from './member/Onboarding';
 import { Dashboard } from './member/Dashboard';
+import { SiteHeader } from './SiteHeader';
 import styles from './MemberArea.module.css';
 
 /**
@@ -88,31 +89,11 @@ export function MemberArea() {
     if (err) setSigninHint(`✕ ${err} — is the GitHub provider configured? (README §4 / §7)`);
   };
 
-  const header = (
-    <header className={styles.header}>
-      <Link href="/" className={styles.wordmark}>
-        idea<span>Lab</span>
-      </Link>
-      <Link href="/members" className={styles.research}>
-        Members
-      </Link>
-      <Link href="/research" className={styles.research}>
-        Research
-      </Link>
-      {(screen === 'onboarding' || screen === 'dashboard') && (
-        <span className={styles.session}>
-          signed in as <strong>@{ghLogin}</strong>
-          <button className={styles.linkBtn} onClick={() => void signOutLocal().then(resolve)}>
-            sign out
-          </button>
-        </span>
-      )}
-    </header>
-  );
-
   return (
     <>
-      {header}
+      {/* one shared header everywhere — it shows @handle + Sign out on its own
+          once a session exists (see SiteHeader) */}
+      <SiteHeader />
       <main className={styles.main}>
         {screen === 'loading' && <div className={styles.centerWrap} aria-busy="true" />}
 
