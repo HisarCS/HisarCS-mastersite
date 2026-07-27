@@ -216,6 +216,21 @@
   border-color: transparent;
 }
 
+.lock {
+  color: var(--muted);
+  font-weight: 500;
+  margin-left: 6px;
+  font-size: 11.5px;
+}
+.slugRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.slugRow .sub {
+  white-space: nowrap;
+}
+
 .chips {
   display: flex;
   flex-wrap: wrap;
