@@ -107,10 +107,24 @@ export function ResearchEntryView({ id, embedded = false }: { id: string; embedd
           </div>
         </div>
 
-        {p.members.length > 0 && (
+        {(p.members.length > 0 || p.externalAuthors.length > 0) && (
           <section className={styles.section}>
             <h2 className={styles.h2}>Members</h2>
             <div className={styles.members}>
+              {/* collaborators without an account here are credited the same
+                  way, just not linked — there's no profile to open */}
+              {p.externalAuthors.map((a, i) => (
+                <span key={`${a.name}-${i}`} className={styles.member}>
+                  <span className={styles.ma} style={{ background: colorFor(a.name) }}>
+                    {initials(a.name)}
+                  </span>
+                  <span>
+                    <span className={styles.mn}>{a.name}</span>
+                    <br />
+                    <span className={styles.mr}>{a.role || 'Member'}</span>
+                  </span>
+                </span>
+              ))}
               {p.members.map((m) => (
                 <Link
                   key={m.publicId}

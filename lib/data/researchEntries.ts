@@ -1,6 +1,6 @@
 import { getSupabase } from '../supabase';
 import { diffFieldIds } from '../domain/fields';
-import type { ResearchEntry, ResearchEntryCard } from '../domain/types';
+import type { ResearchEntry, ResearchEntryCard, ResearchExternalAuthor } from '../domain/types';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -44,7 +44,7 @@ export async function getResearchEntry(publicId: string): Promise<ResearchEntry 
     ({ data, error } = await sb
       .from('research')
       .select(
-        `id, public_id, title, description, avatar_url, is_published,
+        `id, public_id, title, description, avatar_url, is_published, external_authors,
        research_fields(field_id, fields(name)),
        research_members(role, people(id, public_id, full_name, avatar_color)),
        research_links(id, label, url, sort_order),
@@ -66,6 +66,9 @@ export async function getResearchEntry(publicId: string): Promise<ResearchEntry 
     published: d.is_published,
     fields: (d.research_fields ?? []).map((f: any) => f.fields?.name).filter(Boolean),
     fieldIds: (d.research_fields ?? []).map((f: any) => f.field_id),
+    externalAuthors: Array.isArray(d.external_authors)
+      ? d.external_authors.map((a: any) => ({ name: String(a?.name ?? ''), role: a?.role }))
+      : [],
     members: (d.research_members ?? [])
       .filter((m: any) => m.people)
       .map((m: any) => ({
@@ -253,5 +256,43 @@ export async function removeResearchMember(dbId: string, personId: string): Prom
     return error?.message ?? null;
   } catch (e: any) {
     return e?.message ?? 'could not remove member';
+  }
+}
+
+/** Replace the external-collaborator list (display-only credits). */
+export async function setExternalAuthors(
+  dbId: string,
+  authors: ResearchExternalAuthor[],
+): Promise<string | null> {
+  const sb = getSupabase();
+  if (!sb) return 'no backend';
+  try {
+    const { error } = await sb
+      .from('research')
+      .update({ external_authors: authors })
+      .eq('id', dbId);
+    return error?.message ?? null;
+  } catch (e: any) {
+    return e?.message ?? 'could not save collaborators';
+  }
+}
+
+/** Change a member's role. Any member may edit any other member's role. */
+export async function updateResearchMemberRole(
+  dbId: string,
+  personId: string,
+  role: string,
+): Promise<string | null> {
+  const sb = getSupabase();
+  if (!sb) return 'no backend';
+  try {
+    const { error } = await sb
+      .from('research_members')
+      .update({ role: role || 'Member' })
+      .eq('research_id', dbId)
+      .eq('person_id', personId);
+    return error?.message ?? null;
+  } catch (e: any) {
+    return e?.message ?? 'could not save role';
   }
 }

@@ -125,6 +125,31 @@
 .fileName:hover {
   color: var(--accent);
 }
+/* inline, low-chrome role editor on each member row (saves on blur) */
+.roleInput {
+  width: 160px !important;
+  padding: 6px 10px !important;
+  font-size: 13px !important;
+  background: transparent !important;
+  border-color: transparent !important;
+}
+.roleInput:hover {
+  border-color: var(--line) !important;
+}
+.memberRow .ll {
+  flex: 1;
+}
+/* members with a profile are links; outside collaborators are plain text —
+   that difference is the only marker, by design */
+.memberLink {
+  color: var(--ink);
+  text-decoration: none;
+}
+.memberLink:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
 .select {
   padding: 10px 12px;
   font: inherit;

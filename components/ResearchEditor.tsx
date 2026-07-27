@@ -15,11 +15,14 @@ import {
   getResearchEntry,
   removeResearchMember,
   researchFileUrl,
+  setExternalAuthors,
   setResearchPublished,
   syncResearchFields,
   updateResearchEntry,
+  updateResearchMemberRole,
 } from '@/lib/data/researchEntries';
-import type { Field, MemberCard, ResearchEntry } from '@/lib/domain/types';
+import type { Field, MemberCard, ResearchEntry, ResearchExternalAuthor } from '@/lib/domain/types';
+import { MemberPicker } from './member/MemberPicker';
 import { SiteHeader } from './SiteHeader';
 import { Unavailable } from './Unavailable';
 import styles from './ResearchEditor.module.css';
@@ -52,8 +55,6 @@ export function ResearchEditor({ id }: { id: string }) {
   const [fileHint, setFileHint] = useState('');
   const [memberHint, setMemberHint] = useState('');
   const [people, setPeople] = useState<MemberCard[]>([]);
-  const [pickPerson, setPickPerson] = useState('');
-  const [pickRole, setPickRole] = useState('');
   const [busy, setBusy] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -203,21 +204,61 @@ export function ResearchEditor({ id }: { id: string }) {
     await load();
   };
 
-  const addMember = async () => {
-    if (!pickPerson) return;
+  const addMember = async (personId: string, role: string) => {
     setBusy(true);
     setMemberHint('adding…');
-    const err = await addResearchMember(entry.dbId, pickPerson, pickRole.trim());
+    const err = await addResearchMember(entry.dbId, personId, role);
     setBusy(false);
     if (err) {
       setMemberHint(`✕ ${err}`);
       return;
     }
-    setPickPerson('');
-    setPickRole('');
     setMemberHint('');
     await load();
   };
+
+  /** Save a member's role on blur — skipped when nothing changed. */
+  const saveRole = async (personId: string, role: string, before: string) => {
+    if (role.trim() === before.trim()) return;
+    setBusy(true);
+    const err = await updateResearchMemberRole(entry.dbId, personId, role.trim());
+    setBusy(false);
+    setMemberHint(err ? `✕ ${err}` : '✓ role saved');
+    await load();
+  };
+
+  // --- outside collaborators: a jsonb array on the research row, rewritten whole ---
+  const writeExternals = async (next: ResearchExternalAuthor[]) => {
+    setBusy(true);
+    const err = await setExternalAuthors(entry.dbId, next);
+    setBusy(false);
+    if (err) {
+      setMemberHint(`✕ ${err}`);
+      return;
+    }
+    setMemberHint('');
+    await load();
+  };
+
+  const addExternal = async (name: string, role: string) => {
+    if (entry.externalAuthors.some((a) => a.name.toLowerCase() === name.toLowerCase())) {
+      setMemberHint('✕ that collaborator is already credited');
+      return;
+    }
+    await writeExternals([...entry.externalAuthors, role ? { name, role } : { name }]);
+  };
+
+  const saveExternalRole = async (index: number, role: string) => {
+    const current = entry.externalAuthors[index];
+    if (!current || (current.role ?? '') === role.trim()) return;
+    const next = entry.externalAuthors.map((a, i) =>
+      i === index ? { name: a.name, ...(role.trim() ? { role: role.trim() } : {}) } : a,
+    );
+    await writeExternals(next);
+  };
+
+  const removeExternal = async (index: number) =>
+    writeExternals(entry.externalAuthors.filter((_, i) => i !== index));
 
   const removeMember = async (personId: string) => {
     // the DB deletes the entry when its last member leaves — never offer that here
@@ -484,52 +525,80 @@ export function ResearchEditor({ id }: { id: string }) {
         <div className={styles.panel}>
           <h2>Members</h2>
           <p className={styles.sub}>
-            Everyone listed here can edit this research. Removing the last member deletes the entry,
-            so at least one must remain.
+            Everyone here has equal rights: any member can edit this research, change anyone&rsquo;s
+            role, and add or remove members. Removing the last member deletes the entry, so at least
+            one must remain. Names that link to a profile belong to ideaLab members; anyone else is
+            credited here but has no editing rights.
           </p>
+
           {entry.members.map((m) => (
             <div key={m.id} className={styles.memberRow}>
-              <span className={styles.ll}>{m.name}</span>
-              <span className={styles.lu}>{m.role}</span>
+              <Link
+                className={`${styles.ll} ${styles.memberLink}`}
+                href={`/person?id=${encodeURIComponent(m.publicId)}`}
+              >
+                {m.name}
+              </Link>
+              <input
+                className={styles.roleInput}
+                defaultValue={m.role}
+                placeholder="Role"
+                disabled={busy}
+                onBlur={(e) => void saveRole(m.id, e.target.value, m.role)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') e.currentTarget.blur();
+                }}
+              />
               <button
                 className={styles.remove}
                 onClick={() => removeMember(m.id)}
                 disabled={busy || entry.members.length < 2}
                 title={
-                  entry.members.length < 2 ? 'the last member can’t be removed' : `Remove ${m.name}`
+                  entry.members.length < 2
+                    ? 'the last member can\u2019t be removed'
+                    : `Remove ${m.name}`
                 }
                 aria-label={`Remove ${m.name}`}
               >
-                ✕
+                &#10005;
               </button>
             </div>
           ))}
-          <div className={styles.linkAdd}>
-            <select
-              value={pickPerson}
-              onChange={(e) => setPickPerson(e.target.value)}
-              className={styles.select}
-            >
-              <option value="">Add a member…</option>
-              {people
-                .filter((p) => !entry.members.some((m) => m.id === p.id))
-                .map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-            </select>
-            <input
-              placeholder="Role (e.g. Electronics)"
-              value={pickRole}
-              onChange={(e) => setPickRole(e.target.value)}
-            />
-            <button className={styles.btnGhost} onClick={addMember} disabled={busy || !pickPerson}>
-              Add member
-            </button>
-          </div>
+
+          {entry.externalAuthors.map((a, i) => (
+            <div key={`${a.name}-${i}`} className={styles.memberRow}>
+              {/* no account here → plain text; the hyperlink above is what
+                  distinguishes a member with a profile */}
+              <span className={styles.ll}>{a.name}</span>
+              <input
+                className={styles.roleInput}
+                defaultValue={a.role ?? ''}
+                placeholder="Role"
+                disabled={busy}
+                onBlur={(e) => void saveExternalRole(i, e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') e.currentTarget.blur();
+                }}
+              />
+              <button
+                className={styles.remove}
+                onClick={() => removeExternal(i)}
+                disabled={busy}
+                aria-label={`Remove ${a.name}`}
+              >
+                &#10005;
+              </button>
+            </div>
+          ))}
+
+          <MemberPicker
+            people={people.filter((p) => !entry.members.some((m) => m.id === p.id))}
+            onPickMember={(personId, role) => void addMember(personId, role)}
+            onAddExternal={(name, role) => void addExternal(name, role)}
+            disabled={busy}
+          />
           {memberHint && (
-            <div className={`${styles.sub} ${memberHint.startsWith('✕') ? styles.bad : ''}`}>
+            <div className={`${styles.sub} ${memberHint.startsWith('\u2715') ? styles.bad : ''}`}>
               {memberHint}
             </div>
           )}

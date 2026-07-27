@@ -1,0 +1,78 @@
+.row {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+.field {
+  position: relative;
+  flex: 2;
+  min-width: 200px;
+}
+.field input {
+  width: 100%;
+}
+.role {
+  flex: 1;
+  min-width: 140px;
+}
+
+.list {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 30;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+  max-height: 260px;
+  overflow-y: auto;
+}
+.option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  font-size: 14px;
+  padding: 8px 10px;
+  border: none;
+  background: none;
+  border-radius: 7px;
+  cursor: pointer;
+  color: var(--ink);
+}
+.option:hover,
+.option.active {
+  background: rgba(0, 0, 0, 0.06);
+}
+.empty {
+  padding: 8px 10px;
+  font-size: 13.5px;
+  color: var(--muted);
+}
+
+.add {
+  font: inherit;
+  font-size: 14.5px;
+  font-weight: 600;
+  padding: 11px 20px;
+  border-radius: 11px;
+  cursor: pointer;
+  background: none;
+  border: 1.5px solid var(--line);
+  color: var(--ink);
+}
+.add:hover:not(:disabled) {
+  border-color: var(--ink);
+}
+.add:disabled {
+  opacity: 0.6;
+  cursor: default;
+}

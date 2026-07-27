@@ -81,6 +81,16 @@ export interface ResearchMemberRef {
   color: string | null;
 }
 
+/**
+ * A collaborator with no account here (outside co-author, visiting researcher).
+ * Display-only credit stored on `research.external_authors` — see the migration
+ * for why these aren't `research_members` rows.
+ */
+export interface ResearchExternalAuthor {
+  name: string;
+  role?: string;
+}
+
 export interface ResearchLink {
   id: string;
   label: string;
@@ -108,6 +118,8 @@ export interface ResearchEntry {
   /** field ids, for the editor's tag chips (names are in `fields`) */
   fieldIds: number[];
   members: ResearchMemberRef[];
+  /** collaborators without an account here — display-only credits */
+  externalAuthors: ResearchExternalAuthor[];
   links: ResearchLink[];
   files: ResearchFile[];
 }
