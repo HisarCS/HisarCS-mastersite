@@ -110,3 +110,63 @@ export async function purgeMyStorage(userId: string): Promise<void> {
     }
   }
 }
+
+/**
+ * Upload a research file (image or PDF) into `research-files/{researchId}/…`
+ * and record it in `research_files`. Storage RLS keys off the first path
+ * segment (`is_project_editor(researchId)`), so the folder name must be the
+ * entry's id. Images are optimized client-side like avatars; PDFs upload as-is.
+ */
+export async function uploadResearchFile(
+  researchId: string,
+  file: File,
+  sortOrder = 0,
+): Promise<{ error: string | null }> {
+  const isPdf = file.type === 'application/pdf';
+  const spec = isPdf ? UPLOAD_SPECS.researchPdf : UPLOAD_SPECS.researchImage;
+  const bad = checkFile(file, spec);
+  if (bad) return { error: bad };
+  const sb = getSupabase();
+  if (!sb) return { error: 'no backend' };
+  try {
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '-').slice(-60);
+    const path = `${researchId}/${Date.now()}-${safeName}`;
+    // maxDim only exists on the image spec, so reference it directly
+    const body: Blob = isPdf
+      ? file
+      : await optimizeImage(file, UPLOAD_SPECS.researchImage.maxDim, {});
+    const { error: upErr } = await sb.storage.from('research-files').upload(path, body, {
+      upsert: false,
+      cacheControl: '31536000',
+      contentType: isPdf ? 'application/pdf' : 'image/jpeg',
+    });
+    if (upErr) throw upErr;
+    const { error } = await sb.from('research_files').insert({
+      research_id: researchId,
+      storage_path: path,
+      kind: isPdf ? 'pdf' : 'image',
+      caption: file.name,
+      sort_order: sortOrder,
+    });
+    if (error) throw error;
+    return { error: null };
+  } catch (e: any) {
+    return { error: e?.message ?? 'upload failed' };
+  }
+}
+
+/** Remove a research file: the storage object first, then its metadata row. */
+export async function deleteResearchFile(
+  fileId: string,
+  storagePath: string,
+): Promise<string | null> {
+  const sb = getSupabase();
+  if (!sb) return 'no backend';
+  try {
+    await sb.storage.from('research-files').remove([storagePath]);
+    const { error } = await sb.from('research_files').delete().eq('id', fileId);
+    return error?.message ?? null;
+  } catch (e: any) {
+    return e?.message ?? 'could not remove file';
+  }
+}
