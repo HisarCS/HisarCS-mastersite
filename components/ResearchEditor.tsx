@@ -1,20 +1,25 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getAuthUser, getMyProfile } from '@/lib/data/auth';
 import { listFields, createField } from '@/lib/data/profile';
+import { listMembers } from '@/lib/data/members';
+import { uploadResearchFile, deleteResearchFile } from '@/lib/data/storage';
 import {
   addResearchLink,
+  addResearchMember,
   deleteResearchEntry,
   deleteResearchLink,
   getResearchEntry,
+  removeResearchMember,
+  researchFileUrl,
   setResearchPublished,
   syncResearchFields,
   updateResearchEntry,
 } from '@/lib/data/researchEntries';
-import type { Field, ResearchEntry } from '@/lib/domain/types';
+import type { Field, MemberCard, ResearchEntry } from '@/lib/domain/types';
 import { SiteHeader } from './SiteHeader';
 import { Unavailable } from './Unavailable';
 import styles from './ResearchEditor.module.css';
@@ -29,8 +34,8 @@ type State =
  * Editor for a member-created research entry (`/research/edit?id=<public_id>`).
  * RLS is the real gate — `is_project_editor()` refuses writes from non-members —
  * so this only mirrors that for honest UX. Covers title, description, interest
- * tags, external links, publish state, and deletion. Co-member management and
- * file uploads are not built yet.
+ * tags, external links, files (images/PDFs), co-members, publish state, and
+ * deletion.
  */
 export function ResearchEditor({ id }: { id: string }) {
   const router = useRouter();
@@ -43,8 +48,15 @@ export function ResearchEditor({ id }: { id: string }) {
   const [linkLabel, setLinkLabel] = useState('');
   const [linkUrl, setLinkUrl] = useState('');
   const [hint, setHint] = useState('');
+  const [pubHint, setPubHint] = useState('');
+  const [fileHint, setFileHint] = useState('');
+  const [memberHint, setMemberHint] = useState('');
+  const [people, setPeople] = useState<MemberCard[]>([]);
+  const [pickPerson, setPickPerson] = useState('');
+  const [pickRole, setPickRole] = useState('');
   const [busy, setBusy] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const fileInput = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
     const entry = await getResearchEntry(id);
@@ -65,6 +77,7 @@ export function ResearchEditor({ id }: { id: string }) {
   useEffect(() => {
     void load();
     void listFields().then(setFields);
+    void listMembers().then(setPeople); // candidates for the co-member picker
   }, [load]);
 
   useEffect(() => {
@@ -153,14 +166,74 @@ export function ResearchEditor({ id }: { id: string }) {
 
   const publish = async (next: boolean) => {
     setBusy(true);
+    setPubHint(next ? 'publishing…' : 'unpublishing…');
     const err = await setResearchPublished(entry.dbId, next);
     setBusy(false);
     if (err) {
-      setHint(`✕ ${err}`);
+      setPubHint(`✕ ${err}`);
       return;
     }
     await load();
-    setHint(next ? '✓ published' : '✓ back to draft');
+    setPubHint(next ? '✓ it’s live' : '✓ back to draft');
+  };
+
+  const onFile = async (file: File | undefined) => {
+    if (!file) return;
+    setBusy(true);
+    setFileHint('uploading…');
+    const { error } = await uploadResearchFile(entry.dbId, file, entry.files.length);
+    setBusy(false);
+    if (error) {
+      setFileHint(`✕ ${error}`);
+      return;
+    }
+    setFileHint('✓ uploaded');
+    await load();
+  };
+
+  const removeFile = async (fileId: string, storagePath: string) => {
+    setBusy(true);
+    const err = await deleteResearchFile(fileId, storagePath);
+    setBusy(false);
+    if (err) {
+      setFileHint(`✕ ${err}`);
+      return;
+    }
+    setFileHint('');
+    await load();
+  };
+
+  const addMember = async () => {
+    if (!pickPerson) return;
+    setBusy(true);
+    setMemberHint('adding…');
+    const err = await addResearchMember(entry.dbId, pickPerson, pickRole.trim());
+    setBusy(false);
+    if (err) {
+      setMemberHint(`✕ ${err}`);
+      return;
+    }
+    setPickPerson('');
+    setPickRole('');
+    setMemberHint('');
+    await load();
+  };
+
+  const removeMember = async (personId: string) => {
+    // the DB deletes the entry when its last member leaves — never offer that here
+    if (entry.members.length < 2) {
+      setMemberHint('✕ the last member can’t be removed — delete the research instead');
+      return;
+    }
+    setBusy(true);
+    const err = await removeResearchMember(entry.dbId, personId);
+    setBusy(false);
+    if (err) {
+      setMemberHint(`✕ ${err}`);
+      return;
+    }
+    setMemberHint('');
+    await load();
   };
 
   const addLink = async () => {
@@ -221,13 +294,44 @@ export function ResearchEditor({ id }: { id: string }) {
         <h1 className={styles.h1}>Edit research</h1>
         <p className={styles.sub}>
           Public URL: <code>/research?id={entry.publicId}</code>
-          {entry.published && (
+        </p>
+
+        {/* publish state, explained — mirrors the profile dashboard's notice */}
+        <div className={`${styles.notice} ${entry.published ? styles.liveNote : ''}`}>
+          {entry.published ? (
             <>
-              {' · '}
-              <Link href={`/research?id=${encodeURIComponent(entry.publicId)}`}>view page</Link>
+              <div>
+                This research is <strong>live</strong> — it&apos;s listed on the Research page and
+                anyone can read it.
+              </div>
+              <div className={styles.noticeRow}>
+                <button className={styles.btnGhost} onClick={() => publish(false)} disabled={busy}>
+                  Unpublish
+                </button>
+                <Link
+                  className={styles.btnGhost}
+                  href={`/research?id=${encodeURIComponent(entry.publicId)}`}
+                >
+                  View public page
+                </Link>
+                <span className={styles.sub}>{pubHint}</span>
+              </div>
+            </>
+          ) : (
+            <>
+              <div>
+                This research is a <strong>draft</strong> — only its members can see it. Publish it
+                to list it on the Research page.
+              </div>
+              <div className={styles.noticeRow}>
+                <button className={styles.btn} onClick={() => publish(true)} disabled={busy}>
+                  Publish
+                </button>
+                <span className={styles.sub}>{pubHint}</span>
+              </div>
             </>
           )}
-        </p>
+        </div>
 
         <div className={styles.panel}>
           <label className={styles.f}>TITLE</label>
@@ -269,13 +373,6 @@ export function ResearchEditor({ id }: { id: string }) {
           <div className={styles.actions}>
             <button className={styles.btn} onClick={save} disabled={busy}>
               {busy ? 'Saving…' : 'Save changes'}
-            </button>
-            <button
-              className={styles.btnGhost}
-              onClick={() => publish(!entry.published)}
-              disabled={busy}
-            >
-              {entry.published ? 'Unpublish' : 'Publish'}
             </button>
             <span className={`${styles.sub} ${hint.startsWith('✕') ? styles.bad : styles.ok}`}>
               {hint}
@@ -321,11 +418,121 @@ export function ResearchEditor({ id }: { id: string }) {
         </div>
 
         <div className={styles.panel}>
-          <h2>Members</h2>
-          <div className={styles.sub}>
-            {entry.members.map((m) => `${m.name} (${m.role})`).join(', ') || 'None'}
-            {' — '}adding or removing co-members isn’t built yet.
+          <h2>Files</h2>
+          <p className={styles.sub}>
+            Images (JPEG/PNG/WebP, up to 15 MB — optimized on upload) and PDFs (up to 10 MB). They
+            appear on the public page.
+          </p>
+          {entry.files.length > 0 && (
+            <div className={styles.files}>
+              {entry.files.map((f) => {
+                const url = researchFileUrl(f.storagePath);
+                const label = f.caption || f.storagePath.split('/').pop() || 'file';
+                return (
+                  <div key={f.id} className={styles.fileRow}>
+                    {f.kind === 'image' ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={url} alt="" className={styles.fileThumb} loading="lazy" />
+                    ) : (
+                      <div className={styles.fileThumb}>PDF</div>
+                    )}
+                    <a
+                      className={styles.fileName}
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {label}
+                    </a>
+                    <button
+                      className={styles.remove}
+                      onClick={() => removeFile(f.id, f.storagePath)}
+                      disabled={busy}
+                      aria-label={`Remove ${label}`}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          <div className={styles.actions}>
+            <button
+              className={styles.btnGhost}
+              onClick={() => fileInput.current?.click()}
+              disabled={busy}
+            >
+              Upload image or PDF
+            </button>
+            <span className={`${styles.sub} ${fileHint.startsWith('✕') ? styles.bad : styles.ok}`}>
+              {fileHint}
+            </span>
           </div>
+          <input
+            ref={fileInput}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,application/pdf"
+            hidden
+            onChange={(e) => {
+              void onFile(e.target.files?.[0]);
+              e.target.value = ''; // let the same file be picked again
+            }}
+          />
+        </div>
+
+        <div className={styles.panel}>
+          <h2>Members</h2>
+          <p className={styles.sub}>
+            Everyone listed here can edit this research. Removing the last member deletes the entry,
+            so at least one must remain.
+          </p>
+          {entry.members.map((m) => (
+            <div key={m.id} className={styles.memberRow}>
+              <span className={styles.ll}>{m.name}</span>
+              <span className={styles.lu}>{m.role}</span>
+              <button
+                className={styles.remove}
+                onClick={() => removeMember(m.id)}
+                disabled={busy || entry.members.length < 2}
+                title={
+                  entry.members.length < 2 ? 'the last member can’t be removed' : `Remove ${m.name}`
+                }
+                aria-label={`Remove ${m.name}`}
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+          <div className={styles.linkAdd}>
+            <select
+              value={pickPerson}
+              onChange={(e) => setPickPerson(e.target.value)}
+              className={styles.select}
+            >
+              <option value="">Add a member…</option>
+              {people
+                .filter((p) => !entry.members.some((m) => m.id === p.id))
+                .map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+            </select>
+            <input
+              placeholder="Role (e.g. Electronics)"
+              value={pickRole}
+              onChange={(e) => setPickRole(e.target.value)}
+            />
+            <button className={styles.btnGhost} onClick={addMember} disabled={busy || !pickPerson}>
+              Add member
+            </button>
+          </div>
+          {memberHint && (
+            <div className={`${styles.sub} ${memberHint.startsWith('✕') ? styles.bad : ''}`}>
+              {memberHint}
+            </div>
+          )}
         </div>
 
         <div className={`${styles.panel} ${styles.danger}`}>

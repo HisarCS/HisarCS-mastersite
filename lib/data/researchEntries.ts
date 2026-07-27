@@ -46,7 +46,7 @@ export async function getResearchEntry(publicId: string): Promise<ResearchEntry 
       .select(
         `id, public_id, title, description, avatar_url, is_published,
        research_fields(field_id, fields(name)),
-       research_members(role, people(public_id, full_name, avatar_color)),
+       research_members(role, people(id, public_id, full_name, avatar_color)),
        research_links(id, label, url, sort_order),
        research_files(id, storage_path, kind, caption, sort_order)`,
       )
@@ -69,6 +69,7 @@ export async function getResearchEntry(publicId: string): Promise<ResearchEntry 
     members: (d.research_members ?? [])
       .filter((m: any) => m.people)
       .map((m: any) => ({
+        id: m.people.id,
         publicId: m.people.public_id,
         name: m.people.full_name,
         role: m.role || 'Member',
@@ -212,5 +213,45 @@ export async function deleteResearchEntry(dbId: string): Promise<string | null> 
     return error?.message ?? null;
   } catch (e: any) {
     return e?.message ?? 'could not delete';
+  }
+}
+
+/** Add a co-member (an editor) to a research entry. */
+export async function addResearchMember(
+  dbId: string,
+  personId: string,
+  role: string,
+): Promise<string | null> {
+  const sb = getSupabase();
+  if (!sb) return 'no backend';
+  try {
+    const { error } = await sb
+      .from('research_members')
+      .insert({ research_id: dbId, person_id: personId, role: role || 'Member' });
+    if (error) {
+      return String((error as any).code) === '23505' ? 'they are already a member' : error.message;
+    }
+    return null;
+  } catch (e: any) {
+    return e?.message ?? 'could not add member';
+  }
+}
+
+/**
+ * Remove a co-member. NOTE: a trigger deletes the whole entry when its last
+ * member leaves — callers should refuse to remove the only one.
+ */
+export async function removeResearchMember(dbId: string, personId: string): Promise<string | null> {
+  const sb = getSupabase();
+  if (!sb) return 'no backend';
+  try {
+    const { error } = await sb
+      .from('research_members')
+      .delete()
+      .eq('research_id', dbId)
+      .eq('person_id', personId);
+    return error?.message ?? null;
+  } catch (e: any) {
+    return e?.message ?? 'could not remove member';
   }
 }

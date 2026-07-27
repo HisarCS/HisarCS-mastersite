@@ -73,6 +73,8 @@ export interface Member {
 }
 
 export interface ResearchMemberRef {
+  /** people.id — needed to add/remove the membership row */
+  id: string;
   publicId: string;
   name: string;
   role: string;
