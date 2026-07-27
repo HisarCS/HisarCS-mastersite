@@ -163,6 +163,7 @@ export function mockResearchEntry(id: string): ResearchEntry {
     fieldIds: [],
     members: [],
     externalAuthors: [],
+    page: null,
     description: 'Preview — connect the site to Supabase to load this research.',
     links: [],
     files: [],
