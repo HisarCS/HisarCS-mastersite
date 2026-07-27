@@ -27,6 +27,9 @@ import { SiteHeader } from './SiteHeader';
 import { Unavailable } from './Unavailable';
 import styles from './ResearchEditor.module.css';
 
+/** mirrors the DB CHECK on research.public_id */
+const SLUG_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+
 type State =
   | { status: 'loading' }
   | { status: 'ok'; entry: ResearchEntry }
@@ -45,6 +48,7 @@ export function ResearchEditor({ id }: { id: string }) {
   const [state, setState] = useState<State>({ status: 'loading' });
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [slug, setSlug] = useState('');
   const [fields, setFields] = useState<Field[]>([]);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [newField, setNewField] = useState('');
@@ -71,6 +75,7 @@ export function ResearchEditor({ id }: { id: string }) {
     const amEditor = !!me && entry.members.some((m) => m.publicId === me.publicId);
     setTitle(entry.title);
     setDescription(entry.description);
+    setSlug(entry.publicId);
     setSelected(new Set(entry.fieldIds));
     setState(amEditor ? { status: 'ok', entry } : { status: 'denied' });
   }, [id]);
@@ -147,11 +152,17 @@ export function ResearchEditor({ id }: { id: string }) {
       setHint('✕ a title is required');
       return;
     }
+    const nextSlug = slug.trim();
+    if (!SLUG_RE.test(nextSlug)) {
+      setHint('✕ the URL may only use lowercase letters, numbers and dashes');
+      return;
+    }
     setBusy(true);
     setHint('saving…');
     const err = await updateResearchEntry(entry.dbId, {
       title: title.trim(),
       description: description.trim(),
+      publicId: nextSlug,
     });
     if (err) {
       setBusy(false);
@@ -159,8 +170,13 @@ export function ResearchEditor({ id }: { id: string }) {
       return;
     }
     await syncResearchFields(entry.dbId, entry.fieldIds, [...selected]);
-    await load();
     setBusy(false);
+    // the URL key is what this page is addressed by — follow it when it changes
+    if (nextSlug !== entry.publicId) {
+      router.replace(`/research/edit?id=${encodeURIComponent(nextSlug)}`);
+      return;
+    }
+    await load();
     setHint('Saved ✓');
     window.setTimeout(() => setHint(''), 2500);
   };
@@ -333,9 +349,6 @@ export function ResearchEditor({ id }: { id: string }) {
         </div>
 
         <h1 className={styles.h1}>Edit research</h1>
-        <p className={styles.sub}>
-          Public URL: <code>/research?id={entry.publicId}</code>
-        </p>
 
         {/* publish state, explained — mirrors the profile dashboard's notice */}
         <div className={`${styles.notice} ${entry.published ? styles.liveNote : ''}`}>
@@ -384,6 +397,25 @@ export function ResearchEditor({ id }: { id: string }) {
             onChange={(e) => setDescription(e.target.value)}
             placeholder="What is this research about?"
           />
+
+          <label className={styles.f}>
+            PUBLIC URL <span className={styles.lock}>must be unique</span>
+          </label>
+          <div className={styles.slugRow}>
+            <span className={styles.sub}>/research?id=</span>
+            <input
+              value={slug}
+              onChange={(e) => setSlug(e.target.value)}
+              placeholder="lowercase-with-dashes"
+            />
+          </div>
+          <div
+            className={`${styles.sub} ${slug.trim() && !SLUG_RE.test(slug.trim()) ? styles.bad : ''}`}
+          >
+            {slug.trim() && !SLUG_RE.test(slug.trim())
+              ? '\u2715 lowercase letters, numbers and dashes only'
+              : 'Changing this changes the public link \u2014 old links stop working.'}
+          </div>
 
           <label className={styles.f}>FIELDS</label>
           <div className={styles.chips}>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { getResearchEntry, researchFileUrl } from '@/lib/data/researchEntries';
+import { getAuthUser, getMyProfile } from '@/lib/data/auth';
 import { mockResearchEntry } from '@/lib/data/mock';
 import { currentEnv } from '@/lib/env';
 import { safeUrl } from '@/lib/util/html';
@@ -32,15 +33,25 @@ type State = { status: 'loading' } | { status: 'ok'; entry: ResearchEntry } | { 
  *  ResearchView; this handles the member/DB entries. */
 export function ResearchEntryView({ id, embedded = false }: { id: string; embedded?: boolean }) {
   const [state, setState] = useState<State>({ status: 'loading' });
+  const [canEdit, setCanEdit] = useState(false);
 
   useEffect(() => {
     let alive = true;
     void (async () => {
       const entry = await getResearchEntry(id);
       if (!alive) return;
-      if (entry) setState({ status: 'ok', entry });
-      else if (currentEnv() === 'local') setState({ status: 'ok', entry: mockResearchEntry(id) });
-      else setState({ status: 'missing' });
+      if (entry) {
+        setState({ status: 'ok', entry });
+        // offer the editor to this entry's own members
+        const user = await getAuthUser();
+        const me = user ? await getMyProfile(user.userId) : null;
+        if (!alive) return;
+        setCanEdit(!!me && entry.members.some((m) => m.publicId === me.publicId));
+      } else if (currentEnv() === 'local') {
+        setState({ status: 'ok', entry: mockResearchEntry(id) });
+      } else {
+        setState({ status: 'missing' });
+      }
     })();
     return () => {
       alive = false;
@@ -94,6 +105,16 @@ export function ResearchEntryView({ id, embedded = false }: { id: string; embedd
               <span className={`${styles.badge} ${p.published ? styles.live : styles.draft}`}>
                 {p.published ? 'Published' : 'Draft'}
               </span>
+              {/* shown only to this entry's own members; RLS is what actually
+                  gates the edit, this is the affordance */}
+              {canEdit && (
+                <Link
+                  className={styles.editBtn}
+                  href={`/research/edit?id=${encodeURIComponent(p.publicId)}`}
+                >
+                  Edit
+                </Link>
+              )}
             </h1>
             {p.fields.length > 0 && (
               <div className={styles.chips}>
