@@ -47,7 +47,7 @@ export async function getResearchEntry(publicId: string): Promise<ResearchEntry 
       .select(
         `id, public_id, title, description, avatar_url, is_published, external_authors, page,
        research_fields(field_id, fields(name)),
-       research_members(role, people(id, public_id, full_name, avatar_color)),
+       research_members(role, sort_order, people(id, public_id, full_name, avatar_color)),
        research_links(id, label, url, sort_order),
        research_files(id, storage_path, kind, caption, sort_order)`,
       )
@@ -73,6 +73,7 @@ export async function getResearchEntry(publicId: string): Promise<ResearchEntry 
       : [],
     members: (d.research_members ?? [])
       .filter((m: any) => m.people)
+      .sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
       .map((m: any) => ({
         id: m.people.id,
         publicId: m.people.public_id,
@@ -242,13 +243,17 @@ export async function addResearchMember(
   dbId: string,
   personId: string,
   role: string,
+  sortOrder = 0,
 ): Promise<string | null> {
   const sb = getSupabase();
   if (!sb) return 'no backend';
   try {
-    const { error } = await sb
-      .from('research_members')
-      .insert({ research_id: dbId, person_id: personId, role: role || 'Member' });
+    const { error } = await sb.from('research_members').insert({
+      research_id: dbId,
+      person_id: personId,
+      role: role || 'Member',
+      sort_order: sortOrder,
+    });
     if (error) {
       return String((error as any).code) === '23505' ? 'they are already a member' : error.message;
     }
@@ -327,5 +332,27 @@ export async function updateResearchPage(
     return error?.message ?? null;
   } catch (e: any) {
     return e?.message ?? 'could not save the page';
+  }
+}
+
+/** Persist a new member order: sort_order = position in `personIds`. */
+export async function setResearchMembersOrder(
+  dbId: string,
+  personIds: string[],
+): Promise<string | null> {
+  const sb = getSupabase();
+  if (!sb) return 'no backend';
+  try {
+    for (let i = 0; i < personIds.length; i++) {
+      const { error } = await sb
+        .from('research_members')
+        .update({ sort_order: i })
+        .eq('research_id', dbId)
+        .eq('person_id', personIds[i]);
+      if (error) return error.message;
+    }
+    return null;
+  } catch (e: any) {
+    return e?.message ?? 'could not save the order';
   }
 }

@@ -382,3 +382,20 @@
     transform: rotate(360deg);
   }
 }
+
+/* reorder arrows on roster rows — quiet until hovered */
+.orderBtn {
+  font: inherit;
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 4px 6px;
+}
+.orderBtn:hover:not(:disabled) {
+  color: var(--ink);
+}
+.orderBtn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
