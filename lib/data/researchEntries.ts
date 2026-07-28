@@ -1,5 +1,6 @@
 import { getSupabase } from '../supabase';
 import { diffFieldIds } from '../domain/fields';
+import { normalizePage, type ResearchPage } from '../domain/blocks';
 import type { ResearchEntry, ResearchEntryCard, ResearchExternalAuthor } from '../domain/types';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -44,7 +45,7 @@ export async function getResearchEntry(publicId: string): Promise<ResearchEntry 
     ({ data, error } = await sb
       .from('research')
       .select(
-        `id, public_id, title, description, avatar_url, is_published, external_authors,
+        `id, public_id, title, description, avatar_url, is_published, external_authors, page,
        research_fields(field_id, fields(name)),
        research_members(role, people(id, public_id, full_name, avatar_color)),
        research_links(id, label, url, sort_order),
@@ -66,6 +67,7 @@ export async function getResearchEntry(publicId: string): Promise<ResearchEntry 
     published: d.is_published,
     fields: (d.research_fields ?? []).map((f: any) => f.fields?.name).filter(Boolean),
     fieldIds: (d.research_fields ?? []).map((f: any) => f.field_id),
+    page: normalizePage(d.page),
     externalAuthors: Array.isArray(d.external_authors)
       ? d.external_authors.map((a: any) => ({ name: String(a?.name ?? ''), role: a?.role }))
       : [],
@@ -310,5 +312,20 @@ export async function updateResearchMemberRole(
     return error?.message ?? null;
   } catch (e: any) {
     return e?.message ?? 'could not save role';
+  }
+}
+
+/** Save the composed block page (pass null to clear it). */
+export async function updateResearchPage(
+  dbId: string,
+  page: ResearchPage | null,
+): Promise<string | null> {
+  const sb = getSupabase();
+  if (!sb) return 'no backend';
+  try {
+    const { error } = await sb.from('research').update({ page }).eq('id', dbId);
+    return error?.message ?? null;
+  } catch (e: any) {
+    return e?.message ?? 'could not save the page';
   }
 }

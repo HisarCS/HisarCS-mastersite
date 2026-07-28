@@ -14,6 +14,7 @@ import {
   deleteResearchLink,
   getResearchEntry,
   removeResearchMember,
+  updateResearchPage,
   researchFileUrl,
   setExternalAuthors,
   setResearchPublished,
@@ -22,6 +23,8 @@ import {
   updateResearchMemberRole,
 } from '@/lib/data/researchEntries';
 import type { Field, MemberCard, ResearchEntry, ResearchExternalAuthor } from '@/lib/domain/types';
+import type { ResearchPage } from '@/lib/domain/blocks';
+import { PageBuilder, pageProblems } from './blocks/PageBuilder';
 import { MemberPicker } from './member/MemberPicker';
 import { SiteHeader } from './SiteHeader';
 import { Unavailable } from './Unavailable';
@@ -49,6 +52,8 @@ export function ResearchEditor({ id }: { id: string }) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [slug, setSlug] = useState('');
+  const [page, setPage] = useState<ResearchPage | null>(null);
+  const [pageHint, setPageHint] = useState('');
   const [fields, setFields] = useState<Field[]>([]);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [newField, setNewField] = useState('');
@@ -76,6 +81,7 @@ export function ResearchEditor({ id }: { id: string }) {
     setTitle(entry.title);
     setDescription(entry.description);
     setSlug(entry.publicId);
+    setPage(entry.page);
     setSelected(new Set(entry.fieldIds));
     setState(amEditor ? { status: 'ok', entry } : { status: 'denied' });
   }, [id]);
@@ -192,6 +198,25 @@ export function ResearchEditor({ id }: { id: string }) {
     }
     await load();
     setPubHint(next ? '✓ it’s live' : '✓ back to draft');
+  };
+
+  const savePage = async () => {
+    const problems = pageProblems(page);
+    if (problems.length) {
+      setPageHint(`✕ ${problems[0]}`);
+      return;
+    }
+    setBusy(true);
+    setPageHint('saving…');
+    // no blocks = no composed page: store null so readers see the Description
+    const err = await updateResearchPage(entry.dbId, page && page.blocks.length ? page : null);
+    setBusy(false);
+    if (err) {
+      setPageHint(`✕ ${err}`);
+      return;
+    }
+    setPageHint('Saved ✓');
+    window.setTimeout(() => setPageHint(''), 2500);
   };
 
   const onFile = async (file: File | undefined) => {
@@ -449,6 +474,27 @@ export function ResearchEditor({ id }: { id: string }) {
             </button>
             <span className={`${styles.sub} ${hint.startsWith('✕') ? styles.bad : styles.ok}`}>
               {hint}
+            </span>
+          </div>
+        </div>
+
+        <div className={styles.panel}>
+          <h2>Page</h2>
+          <PageBuilder
+            page={page}
+            files={entry.files}
+            disabled={busy}
+            onChange={(p) => {
+              setPage(p);
+              setPageHint('');
+            }}
+          />
+          <div className={styles.actions}>
+            <button className={styles.btn} onClick={savePage} disabled={busy}>
+              {busy ? 'Saving…' : 'Save page'}
+            </button>
+            <span className={`${styles.sub} ${pageHint.startsWith('✕') ? styles.bad : styles.ok}`}>
+              {pageHint}
             </span>
           </div>
         </div>

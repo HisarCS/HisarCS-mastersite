@@ -8,6 +8,7 @@ import { mockResearchEntry } from '@/lib/data/mock';
 import { currentEnv } from '@/lib/env';
 import { safeUrl } from '@/lib/util/html';
 import type { ResearchEntry } from '@/lib/domain/types';
+import { BlockRenderer } from './blocks/BlockRenderer';
 import { SiteHeader } from './SiteHeader';
 import { Unavailable } from './Unavailable';
 import styles from './ResearchEntryView.module.css';
@@ -166,72 +167,81 @@ export function ResearchEntryView({ id, embedded = false }: { id: string; embedd
           </section>
         )}
 
-        <section className={styles.section}>
-          <h2 className={styles.h2}>About</h2>
-          <div className={styles.desc}>{p.description}</div>
-        </section>
+        {p.page && p.page.blocks.length > 0 ? (
+          // composed block page — same renderer the editor preview uses
+          <BlockRenderer page={p.page} />
+        ) : (
+          <>
+            <section className={styles.section}>
+              <h2 className={styles.h2}>About</h2>
+              <div className={styles.desc}>{p.description}</div>
+            </section>
 
-        {p.files.length > 0 && (
-          <section className={styles.section}>
-            <h2 className={styles.h2}>Files</h2>
-            <div className={styles.files}>
-              {p.files.map((f) => {
-                const label = f.caption || String(f.storagePath).split('/').pop() || 'file';
-                const url = researchFileUrl(f.storagePath);
-                return (
-                  <a
-                    key={f.id}
-                    className={styles.file}
-                    href={url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {f.kind === 'image' ? (
-                      <div className={styles.thumb}>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={url}
-                          alt=""
-                          loading="lazy"
-                          decoding="async"
-                          className={styles.thumbImg}
-                        />
-                      </div>
-                    ) : (
-                      <div className={styles.thumb} style={{ background: colorFor(label) }}>
-                        {f.kind === 'pdf' ? 'PDF' : '📄'}
-                      </div>
-                    )}
-                    <div className={styles.cap}>{label}</div>
-                  </a>
-                );
-              })}
-            </div>
-          </section>
-        )}
+            {p.files.length > 0 && (
+              <section className={styles.section}>
+                <h2 className={styles.h2}>Files</h2>
+                <div className={styles.files}>
+                  {p.files.map((f) => {
+                    const label = f.caption || String(f.storagePath).split('/').pop() || 'file';
+                    const url = researchFileUrl(f.storagePath);
+                    return (
+                      <a
+                        key={f.id}
+                        className={styles.file}
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {f.kind === 'image' ? (
+                          <div className={styles.thumb}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={url}
+                              alt=""
+                              loading="lazy"
+                              decoding="async"
+                              className={styles.thumbImg}
+                            />
+                          </div>
+                        ) : (
+                          <div className={styles.thumb} style={{ background: colorFor(label) }}>
+                            {f.kind === 'pdf' ? 'PDF' : '📄'}
+                          </div>
+                        )}
+                        <div className={styles.cap}>{label}</div>
+                      </a>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
 
-        {p.links.length > 0 && (
-          <section className={styles.section}>
-            <h2 className={styles.h2}>Links</h2>
-            <div className={styles.links}>
-              {p.links.map((l) => (
-                <a
-                  key={`${l.label}-${l.url}`}
-                  className={styles.link}
-                  href={safeUrl(l.url)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <span className={styles.arrow}>↗</span>
-                  <span>
-                    <span className={styles.ll}>{l.label}</span>
-                    <br />
-                    <span className={styles.lu}>{String(l.url).replace(/^https?:\/\//, '')}</span>
-                  </span>
-                </a>
-              ))}
-            </div>
-          </section>
+            {p.links.length > 0 && (
+              <section className={styles.section}>
+                <h2 className={styles.h2}>Links</h2>
+                <div className={styles.links}>
+                  {p.links.map((l) => (
+                    <a
+                      key={`${l.label}-${l.url}`}
+                      className={styles.link}
+                      href={safeUrl(l.url)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <span className={styles.arrow}>↗</span>
+                      <span>
+                        <span className={styles.ll}>{l.label}</span>
+                        <br />
+                        <span className={styles.lu}>
+                          {String(l.url).replace(/^https?:\/\//, '')}
+                        </span>
+                      </span>
+                    </a>
+                  ))}
+                </div>
+              </section>
+            )}
+          </>
         )}
       </main>
     </>

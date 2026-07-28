@@ -120,6 +120,8 @@ export interface ResearchEntry {
   members: ResearchMemberRef[];
   /** collaborators without an account here — display-only credits */
   externalAuthors: ResearchExternalAuthor[];
+  /** composed block page (null = legacy: render `description`) */
+  page: import('./blocks').ResearchPage | null;
   links: ResearchLink[];
   files: ResearchFile[];
 }
