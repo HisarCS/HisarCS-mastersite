@@ -121,7 +121,7 @@ export interface ResearchEntry {
   /** collaborators without an account here — display-only credits */
   externalAuthors: ResearchExternalAuthor[];
   /** composed block page (null = legacy: render `description`) */
-  page: import('./blocks').ResearchPage | null;
+  page: import('./page').ResearchPage | null;
   links: ResearchLink[];
   files: ResearchFile[];
 }

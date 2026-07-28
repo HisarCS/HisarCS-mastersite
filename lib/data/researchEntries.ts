@@ -1,6 +1,6 @@
 import { getSupabase } from '../supabase';
 import { diffFieldIds } from '../domain/fields';
-import { normalizePage, type ResearchPage } from '../domain/blocks';
+import { normalizePage, type ResearchPage } from '../domain/page';
 import type { ResearchEntry, ResearchEntryCard, ResearchExternalAuthor } from '../domain/types';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */

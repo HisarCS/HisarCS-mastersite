@@ -8,7 +8,7 @@ import { mockResearchEntry } from '@/lib/data/mock';
 import { currentEnv } from '@/lib/env';
 import { safeUrl } from '@/lib/util/html';
 import type { ResearchEntry } from '@/lib/domain/types';
-import { BlockRenderer } from './blocks/BlockRenderer';
+import { MarkdownPage } from './markdown/MarkdownPage';
 import { SiteHeader } from './SiteHeader';
 import { Unavailable } from './Unavailable';
 import styles from './ResearchEntryView.module.css';
@@ -167,9 +167,9 @@ export function ResearchEntryView({ id, embedded = false }: { id: string; embedd
           </section>
         )}
 
-        {p.page && p.page.blocks.length > 0 ? (
-          // composed block page — same renderer the editor preview uses
-          <BlockRenderer page={p.page} />
+        {p.page ? (
+          // composed markdown page — same renderer the editor preview uses
+          <MarkdownPage markdown={p.page.markdown} />
         ) : (
           <>
             <section className={styles.section}>
