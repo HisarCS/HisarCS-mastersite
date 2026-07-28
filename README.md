@@ -46,8 +46,10 @@ empty lab renders the mark in ink only, and missing pages show an honest
 **Migrations are append-only** (ADR-0003): `20260711000001_schema.sql` is the
 baseline; every later change is its own timestamped file. Editing an
 already-applied migration is a no-op on production — `db push` skips files it
-has recorded — so a "fix" there silently never ships. Never edit tables by hand
-in Studio either, or local and production drift.
+has recorded — so a "fix" there silently never ships. The one exception:
+**comment-only corrections are fine** (comments never execute; a stale comment
+is worse than an amended one). Never edit tables by hand in Studio either, or
+local and production drift.
 
 ---
 

@@ -498,3 +498,11 @@ a markdown document is less machine-inspectable than blocks were. The v1 block
 shape is read as null (its entries fall back to `description`; none existed in
 production). `page.version` bumps only on breaking shape changes, paired with a
 read-time migration in `lib/domain/page.ts`.
+
+One clarification to the append-only migration rule (ADR-0003) came out of this
+pivot: the applied migration that added the column
+(`20260728090000_research_page_blocks.sql`) described the v1 block format in
+its comments. **Comment-only corrections to applied migrations are allowed** —
+comments never execute, so the file still matches what production ran — and
+that comment has been corrected in place. The rule stays absolute for
+executable SQL: never edit statements in an applied migration; ship a new one.
