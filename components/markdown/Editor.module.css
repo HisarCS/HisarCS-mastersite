@@ -1,0 +1,141 @@
+/* Markdown editor chrome — the content itself is styled by Markdown.module.css
+   in the preview, identically to the public page. */
+
+.help {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.tabs {
+  display: flex;
+  gap: 4px;
+}
+.tab {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 7px 16px;
+  border-radius: 9px 9px 0 0;
+  cursor: pointer;
+  background: none;
+  border: 1px solid transparent;
+  color: var(--muted);
+}
+.tab.on {
+  background: #fbfaf7;
+  border-color: var(--line);
+  border-bottom-color: #fbfaf7;
+  color: var(--ink);
+}
+.spacer {
+  flex: 1;
+}
+.inserts {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.ins {
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 5px 11px;
+  border-radius: 8px;
+  cursor: pointer;
+  background: none;
+  border: 1.5px solid var(--line);
+  color: var(--ink);
+}
+.ins:hover:not(:disabled) {
+  border-color: var(--ink);
+}
+.ins:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.imageList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px;
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  margin-top: 8px;
+}
+.imageBtn {
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 99px;
+  cursor: pointer;
+  background: var(--card);
+  border: 1px solid var(--line);
+  color: var(--ink);
+}
+.imageBtn:hover {
+  border-color: var(--ink);
+}
+.none {
+  color: var(--muted);
+  font-size: 13.5px;
+}
+
+.ta {
+  width: 100%;
+  min-height: 420px;
+  margin-top: -1px;
+  padding: 14px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13.5px;
+  line-height: 1.6;
+  border: 1px solid var(--line);
+  border-radius: 0 10px 10px 10px;
+  background: #fbfaf7;
+  color: var(--ink);
+  resize: vertical;
+}
+.ta:focus {
+  outline: 2px solid var(--accent);
+  border-color: transparent;
+}
+
+.previewBox {
+  margin-top: -1px;
+  padding: 4px 18px 18px;
+  border: 1px solid var(--line);
+  border-radius: 0 10px 10px 10px;
+  background: var(--bg);
+  min-height: 420px;
+}
+
+.cheat {
+  margin-top: 12px;
+  font-size: 13.5px;
+  color: var(--muted);
+}
+.cheat summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--ink);
+}
+.cheatPre {
+  margin-top: 8px;
+  padding: 14px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font-size: 12px;
+  line-height: 1.7;
+  overflow-x: auto;
+  color: var(--ink);
+}
