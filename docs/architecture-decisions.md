@@ -463,3 +463,38 @@ deleting buckets from SQL, so the old empty `project-files` bucket is left
 behind, policy-less and inert, to be removed via Studio. Two names now live in
 the codebase — `research` (curated, static) and `researchEntries` (member,
 DB-backed) — which is the one wrinkle this merge introduces.
+
+---
+
+## ADR-0019 — Research page bodies are Markdown documents
+
+**Status:** Accepted 2026-07-28 (replaces the block system merged in PR #6 —
+shipped and superseded within days, before any real content used it)
+
+**Context:** Members compose the body of a research page themselves. Two
+authoring models were built. First, a structured block editor (nine content-type
+primitives in `research.page` jsonb) — sound for layout consistency, but each
+capability students actually asked for (equations, data charts, images floated
+inside running text) demanded another bespoke form, and form-per-block editing
+was slower than writing. Markdown expresses all of it in one document, is a
+transferable skill, and previews trivially.
+
+**Decision:** `research.page` stores `{ version: 2, markdown }`. The dialect is
+GitHub-flavored Markdown plus: KaTeX math (`$…$`, `$$…$$`), two fenced
+mini-languages parsed by pure functions (` ```chart ` — which requires a
+`question:` line that becomes the caption — and ` ```stats ` for stat chips),
+and image placement via the image _title_ (`"left 40"`, `right`, `inset`,
+`wide`; standalone image lines become captioned figures, adjacent images render
+side by side). One renderer serves the public page and the editor preview. Raw
+HTML is ignored; URLs are sanitized; nothing renders through `innerHTML`.
+Malformed fences render an inline error, never silence.
+
+**Consequences:** Authoring freedom with house styling — students control
+content and order, never fonts or colors, and the design system survives a
+redesign as a CSS change. The chart fence enforces the "a chart answers one
+stated question" rule syntactically. Costs: ~130 KB gzipped added to research
+routes (react-markdown + KaTeX, bundled same-origin per ADR-0011's intent), and
+a markdown document is less machine-inspectable than blocks were. The v1 block
+shape is read as null (its entries fall back to `description`; none existed in
+production). `page.version` bumps only on breaking shape changes, paired with a
+read-time migration in `lib/domain/page.ts`.

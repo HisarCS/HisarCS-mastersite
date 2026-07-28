@@ -104,6 +104,10 @@ erDiagram
     write-ups are static content (`lib/data/research.ts` + preserved HTML in
     `public/research/`), so `/research` shows curated entries and published DB
     entries together, curated first.
+  - _`page`_ (jsonb, nullable) holds the entry's composed body as a Markdown
+    document (`{version: 2, markdown}`); null falls back to rendering
+    `description`. Dialect + rationale: `docs/research-publishing-framework.md`,
+    ADR-0019.
 - **Junction tables** (`person_fields`, `research_fields`, `research_members`)
   are the many-to-many links. `research_members` doubles as the permission list:
   _being on it is the right to edit that research entry._
@@ -423,11 +427,12 @@ Public/read views (homepage, profiles, research pages), the member dashboard,
 uploads, account deletion, and the `/members` + `/research` directory pages are
 all wired to Supabase. Still to build:
 
-1. **A research editor.** Member-created research entries render
-   (`ResearchEntryView`) and the dashboard lists them, but there is no UI yet to
-   create one or edit its title, description, publish toggle, members, tags,
-   links, or files. The schema, RLS (`is_project_editor`), and the
-   `research-files` bucket are all in place.
+1. ~~A research editor.~~ **Done.** Members create entries from the dashboard
+   and edit everything at `/research/edit`: title, description, public URL,
+   tags, links, files, co-members (site members with equal rights, or outside
+   collaborators as plain-text credits), publish state, deletion — and the page
+   body itself, written as Markdown with equations (KaTeX), charts/stat-chip
+   fences, and image placement (see `docs/research-publishing-framework.md`).
 2. Add **search / sort / filter** to the `/members` and `/research` directories
    (the `people_directory` view already backs this).
 3. Build a small **admin panel** (publish queue for new members, manage the

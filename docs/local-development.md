@@ -142,6 +142,11 @@ color / reset) → resume PDF upload ("View current" opens it) → **Delete acco
 (confirm by typing your GitHub handle; verify the `people` row + `avatars`/`resumes`
 objects are gone) → sign in again re-creates the profile.
 
+Research flow: dashboard → **+ New research** → editor: write the **Page** as
+Markdown (chart + stats fences, `$math$`, image placement — syntax reference is
+in the editor) → **Save page** → **Publish** → the public `/research?id=…` page
+shows the composed body; without a page it shows the Description.
+
 ---
 
 ## Command reference
