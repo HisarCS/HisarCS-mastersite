@@ -17,6 +17,7 @@ import {
   updateResearchPage,
   researchFileUrl,
   setExternalAuthors,
+  setResearchMembersOrder,
   setResearchPublished,
   syncResearchFields,
   updateResearchEntry,
@@ -247,7 +248,7 @@ export function ResearchEditor({ id }: { id: string }) {
   const addMember = async (personId: string, role: string) => {
     setBusy(true);
     setMemberHint('adding…');
-    const err = await addResearchMember(entry.dbId, personId, role);
+    const err = await addResearchMember(entry.dbId, personId, role, entry.members.length);
     setBusy(false);
     if (err) {
       setMemberHint(`✕ ${err}`);
@@ -315,6 +316,31 @@ export function ResearchEditor({ id }: { id: string }) {
     }
     setMemberHint('');
     await load();
+  };
+
+  /** Move a member up/down; author order matters, so it persists immediately. */
+  const moveMember = async (i: number, dir: -1 | 1) => {
+    const j = i + dir;
+    if (j < 0 || j >= entry.members.length) return;
+    const ids = entry.members.map((m) => m.id);
+    [ids[i], ids[j]] = [ids[j]!, ids[i]!];
+    setBusy(true);
+    const err = await setResearchMembersOrder(entry.dbId, ids);
+    setBusy(false);
+    if (err) {
+      setMemberHint(`✕ ${err}`);
+      return;
+    }
+    setMemberHint('');
+    await load();
+  };
+
+  const moveExternal = async (i: number, dir: -1 | 1) => {
+    const j = i + dir;
+    if (j < 0 || j >= entry.externalAuthors.length) return;
+    const next = [...entry.externalAuthors];
+    [next[i], next[j]] = [next[j]!, next[i]!];
+    await writeExternals(next);
   };
 
   const addLink = async () => {
@@ -608,7 +634,7 @@ export function ResearchEditor({ id }: { id: string }) {
             credited here but has no editing rights.
           </p>
 
-          {entry.members.map((m) => (
+          {entry.members.map((m, i) => (
             <div key={m.id} className={styles.memberRow}>
               <Link
                 className={`${styles.ll} ${styles.memberLink}`}
@@ -626,6 +652,22 @@ export function ResearchEditor({ id }: { id: string }) {
                   if (e.key === 'Enter') e.currentTarget.blur();
                 }}
               />
+              <button
+                className={styles.orderBtn}
+                onClick={() => moveMember(i, -1)}
+                disabled={busy || i === 0}
+                aria-label={`Move ${m.name} up`}
+              >
+                ↑
+              </button>
+              <button
+                className={styles.orderBtn}
+                onClick={() => moveMember(i, 1)}
+                disabled={busy || i === entry.members.length - 1}
+                aria-label={`Move ${m.name} down`}
+              >
+                ↓
+              </button>
               <button
                 className={styles.remove}
                 onClick={() => removeMember(m.id)}
@@ -657,6 +699,22 @@ export function ResearchEditor({ id }: { id: string }) {
                   if (e.key === 'Enter') e.currentTarget.blur();
                 }}
               />
+              <button
+                className={styles.orderBtn}
+                onClick={() => moveExternal(i, -1)}
+                disabled={busy || i === 0}
+                aria-label={`Move ${a.name} up`}
+              >
+                ↑
+              </button>
+              <button
+                className={styles.orderBtn}
+                onClick={() => moveExternal(i, 1)}
+                disabled={busy || i === entry.externalAuthors.length - 1}
+                aria-label={`Move ${a.name} down`}
+              >
+                ↓
+              </button>
               <button
                 className={styles.remove}
                 onClick={() => removeExternal(i)}

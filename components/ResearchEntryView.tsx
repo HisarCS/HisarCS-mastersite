@@ -133,20 +133,6 @@ export function ResearchEntryView({ id, embedded = false }: { id: string; embedd
           <section className={styles.section}>
             <h2 className={styles.h2}>Members</h2>
             <div className={styles.members}>
-              {/* collaborators without an account here are credited the same
-                  way, just not linked — there's no profile to open */}
-              {p.externalAuthors.map((a, i) => (
-                <span key={`${a.name}-${i}`} className={styles.member}>
-                  <span className={styles.ma} style={{ background: colorFor(a.name) }}>
-                    {initials(a.name)}
-                  </span>
-                  <span>
-                    <span className={styles.mn}>{a.name}</span>
-                    <br />
-                    <span className={styles.mr}>{a.role || 'Member'}</span>
-                  </span>
-                </span>
-              ))}
               {p.members.map((m) => (
                 <Link
                   key={m.publicId}
@@ -162,6 +148,20 @@ export function ResearchEntryView({ id, embedded = false }: { id: string; embedd
                     <span className={styles.mr}>{m.role}</span>
                   </span>
                 </Link>
+              ))}
+              {/* outside collaborators are credited the same way after the
+                  members, just not linked — there's no profile to open */}
+              {p.externalAuthors.map((a, i) => (
+                <span key={`${a.name}-${i}`} className={styles.member}>
+                  <span className={styles.ma} style={{ background: colorFor(a.name) }}>
+                    {initials(a.name)}
+                  </span>
+                  <span>
+                    <span className={styles.mn}>{a.name}</span>
+                    <br />
+                    <span className={styles.mr}>{a.role || 'Member'}</span>
+                  </span>
+                </span>
               ))}
             </div>
           </section>
