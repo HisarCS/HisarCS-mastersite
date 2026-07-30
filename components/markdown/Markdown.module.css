@@ -232,3 +232,9 @@
   margin: 0 0 14px;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
+
+/* GFM syntax forces a header row; hide it when the author left every cell
+   empty (headerless / key-value tables). */
+.tableWrap thead tr:not(:has(th:not(:empty))) {
+  display: none;
+}
