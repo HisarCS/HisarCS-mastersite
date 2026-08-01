@@ -6,7 +6,7 @@ import { getAuthUser, onAuthChange, signOutLocal } from '@/lib/data/auth';
 import styles from './SiteHeader.module.css';
 
 /**
- * Site-wide header. Members / Research sit next to the ideaLab wordmark, and the
+ * Site-wide header. Members / Research / About Us sit next to the ideaLab wordmark, and the
  * last slot reflects auth state: "One of Us" when signed out, or the member's
  * GitHub handle (linking to their editable member page) plus Sign out when
  * signed in. Every view renders this, so the signed-in treatment is consistent.
@@ -35,6 +35,9 @@ export function SiteHeader() {
         </Link>
         <Link href="/research" className={styles.link}>
           Research
+        </Link>
+        <Link href="/about" className={styles.link}>
+          About Us
         </Link>
         {ghLogin ? (
           <span className={styles.session}>
