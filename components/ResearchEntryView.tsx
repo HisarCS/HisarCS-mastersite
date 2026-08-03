@@ -7,6 +7,7 @@ import { getAuthUser, getMyProfile } from '@/lib/data/auth';
 import { mockResearchEntry } from '@/lib/data/mock';
 import { currentEnv } from '@/lib/env';
 import { safeUrl } from '@/lib/util/html';
+import { avatarSrcSet, researchImgSrcSet, thumbUrl } from '@/lib/util/media';
 import type { ResearchEntry } from '@/lib/domain/types';
 import { MarkdownPage } from './markdown/MarkdownPage';
 import { SiteHeader } from './SiteHeader';
@@ -95,7 +96,13 @@ export function ResearchEntryView({ id, embedded = false }: { id: string; embedd
           <div className={styles.pav}>
             {p.avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={p.avatarUrl} alt="" className={styles.pavImg} />
+              <img
+                src={thumbUrl(p.avatarUrl, 256) ?? ''}
+                srcSet={avatarSrcSet(p.avatarUrl)}
+                sizes="120px"
+                alt=""
+                className={styles.pavImg}
+              />
             ) : (
               initials(p.title)
             )}
@@ -197,6 +204,8 @@ export function ResearchEntryView({ id, embedded = false }: { id: string; embedd
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                               src={url}
+                              srcSet={researchImgSrcSet(url)}
+                              sizes="(max-width: 640px) 94vw, 330px"
                               alt=""
                               loading="lazy"
                               decoding="async"

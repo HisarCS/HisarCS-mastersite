@@ -7,6 +7,7 @@ import { getAuthUser, getMyProfile } from '@/lib/data/auth';
 import { listFields, createField } from '@/lib/data/profile';
 import { listMembers } from '@/lib/data/members';
 import { uploadResearchFile, deleteResearchFile } from '@/lib/data/storage';
+import { researchImgSmall } from '@/lib/util/media';
 import {
   addResearchLink,
   addResearchMember,
@@ -564,8 +565,8 @@ export function ResearchEditor({ id }: { id: string }) {
         <div className={styles.panel}>
           <h2>Files</h2>
           <p className={styles.sub}>
-            Images (JPEG/PNG/WebP, up to 15 MB — optimized on upload) and PDFs (up to 10 MB). They
-            appear on the public page.
+            Images (JPEG/PNG/WebP, up to 15 MB, at least 2000 px on the long edge — optimized on
+            upload) and PDFs (up to 10 MB). They appear on the public page.
           </p>
           {entry.files.length > 0 && (
             <div className={styles.files}>
@@ -576,7 +577,12 @@ export function ResearchEditor({ id }: { id: string }) {
                   <div key={f.id} className={styles.fileRow}>
                     {f.kind === 'image' ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={url} alt="" className={styles.fileThumb} loading="lazy" />
+                      <img
+                        src={researchImgSmall(url)}
+                        alt=""
+                        className={styles.fileThumb}
+                        loading="lazy"
+                      />
                     ) : (
                       <div className={styles.fileThumb}>PDF</div>
                     )}

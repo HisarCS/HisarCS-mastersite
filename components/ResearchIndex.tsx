@@ -6,7 +6,7 @@ import { listResearch } from '@/lib/data/research';
 import { listResearchEntries } from '@/lib/data/researchEntries';
 import { mockResearchEntries } from '@/lib/data/mock';
 import { currentEnv } from '@/lib/env';
-import { thumbUrl } from '@/lib/util/media';
+import { avatarSrcSet, researchImgSrcSet, thumbUrl } from '@/lib/util/media';
 import { hashStr } from '@/lib/util/hash';
 import type { ResearchEntryCard } from '@/lib/domain/types';
 import { SiteHeader } from './SiteHeader';
@@ -103,7 +103,9 @@ export function ResearchIndex() {
                 {r.thumb ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
-                    src={thumbUrl(r.thumb) ?? ''}
+                    src={thumbUrl(r.thumb, 512) ?? ''}
+                    srcSet={avatarSrcSet(r.thumb) ?? researchImgSrcSet(r.thumb)}
+                    sizes="(max-width: 640px) 94vw, 330px"
                     alt=""
                     loading="lazy"
                     decoding="async"

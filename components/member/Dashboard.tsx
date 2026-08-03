@@ -17,7 +17,7 @@ import { setAvatarUrl, uploadAvatar, uploadResume } from '@/lib/data/storage';
 import { createResearchEntry } from '@/lib/data/researchEntries';
 import { DangerZone } from './DangerZone';
 import { cleanYearInput, gradYearMax, GRAD_YEAR_MIN, isValidGradYear } from '@/lib/util/year';
-import { thumbUrl } from '@/lib/util/media';
+import { avatarSrcSet, thumbUrl } from '@/lib/util/media';
 import { safeUrl } from '@/lib/util/html';
 import type { Field, MyProfile, MyResearchSummary } from '@/lib/domain/types';
 import styles from './Dashboard.module.css';
@@ -288,7 +288,12 @@ export function Dashboard({
           >
             {profile.avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={thumbUrl(profile.avatarUrl) ?? ''} alt="" />
+              <img
+                src={thumbUrl(profile.avatarUrl, 256) ?? ''}
+                srcSet={avatarSrcSet(profile.avatarUrl)}
+                sizes="84px"
+                alt=""
+              />
             ) : (
               initials
             )}
@@ -314,6 +319,10 @@ export function Dashboard({
               hidden
               onChange={(e) => void onAvatarFile(e.target.files?.[0])}
             />
+            <div className={styles.sub}>
+              Use a square photo, at least 512×512 px — it renders large on member cards, so bigger
+              is better (up to 10 MB; stored at 1024 px).
+            </div>
             <div className={styles.sub}>
               …or pick a tile color (shows behind your initials on the homepage):
             </div>

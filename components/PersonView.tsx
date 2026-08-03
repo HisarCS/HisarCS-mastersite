@@ -6,6 +6,7 @@ import { getMember } from '@/lib/data/members';
 import { mockPerson } from '@/lib/data/mock';
 import { currentEnv } from '@/lib/env';
 import { safeUrl } from '@/lib/util/html';
+import { avatarSrcSet, thumbUrl } from '@/lib/util/media';
 import type { Member } from '@/lib/domain/types';
 import { SiteHeader } from './SiteHeader';
 import { Unavailable } from './Unavailable';
@@ -80,7 +81,12 @@ export function PersonView({ id, embedded = false }: { id: string; embedded?: bo
           <div className={styles.avatar} style={{ background: color }}>
             {p.avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={p.avatarUrl} alt="" />
+              <img
+                src={thumbUrl(p.avatarUrl, 256) ?? ''}
+                srcSet={avatarSrcSet(p.avatarUrl)}
+                sizes="108px"
+                alt=""
+              />
             ) : (
               initials
             )}

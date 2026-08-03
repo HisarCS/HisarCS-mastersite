@@ -1,6 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { esc, safeUrl } from '../../lib/util/html';
-import { thumbUrl, checkFile, type UploadSpec } from '../../lib/util/media';
+import {
+  avatarSrcSet,
+  checkFile,
+  researchImgSrcSet,
+  thumbUrl,
+  type UploadSpec,
+} from '../../lib/util/media';
 import { academicYear, cohortFor } from '../../lib/util/date';
 import { isLocalHost } from '../../lib/env';
 
@@ -40,6 +46,46 @@ describe('thumbUrl', () => {
   });
   it('passes unknown URLs through untouched', () => {
     expect(thumbUrl('https://example.com/a.jpg')).toBe('https://example.com/a.jpg');
+  });
+  it('serves the stored original when the need exceeds the small twin', () => {
+    const url = 'https://x.supabase.co/storage/v1/object/public/avatars/u/avatar-512.jpg';
+    expect(thumbUrl(url, 512)).toBe(url);
+  });
+});
+
+describe('avatarSrcSet', () => {
+  const base = 'https://x.supabase.co/storage/v1/object/public/avatars/u';
+  it('emits the full ladder for avatar-1024 uploads', () => {
+    const s = avatarSrcSet(`${base}/avatar-1024.jpg`)!;
+    expect(s).toContain(`${base}/avatar-128.jpg 128w`);
+    expect(s).toContain(`${base}/avatar-256.jpg 256w`);
+    expect(s).toContain(`${base}/avatar-512.jpg 512w`);
+    expect(s).toContain(`${base}/avatar-1024.jpg 1024w`);
+  });
+  it('emits only the pair that exists for legacy avatar-512 uploads', () => {
+    const s = avatarSrcSet(`${base}/avatar-512.jpg`)!;
+    expect(s).toBe(`${base}/avatar-128.jpg 128w, ${base}/avatar-512.jpg 512w`);
+  });
+  it('sizes external providers on demand, preserving other params', () => {
+    const s = avatarSrcSet('https://avatars.githubusercontent.com/u/1?v=4')!;
+    expect(s).toContain('v=4');
+    expect(s).toContain('s=1024');
+  });
+  it('returns undefined for unknown URLs — srcset must never 404', () => {
+    expect(avatarSrcSet('https://example.com/a.jpg')).toBeUndefined();
+    expect(avatarSrcSet(null)).toBeUndefined();
+  });
+});
+
+describe('researchImgSrcSet', () => {
+  it('derives the ladder from a -w2400 name (URL or storage path)', () => {
+    const s = researchImgSrcSet('abc/171-photo-w2400.jpg')!;
+    expect(s).toBe(
+      'abc/171-photo-w800.jpg 800w, abc/171-photo-w1600.jpg 1600w, abc/171-photo-w2400.jpg 2400w',
+    );
+  });
+  it('returns undefined for pre-ladder uploads', () => {
+    expect(researchImgSrcSet('abc/171-photo.jpg')).toBeUndefined();
   });
 });
 

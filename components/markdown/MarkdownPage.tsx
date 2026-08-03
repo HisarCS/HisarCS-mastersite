@@ -8,6 +8,7 @@ import 'katex/dist/katex.min.css';
 import type { Element } from 'hast';
 import { researchFileUrl } from '@/lib/data/researchEntries';
 import { safeUrl } from '@/lib/util/html';
+import { researchImgSrcSet } from '@/lib/util/media';
 import { parseChartSpec, parsePlacement, parseStatsSpec } from '@/lib/util/chartSpec';
 import { ChartSvg } from './ChartSvg';
 import styles from './Markdown.module.css';
@@ -23,16 +24,41 @@ import styles from './Markdown.module.css';
 /** image src: uploaded-file storage path, or an external https URL. */
 const mediaUrl = (src: string) => (/^https?:\/\//.test(src) ? safeUrl(src) : researchFileUrl(src));
 
-function Figure({ src, caption, title }: { src: string; caption: string; title?: string }) {
+/** The article column is ~840 CSS px; `sizes` tells the browser how much of
+ *  it a figure occupies so it can pick the right ladder variant. */
+const ARTICLE_W = 840;
+const sizesFor = (align: string, widthPct?: number, share = 1): string => {
+  if (align === 'wide') return '(max-width: 900px) 100vw, 940px';
+  if (align === 'inset') return '(max-width: 900px) 94vw, 440px';
+  if ((align === 'left' || align === 'right') && widthPct)
+    return `(max-width: 640px) 100vw, ${Math.round((ARTICLE_W * widthPct) / 100)}px`;
+  // full-width figure, or one slot of a side-by-side row
+  return `(max-width: 640px) 100vw, ${Math.round(ARTICLE_W * share)}px`;
+};
+
+function Figure({
+  src,
+  caption,
+  title,
+  share = 1,
+}: {
+  src: string;
+  caption: string;
+  title?: string;
+  share?: number;
+}) {
   const place = parsePlacement(title);
   const style =
     place.align === 'left' || place.align === 'right' ? { width: `${place.width}%` } : undefined;
+  const url = mediaUrl(src);
   return (
     <figure className={`${styles.figure} ${styles[place.align]}`} style={style}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         className={styles.img}
-        src={mediaUrl(src)}
+        src={url}
+        srcSet={researchImgSrcSet(url)}
+        sizes={sizesFor(place.align, place.width, share)}
         alt={caption}
         loading="lazy"
         decoding="async"
@@ -124,6 +150,7 @@ export function MarkdownPage({ markdown }: { markdown: string }) {
                   src={String(im.properties?.src ?? '')}
                   caption={String(im.properties?.alt ?? '')}
                   title={im.properties?.title ? String(im.properties.title) : undefined}
+                  share={1 / imgs.length}
                 />
               ));
               return imgs.length > 1 ? <div className={styles.row}>{figures}</div> : <>{figures}</>;
@@ -140,12 +167,15 @@ export function MarkdownPage({ markdown }: { markdown: string }) {
               place.align === 'left' || place.align === 'right'
                 ? { width: `${place.width}%` }
                 : undefined;
+            const url = mediaUrl(String(src ?? ''));
             return (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 className={`${styles.img} ${styles[place.align]}`}
                 style={style}
-                src={mediaUrl(String(src ?? ''))}
+                src={url}
+                srcSet={researchImgSrcSet(url)}
+                sizes={sizesFor(place.align, place.width)}
                 alt={alt ?? ''}
                 loading="lazy"
                 decoding="async"
