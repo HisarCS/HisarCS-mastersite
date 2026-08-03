@@ -1,5 +1,11 @@
 import { getSupabase } from '../supabase';
-import { checkFile, optimizeImage, UPLOAD_SPECS } from '../util/media';
+import {
+  AVATAR_LADDER,
+  checkFile,
+  optimizeImage,
+  RESEARCH_IMG_LADDER,
+  UPLOAD_SPECS,
+} from '../util/media';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -33,17 +39,18 @@ export async function uploadAvatar(
   const sb = getSupabase();
   if (!sb) return { url: null, error: 'no backend' };
   try {
-    const big = await optimizeImage(file, UPLOAD_SPECS.avatar.maxDim!, { square: true });
-    const thumb = await optimizeImage(file, 128, { square: true });
     const put = (p: string, blob: Blob) =>
       sb.storage
         .from('avatars')
         .upload(p, blob, { upsert: true, cacheControl: '31536000', contentType: 'image/jpeg' });
-    let r = await put(`${userId}/avatar-512.jpg`, big);
-    if (r.error) throw r.error;
-    r = await put(`${userId}/avatar-128.jpg`, thumb);
-    if (r.error) throw r.error;
-    const url = publicUrl(sb, 'avatars', `${userId}/avatar-512.jpg`);
+    // full responsive ladder; overwrites any legacy avatar-512/-128 pair, so
+    // no stale-file cleanup is needed
+    for (const w of AVATAR_LADDER) {
+      const blob = await optimizeImage(file, w, { square: true });
+      const r = await put(`${userId}/avatar-${w}.jpg`, blob);
+      if (r.error) throw r.error;
+    }
+    const url = publicUrl(sb, 'avatars', `${userId}/avatar-1024.jpg`);
     const { error } = await sb.from('people').update({ avatar_url: url }).eq('id', personId);
     if (error) throw error;
     return { url, error: null };
@@ -130,17 +137,28 @@ export async function uploadResearchFile(
   if (!sb) return { error: 'no backend' };
   try {
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '-').slice(-60);
-    const path = `${researchId}/${Date.now()}-${safeName}`;
-    // maxDim only exists on the image spec, so reference it directly
-    const body: Blob = isPdf
-      ? file
-      : await optimizeImage(file, UPLOAD_SPECS.researchImage.maxDim, {});
-    const { error: upErr } = await sb.storage.from('research-files').upload(path, body, {
-      upsert: false,
-      cacheControl: '31536000',
-      contentType: isPdf ? 'application/pdf' : 'image/jpeg',
-    });
-    if (upErr) throw upErr;
+    const upload = (p: string, body: Blob, contentType: string) =>
+      sb.storage
+        .from('research-files')
+        .upload(p, body, { upsert: false, cacheControl: '31536000', contentType });
+
+    let path: string;
+    if (isPdf) {
+      path = `${researchId}/${Date.now()}-${safeName}`;
+      const { error: upErr } = await upload(path, file, 'application/pdf');
+      if (upErr) throw upErr;
+    } else {
+      // responsive ladder: -w800/-w1600/-w2400 siblings. The DB row (and thus
+      // markdown references) point at the -w2400 file; srcset helpers derive
+      // the rest from the name.
+      const stem = `${researchId}/${Date.now()}-${safeName.replace(/\.[a-zA-Z0-9]+$/, '')}`;
+      path = `${stem}-w${RESEARCH_IMG_LADDER[RESEARCH_IMG_LADDER.length - 1]}.jpg`;
+      for (const w of RESEARCH_IMG_LADDER) {
+        const blob = await optimizeImage(file, w, {});
+        const { error: upErr } = await upload(`${stem}-w${w}.jpg`, blob, 'image/jpeg');
+        if (upErr) throw upErr;
+      }
+    }
     const { error } = await sb.from('research_files').insert({
       research_id: researchId,
       storage_path: path,
@@ -163,7 +181,11 @@ export async function deleteResearchFile(
   const sb = getSupabase();
   if (!sb) return 'no backend';
   try {
-    await sb.storage.from('research-files').remove([storagePath]);
+    // ladder uploads have -w800/-w1600 siblings next to the recorded -w2400
+    const paths = /-w2400\.jpg$/i.test(storagePath)
+      ? RESEARCH_IMG_LADDER.map((w) => storagePath.replace(/-w2400\.jpg$/i, `-w${w}.jpg`))
+      : [storagePath];
+    await sb.storage.from('research-files').remove(paths);
     const { error } = await sb.from('research_files').delete().eq('id', fileId);
     return error?.message ?? null;
   } catch (e: any) {
