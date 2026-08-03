@@ -6,8 +6,8 @@
 -- view falls back to rendering `description`, so entries without a page keep
 -- working unchanged.
 --
--- Current format (v2): { "version": 2, "markdown": "..." } — see ADR-0019 and
--- docs/research-publishing-framework.md. This migration originally shipped
+-- Current format (v2): { "version": 2, "markdown": "..." } — see ADR-0019.
+-- This migration originally shipped
 -- for a v1 block format that was replaced within days (hence the filename);
 -- this comment was corrected afterwards. Comment-only corrections to applied
 -- migrations are allowed — comments never execute — the SQL below is
