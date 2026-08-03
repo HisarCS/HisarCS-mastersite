@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { listMembers } from '@/lib/data/members';
 import { mockMembers } from '@/lib/data/mock';
 import { currentEnv } from '@/lib/env';
-import { thumbUrl } from '@/lib/util/media';
+import { avatarSrcSet, thumbUrl } from '@/lib/util/media';
 import { hashStr } from '@/lib/util/hash';
 import type { MemberCard } from '@/lib/domain/types';
 import { SiteHeader } from './SiteHeader';
@@ -66,7 +66,9 @@ export function MembersIndex() {
                   {m.avatarUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={thumbUrl(m.avatarUrl) ?? ''}
+                      src={thumbUrl(m.avatarUrl, 512) ?? ''}
+                      srcSet={avatarSrcSet(m.avatarUrl)}
+                      sizes="(max-width: 640px) 94vw, 330px"
                       alt=""
                       loading="lazy"
                       decoding="async"

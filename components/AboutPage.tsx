@@ -5,6 +5,10 @@ const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
 
 const SUMMITS = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
 
+/** srcset over the committed `-w<W>` variants (see scripts/image-ladder.mjs). */
+const set = (stem: string, ext: string, widths: number[]) =>
+  widths.map((w) => `${BASE}/about/${stem}-w${w}${ext} ${w}w`).join(', ');
+
 /** About Us — the HisarCS story, ported from the original hisarcs.github.io/about.html. */
 export function AboutPage() {
   return (
@@ -16,7 +20,13 @@ export function AboutPage() {
 
         <figure className={styles.figure}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={`${BASE}/about/main.jpg`} alt="The HisarCS team" className={styles.img} />
+          <img
+            src={`${BASE}/about/main-w1600.jpg`}
+            srcSet={set('main', '.jpg', [800, 1600, 2400])}
+            sizes="(max-width: 900px) 100vw, 792px"
+            alt="The HisarCS team"
+            className={styles.img}
+          />
         </figure>
 
         <p className={styles.p}>
@@ -29,7 +39,13 @@ export function AboutPage() {
 
         <figure className={styles.figure}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={`${BASE}/about/stat.jpg`} alt="HisarCS in numbers" className={styles.img} />
+          <img
+            src={`${BASE}/about/stat.jpg`}
+            srcSet={`${set('stat', '.jpg', [800])}, ${BASE}/about/stat.jpg 1226w`}
+            sizes="(max-width: 900px) 100vw, 792px"
+            alt="HisarCS in numbers"
+            className={styles.img}
+          />
         </figure>
 
         <h2 className={styles.heading}>Peer Learning</h2>
@@ -44,6 +60,8 @@ export function AboutPage() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={`${BASE}/about/motto.png`}
+            srcSet={`${set('motto', '.png', [800])}, ${BASE}/about/motto.png 898w`}
+            sizes="(max-width: 640px) 94vw, 440px"
             alt="Make, fail, learn, repeat"
             className={styles.img}
           />
@@ -70,7 +88,9 @@ export function AboutPage() {
             // eslint-disable-next-line @next/next/no-img-element
             <img
               key={n}
-              src={`${BASE}/about/summit${n}.jpg`}
+              src={`${BASE}/about/summit${n}-w800.jpg`}
+              srcSet={set(`summit${n}`, '.jpg', [800, 1600])}
+              sizes="(max-width: 640px) 47vw, 272px"
               alt={`Coding summit photo ${n}`}
               loading="lazy"
               decoding="async"
