@@ -124,6 +124,21 @@ export function ResearchEntryView({ id, embedded = false }: { id: string; embedd
                 </Link>
               )}
             </h1>
+            {(p.venue || p.presentedOn) && (
+              <div className={styles.venueLine}>
+                {[
+                  p.venue,
+                  p.presentedOn
+                    ? new Date(`${p.presentedOn}T00:00:00`).toLocaleDateString('en', {
+                        month: 'long',
+                        year: 'numeric',
+                      })
+                    : '',
+                ]
+                  .filter(Boolean)
+                  .join(' · ')}
+              </div>
+            )}
             {p.fields.length > 0 && (
               <div className={styles.chips}>
                 {p.fields.map((f) => (

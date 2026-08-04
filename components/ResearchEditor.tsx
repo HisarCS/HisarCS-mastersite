@@ -54,6 +54,8 @@ export function ResearchEditor({ id }: { id: string }) {
   const [state, setState] = useState<State>({ status: 'loading' });
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [venue, setVenue] = useState('');
+  const [presentedOn, setPresentedOn] = useState('');
   const [slug, setSlug] = useState('');
   const [pageMd, setPageMd] = useState('');
   const [pageHint, setPageHint] = useState('');
@@ -83,6 +85,8 @@ export function ResearchEditor({ id }: { id: string }) {
     const amEditor = !!me && entry.members.some((m) => m.publicId === me.publicId);
     setTitle(entry.title);
     setDescription(entry.description);
+    setVenue(entry.venue ?? '');
+    setPresentedOn(entry.presentedOn ?? '');
     setSlug(entry.publicId);
     setPageMd(entry.page?.markdown ?? '');
     setSelected(new Set(entry.fieldIds));
@@ -172,6 +176,8 @@ export function ResearchEditor({ id }: { id: string }) {
       title: title.trim(),
       description: description.trim(),
       publicId: nextSlug,
+      venue: venue.trim(),
+      presentedOn,
     });
     if (err) {
       setBusy(false);
@@ -464,8 +470,27 @@ export function ResearchEditor({ id }: { id: string }) {
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="What is this research about?"
+            placeholder="What is this research about? The first two lines show on the card."
           />
+
+          <div className={styles.pairRow}>
+            <div>
+              <label className={styles.f}>VENUE</label>
+              <input
+                value={venue}
+                onChange={(e) => setVenue(e.target.value)}
+                placeholder="IDC '26, exhibition, class…"
+              />
+            </div>
+            <div>
+              <label className={styles.f}>DATE</label>
+              <input
+                type="date"
+                value={presentedOn}
+                onChange={(e) => setPresentedOn(e.target.value)}
+              />
+            </div>
+          </div>
 
           <label className={styles.f}>
             PUBLIC URL <span className={styles.lock}>must be unique</span>
