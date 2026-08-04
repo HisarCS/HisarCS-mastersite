@@ -335,6 +335,25 @@ export async function updateResearchPage(
   }
 }
 
+/**
+ * Set (or clear) the entry's card thumbnail. Stores the image's public URL in
+ * research.avatar_url; ladder-named uploads (…-w2400.jpg) get a responsive
+ * srcset on the index cards for free. RLS: any member of the entry.
+ */
+export async function setResearchThumbnail(
+  dbId: string,
+  url: string | null,
+): Promise<string | null> {
+  const sb = getSupabase();
+  if (!sb) return 'no backend';
+  try {
+    const { error } = await sb.from('research').update({ avatar_url: url }).eq('id', dbId);
+    return error?.message ?? null;
+  } catch (e: any) {
+    return e?.message ?? 'could not set the thumbnail';
+  }
+}
+
 /** Persist a new member order: sort_order = position in `personIds`. */
 export async function setResearchMembersOrder(
   dbId: string,

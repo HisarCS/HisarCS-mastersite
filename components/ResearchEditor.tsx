@@ -20,6 +20,7 @@ import {
   setExternalAuthors,
   setResearchMembersOrder,
   setResearchPublished,
+  setResearchThumbnail,
   syncResearchFields,
   updateResearchEntry,
   updateResearchMemberRole,
@@ -237,12 +238,29 @@ export function ResearchEditor({ id }: { id: string }) {
   const removeFile = async (fileId: string, storagePath: string) => {
     setBusy(true);
     const err = await deleteResearchFile(fileId, storagePath);
+    // the deleted image may have been the card thumbnail — don't leave a dead URL
+    if (!err && entry.avatarUrl === researchFileUrl(storagePath)) {
+      await setResearchThumbnail(entry.dbId, null);
+    }
     setBusy(false);
     if (err) {
       setFileHint(`✕ ${err}`);
       return;
     }
     setFileHint('');
+    await load();
+  };
+
+  /** Point the card thumbnail at one of the entry's images (or clear it). */
+  const setThumb = async (url: string | null) => {
+    setBusy(true);
+    const err = await setResearchThumbnail(entry.dbId, url);
+    setBusy(false);
+    if (err) {
+      setFileHint(`✕ ${err}`);
+      return;
+    }
+    setFileHint(url ? '✓ thumbnail updated' : '✓ thumbnail cleared — card shows initials');
     await load();
   };
 
@@ -566,7 +584,8 @@ export function ResearchEditor({ id }: { id: string }) {
           <h2>Files</h2>
           <p className={styles.sub}>
             Images (JPEG/PNG/WebP, up to 15 MB, at least 2000 px on the long edge — optimized on
-            upload) and PDFs (up to 10 MB). They appear on the public page.
+            upload) and PDFs (up to 10 MB). They appear on the public page. One image can be the
+            card thumbnail on the Research index (shown cropped to 16:10, sharp on any screen).
           </p>
           {entry.files.length > 0 && (
             <div className={styles.files}>
@@ -594,6 +613,26 @@ export function ResearchEditor({ id }: { id: string }) {
                     >
                       {label}
                     </a>
+                    {f.kind === 'image' &&
+                      (entry.avatarUrl === url ? (
+                        <button
+                          className={`${styles.thumbBtn} ${styles.thumbOn}`}
+                          onClick={() => setThumb(null)}
+                          disabled={busy}
+                          title="This is the card thumbnail — click to clear"
+                        >
+                          ★ Thumbnail
+                        </button>
+                      ) : (
+                        <button
+                          className={styles.thumbBtn}
+                          onClick={() => setThumb(url)}
+                          disabled={busy}
+                          title="Show this image on the research card"
+                        >
+                          Set as thumbnail
+                        </button>
+                      ))}
                     <button
                       className={styles.remove}
                       onClick={() => removeFile(f.id, f.storagePath)}
