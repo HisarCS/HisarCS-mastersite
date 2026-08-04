@@ -383,6 +383,21 @@
   }
 }
 
+/* venue + date side by side; stacks on narrow screens */
+.pairRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.pairRow input {
+  width: 100%;
+}
+@media (max-width: 640px) {
+  .pairRow {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* thumbnail toggle on image file rows — quiet until it's the active one */
 .thumbBtn {
   font: inherit;

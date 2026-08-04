@@ -49,6 +49,12 @@ export interface ResearchEntryCard {
   publicId: string;
   title: string;
   avatarUrl: string | null;
+  description: string;
+  /** where it was shown/published, e.g. "IDC '26" — card subtitle */
+  venue: string | null;
+  /** ISO date (yyyy-mm-dd) or null */
+  presentedOn: string | null;
+  tags: string[];
 }
 
 /** A research reference shown on a member's profile. */
@@ -113,6 +119,10 @@ export interface ResearchEntry {
   title: string;
   description: string;
   avatarUrl: string | null;
+  /** where it was shown/published, e.g. "IDC '26" — card subtitle */
+  venue: string | null;
+  /** ISO date (yyyy-mm-dd) or null */
+  presentedOn: string | null;
   published: boolean;
   fields: string[];
   /** field ids, for the editor's tag chips (names are in `fields`) */
