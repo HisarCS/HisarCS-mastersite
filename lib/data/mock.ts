@@ -148,6 +148,13 @@ export function mockResearchEntries(): ResearchEntryCard[] {
     publicId: mockSlug(title),
     title,
     avatarUrl: null,
+    description:
+      i % 3 === 0
+        ? 'A longer mock description that should clamp to two lines on the card no matter how much text an author eventually writes here, proving the tags stay pinned.'
+        : 'Short mock summary.',
+    venue: i % 2 === 0 ? "IDC '26" : null,
+    presentedOn: i % 2 === 0 ? '2026-06-15' : null,
+    tags: i % 3 === 2 ? [] : ['robotics', 'fabrication'],
   }));
 }
 
@@ -157,6 +164,8 @@ export function mockResearchEntry(id: string): ResearchEntry {
     dbId: '',
     publicId: id || 'research',
     title,
+    venue: "IDC '26",
+    presentedOn: '2026-06-15',
     published: true,
     avatarUrl: null,
     fields: [],

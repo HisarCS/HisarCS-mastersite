@@ -58,6 +58,14 @@
   object-fit: cover;
 }
 
+/* venue + date under the title, e.g. "IDC '26 - June 2026" */
+.venueLine {
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 13px;
+  margin: 2px 0 8px;
+}
+
 .title {
   font-size: 34px;
   letter-spacing: -0.02em;
