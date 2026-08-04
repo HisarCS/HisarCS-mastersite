@@ -383,6 +383,29 @@
   }
 }
 
+/* thumbnail toggle on image file rows — quiet until it's the active one */
+.thumbBtn {
+  font: inherit;
+  font-size: 12px;
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 99px;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 3px 10px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.thumbBtn:hover:not(:disabled) {
+  color: var(--ink);
+  border-color: var(--ink);
+}
+.thumbOn {
+  color: var(--accent);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
 /* reorder arrows on roster rows — quiet until hovered */
 .orderBtn {
   font: inherit;
