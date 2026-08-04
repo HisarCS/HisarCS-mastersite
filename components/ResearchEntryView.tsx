@@ -98,7 +98,7 @@ export function ResearchEntryView({ id, embedded = false }: { id: string; embedd
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={thumbUrl(p.avatarUrl, 256) ?? ''}
-                srcSet={avatarSrcSet(p.avatarUrl)}
+                srcSet={avatarSrcSet(p.avatarUrl) ?? researchImgSrcSet(p.avatarUrl)}
                 sizes="120px"
                 alt=""
                 className={styles.pavImg}
