@@ -142,25 +142,26 @@ export function ResearchEntryView({ id, embedded = false }: { id: string; embedd
                   .join(' · ')}
               </div>
             )}
-            {p.fields.length > 0 && (
-              <div className={styles.chips}>
-                {p.fields.map((f) => (
-                  <button
-                    key={f}
-                    type="button"
-                    className={styles.chip}
-                    style={{ '--chip-c': tagColor(f) } as CSSProperties}
-                  >
-                    {f}
-                  </button>
-                ))}
-              </div>
-            )}
-            {/* the description is the entry's lede — always visible, even when
-                a composed page replaces the About section below */}
-            {p.page && p.description && <p className={styles.lede}>{p.description}</p>}
+            {/* the description reads directly under the venue · date line */}
+            {p.description && <p className={styles.lede}>{p.description}</p>}
           </div>
         </div>
+
+        {/* tags sit in their own borderless row, above the members list */}
+        {p.fields.length > 0 && (
+          <div className={styles.tagBar}>
+            {p.fields.map((f) => (
+              <button
+                key={f}
+                type="button"
+                className={styles.chip}
+                style={{ '--chip-c': tagColor(f) } as CSSProperties}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+        )}
 
         {(p.members.length > 0 || p.externalAuthors.length > 0) && (
           <section className={styles.section}>
@@ -205,11 +206,6 @@ export function ResearchEntryView({ id, embedded = false }: { id: string; embedd
           <MarkdownPage markdown={p.page.markdown} />
         ) : (
           <>
-            <section className={styles.section}>
-              <h2 className={styles.h2}>About</h2>
-              <div className={styles.desc}>{p.description}</div>
-            </section>
-
             {p.files.length > 0 && (
               <section className={styles.section}>
                 <h2 className={styles.h2}>Files</h2>
