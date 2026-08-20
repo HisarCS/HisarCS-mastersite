@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import Link from 'next/link';
 import { getResearchEntry, researchFileUrl } from '@/lib/data/researchEntries';
 import { getAuthUser, getMyProfile } from '@/lib/data/auth';
@@ -8,6 +8,7 @@ import { mockResearchEntry } from '@/lib/data/mock';
 import { currentEnv } from '@/lib/env';
 import { safeUrl } from '@/lib/util/html';
 import { avatarSrcSet, researchImgSrcSet, thumbUrl } from '@/lib/util/media';
+import { hashStr } from '@/lib/util/hash';
 import type { ResearchEntry } from '@/lib/domain/types';
 import { MarkdownPage } from './markdown/MarkdownPage';
 import { SiteHeader } from './SiteHeader';
@@ -27,6 +28,8 @@ const initials = (s: string) =>
 
 const colorFor = (s: string) =>
   COLORS[[...String(s)].reduce((a, c) => a + c.charCodeAt(0), 0) % COLORS.length]!;
+/** same hash as the index cards, so a tag keeps its color across pages */
+const tagColor = (t: string) => COLORS[hashStr(t) % COLORS.length]!;
 
 type State = { status: 'loading' } | { status: 'ok'; entry: ResearchEntry } | { status: 'missing' };
 
@@ -142,12 +145,20 @@ export function ResearchEntryView({ id, embedded = false }: { id: string; embedd
             {p.fields.length > 0 && (
               <div className={styles.chips}>
                 {p.fields.map((f) => (
-                  <span key={f} className={styles.chip}>
+                  <button
+                    key={f}
+                    type="button"
+                    className={styles.chip}
+                    style={{ '--chip-c': tagColor(f) } as CSSProperties}
+                  >
                     {f}
-                  </span>
+                  </button>
                 ))}
               </div>
             )}
+            {/* the description is the entry's lede — always visible, even when
+                a composed page replaces the About section below */}
+            {p.page && p.description && <p className={styles.lede}>{p.description}</p>}
           </div>
         </div>
 

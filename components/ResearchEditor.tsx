@@ -35,6 +35,8 @@ import styles from './ResearchEditor.module.css';
 
 /** mirrors the DB CHECK on research.public_id */
 const SLUG_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+/** description budget: 2 clamped lines on the card + a one-paragraph lede */
+const DESC_MAX = 280;
 
 type State =
   | { status: 'loading' }
@@ -466,11 +468,17 @@ export function ResearchEditor({ id }: { id: string }) {
           <label className={styles.f}>TITLE</label>
           <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title" />
 
-          <label className={styles.f}>DESCRIPTION</label>
+          <label className={styles.f}>
+            DESCRIPTION{' '}
+            <span className={styles.lock}>
+              {description.length}/{DESC_MAX} — card shows 2 lines, page shows it under the title
+            </span>
+          </label>
           <textarea
             value={description}
+            maxLength={DESC_MAX}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="What is this research about? The first two lines show on the card."
+            placeholder="What is this research about?"
           />
 
           <div className={styles.pairRow}>

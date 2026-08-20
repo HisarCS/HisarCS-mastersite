@@ -5,6 +5,18 @@
   margin-top: 26px;
   font-size: 16px;
   line-height: 1.65;
+  /* hard right edge: nothing may push past the centered column — long
+     unbreakable strings wrap instead of overflowing */
+  overflow-wrap: break-word;
+}
+.article a {
+  overflow-wrap: anywhere; /* pasted URLs are the usual offender */
+}
+/* KaTeX display math can be wider than the column — scroll it in place */
+.article :global(.katex-display) {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 2px;
 }
 .article::after {
   /* floats never leak past the article */
@@ -139,8 +151,14 @@
 }
 .wide {
   clear: both;
-  margin-left: -6%;
-  margin-right: -6%;
+}
+/* only bleed past the column when the viewport has room for it — between
+   640 and 900px the -6% margins used to overflow the right edge */
+@media (min-width: 900px) {
+  .wide {
+    margin-left: -6%;
+    margin-right: -6%;
+  }
 }
 .inset {
   max-width: 440px;
@@ -174,10 +192,6 @@
   .right {
     float: none;
     width: 100% !important;
-    margin-left: 0;
-    margin-right: 0;
-  }
-  .wide {
     margin-left: 0;
     margin-right: 0;
   }
