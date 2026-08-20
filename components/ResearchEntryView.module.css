@@ -177,15 +177,10 @@
 
 .desc {
   font-size: 15.5px;
-  line-height: 1.7;
-  max-width: 680px;
+  line-height: 1.65;
+  max-width: 640px;
   white-space: pre-wrap;
   overflow-wrap: anywhere; /* pasted URLs / unbroken strings must never bleed out */
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  padding: 18px 22px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 }
 
 .files {
