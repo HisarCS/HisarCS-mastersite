@@ -1,0 +1,508 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ideaLab — Layout Specification</title>
+<style>
+  :root {
+    --paper: #fafaf7; --ink: #1c1c1e; --mute: #75726a;
+    --line: rgba(20, 20, 20, 0.14); --hair: rgba(20, 20, 20, 0.08);
+    --red: #d6336c; --red-soft: rgba(214, 51, 108, 0.08);
+    --fill: #eeede7; --fill2: #e2e1d8; --card-bg: #ffffff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #141417; --ink: #e6e4de; --mute: #97948c;
+      --line: rgba(230, 228, 222, 0.2); --hair: rgba(230, 228, 222, 0.1);
+      --red: #f06595; --red-soft: rgba(240, 101, 149, 0.1);
+      --fill: #1e1e24; --fill2: #26262e; --card-bg: #1a1a20;
+    }
+  }
+  :root[data-theme='dark'] {
+    --paper: #141417; --ink: #e6e4de; --mute: #97948c;
+    --line: rgba(230, 228, 222, 0.2); --hair: rgba(230, 228, 222, 0.1);
+    --red: #f06595; --red-soft: rgba(240, 101, 149, 0.1);
+    --fill: #1e1e24; --fill2: #26262e; --card-bg: #1a1a20;
+  }
+  :root[data-theme='light'] {
+    --paper: #fafaf7; --ink: #1c1c1e; --mute: #75726a;
+    --line: rgba(20, 20, 20, 0.14); --hair: rgba(20, 20, 20, 0.08);
+    --red: #d6336c; --red-soft: rgba(214, 51, 108, 0.08);
+    --fill: #eeede7; --fill2: #e2e1d8; --card-bg: #ffffff;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--paper); color: var(--ink);
+    font: 15px/1.55 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  code, .mono { font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; }
+  .sheet { max-width: 1100px; margin: 0 auto; padding: 0 28px 120px; }
+
+  header.mast { padding: 52px 0 30px; border-bottom: 2px solid var(--ink); }
+  .mast .doc { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--red); font-weight: 700; }
+  .mast h1 { font-size: 34px; letter-spacing: -0.02em; margin: 8px 0 10px; text-wrap: balance; }
+  .mast p { max-width: 68ch; color: var(--mute); }
+  .meta-row { display: flex; flex-wrap: wrap; gap: 8px 26px; margin-top: 16px; font-size: 12px; color: var(--mute); }
+  .meta-row code { font-size: 11.5px; color: var(--ink); }
+
+  nav.toc { position: sticky; top: 0; z-index: 10; background: var(--paper); border-bottom: 1px solid var(--line); padding: 10px 0; display: flex; flex-wrap: wrap; gap: 2px 14px; font-size: 12px; }
+  nav.toc a { color: var(--mute); text-decoration: none; padding: 2px 4px; }
+  nav.toc a:hover, nav.toc a:focus-visible { color: var(--red); }
+  nav.toc b { color: var(--ink); font-weight: 600; }
+
+  section { padding: 44px 0 8px; border-bottom: 1px solid var(--line); scroll-margin-top: 86px; }
+  .sec-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 6px; }
+  .sec-no { font-family: ui-monospace, Menlo, monospace; font-size: 13px; font-weight: 700; color: var(--red); }
+  h2 { font-size: 22px; letter-spacing: -0.01em; }
+  .route { font-family: ui-monospace, Menlo, monospace; font-size: 12.5px; color: var(--mute); }
+  .files { font-size: 11.5px; color: var(--mute); margin-bottom: 20px; }
+  .files code { font-size: 11px; }
+  h3 { font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--mute); margin: 26px 0 10px; font-weight: 700; }
+
+  /* -- diagram system: frame + numbered callouts + legend --------------------- */
+  .spec-row { display: grid; grid-template-columns: auto minmax(260px, 1fr); gap: 30px; align-items: start; margin: 18px 0 8px; }
+  @media (max-width: 860px) { .spec-row { grid-template-columns: 1fr; } }
+  .frame { border: 2px solid var(--ink); background: var(--card-bg); position: relative; }
+  .frame-cap { font-size: 12px; color: var(--mute); margin-top: 8px; max-width: 60ch; }
+  .frame-cap b { color: var(--ink); }
+  .zone { border: 1px dashed var(--line); background: var(--fill); position: relative; display: flex; align-items: center; justify-content: center; text-align: center; font-family: ui-monospace, Menlo, monospace; font-size: 11.5px; line-height: 1.35; color: var(--mute); padding: 4px 6px; }
+  .zone.deep { background: var(--fill2); }
+  .zone.clear { background: transparent; }
+  .k { position: absolute; top: 4px; left: 4px; width: 18px; height: 18px; border-radius: 50%; background: var(--red); color: #fff; font: 700 11px/18px ui-monospace, Menlo, monospace; text-align: center; z-index: 3; }
+  .k.br { left: auto; top: auto; right: 4px; bottom: 4px; }
+  .legend { list-style: none; font-size: 13px; }
+  .legend li { display: grid; grid-template-columns: 24px 1fr; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--hair); align-items: baseline; }
+  .legend .kk { width: 18px; height: 18px; border-radius: 50%; background: var(--red); color: #fff; font: 700 11px/18px ui-monospace, Menlo, monospace; text-align: center; }
+  .legend b { font-weight: 600; }
+  .legend .spec { display: block; font-family: ui-monospace, Menlo, monospace; font-size: 11.5px; color: var(--mute); margin-top: 2px; }
+  .dim-side { position: absolute; font-family: ui-monospace, Menlo, monospace; font-size: 10.5px; font-weight: 700; color: var(--red); white-space: nowrap; }
+
+  /* -- spec tables -------------------------------------------------------------- */
+  .tbl-wrap { overflow-x: auto; margin: 10px 0 22px; }
+  table { border-collapse: collapse; width: 100%; font-size: 12.5px; min-width: 640px; }
+  th { text-align: left; font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--mute); font-weight: 700; padding: 6px 14px 6px 0; border-bottom: 1.5px solid var(--ink); white-space: nowrap; }
+  td { padding: 7px 14px 7px 0; border-bottom: 1px solid var(--hair); vertical-align: top; }
+  td:first-child { font-weight: 600; white-space: nowrap; }
+  td code { font-size: 11.5px; background: var(--red-soft); color: inherit; border-radius: 4px; padding: 1px 5px; }
+  tr:hover td { background: var(--red-soft); }
+
+  .swatch { display: inline-block; width: 11px; height: 11px; border-radius: 3px; border: 1px solid var(--line); vertical-align: -1px; margin-right: 6px; }
+  .callout { border-left: 3px solid var(--red); background: var(--red-soft); padding: 10px 14px; font-size: 13px; margin: 14px 0; max-width: 74ch; }
+  .callout b { color: var(--red); }
+  ul.issues { margin: 8px 0 18px 18px; font-size: 13px; }
+  ul.issues li { margin-bottom: 5px; }
+  ul.issues .open { color: var(--red); font-weight: 700; font-size: 10px; letter-spacing: 0.08em; margin-right: 6px; }
+
+  /* -- 1:1 reference render of a research card (site tokens, light) ------------- */
+  .ref-card { width: 330px; background: #fff; border: 1px solid rgba(0,0,0,.09); border-radius: 16px; overflow: hidden; color: #141414; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; flex-shrink: 0; }
+  .ref-thumb { aspect-ratio: 16/10; background: #2f6fe8; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 44px; font-weight: 700; }
+  .ref-body { padding: 16px 18px 8px; display: flex; flex-direction: column; gap: 7px; }
+  .ref-venue { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 12.5px; line-height: 1.4; height: 1.4em; }
+  .ref-venue .v { color: #e8542f; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ref-venue .d { color: #8a8578; font-weight: 600; white-space: nowrap; }
+  .ref-title { font-size: 20px; font-weight: 700; line-height: 1.25; height: 2.5em; letter-spacing: -0.01em; overflow: hidden; }
+  .ref-desc { color: #8a8578; font-size: 14px; line-height: 1.5; height: 3em; overflow: hidden; }
+  .ref-chips { display: flex; gap: 6px; align-items: center; height: 26px; margin: 0 18px 16px; overflow: hidden; }
+  .ref-chip { font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 99px; border: 1px solid rgba(0,0,0,.09); color: #8a8578; background: #fff; white-space: nowrap; flex-shrink: 0; }
+  .ref-chip.hov { color: #d2447e; border-color: #d2447e; background: #fdf0f5; }
+
+  @media (max-width: 720px) { table { min-width: 560px; } }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+<header class="mast">
+  <div class="doc">Layout specification · LS-01 · rev 2</div>
+  <h1>ideaLab — page-by-page layout specification</h1>
+  <p>Every rendered surface of the site: a dimensioned drawing, a numbered-callout legend, and a spec table with exact box, type, and color values. Each number is transcribed from the component's CSS module (cited per section). If this document and the code disagree, the code is right and this file must be corrected in the same PR.</p>
+  <div class="meta-row">
+    <span>All printed values are <b>real CSS px</b>; drawings are proportional, callouts <span style="color:var(--red); font-weight:700;">① numbered</span> to legends</span>
+    <span>Repo: <code>HisarCS/HisarCS-mastersite</code></span>
+  </div>
+</header>
+
+<nav class="toc">
+  <a href="#f"><b>F</b> Foundations</a>
+  <a href="#s1"><b>1</b> Home</a>
+  <a href="#s2"><b>2</b> Members</a>
+  <a href="#s3"><b>3</b> Research index</a>
+  <a href="#s4"><b>4</b> Research entry</a>
+  <a href="#s5"><b>5</b> Curated research</a>
+  <a href="#s6"><b>6</b> Person</a>
+  <a href="#s7"><b>7</b> About</a>
+  <a href="#s8"><b>8</b> Member area</a>
+  <a href="#s9"><b>9</b> Research editor</a>
+  <a href="#states"><b>S</b> States</a>
+  <a href="#issues"><b>!</b> Open issues</a>
+</nav>
+
+<!-- ============================================================ FOUNDATIONS -->
+<section id="f">
+  <div class="sec-head"><span class="sec-no">F</span><h2>Foundations</h2></div>
+  <div class="files">Source: <code>app/globals.css</code> · <code>components/SiteHeader.module.css</code> · <code>lib/util/hash.ts</code> · <code>docs/image-guidelines.md</code></div>
+
+  <h3>Color tokens (the only permitted colors)</h3>
+  <div class="tbl-wrap"><table>
+    <tr><th>Token</th><th>Value</th><th>Use</th></tr>
+    <tr><td><code>--bg</code></td><td class="mono"><span class="swatch" style="background:#f6f4ef"></span>#f6f4ef</td><td>page canvas (warm off-white)</td></tr>
+    <tr><td><code>--ink</code></td><td class="mono"><span class="swatch" style="background:#141414"></span>#141414</td><td>primary text, solid buttons</td></tr>
+    <tr><td><code>--muted</code></td><td class="mono"><span class="swatch" style="background:#8a8578"></span>#8a8578</td><td>secondary text, captions, chip resting state</td></tr>
+    <tr><td><code>--card</code></td><td class="mono"><span class="swatch" style="background:#ffffff"></span>#ffffff</td><td>card / panel surfaces</td></tr>
+    <tr><td><code>--accent</code></td><td class="mono"><span class="swatch" style="background:#e8542f"></span>#e8542f</td><td>links, eyebrows, venue lines, wordmark "Lab"</td></tr>
+    <tr><td><code>--line</code></td><td class="mono">rgba(0,0,0,.09)</td><td>hairline borders everywhere</td></tr>
+    <tr><td><code>--ok</code> / <code>--danger</code></td><td class="mono"><span class="swatch" style="background:#28a06d"></span>#28a06d · <span class="swatch" style="background:#c0392b"></span>#c0392b</td><td>status only, never decorative</td></tr>
+  </table></div>
+
+  <h3>Category palette (avatars + tag hover)</h3>
+  <div class="tbl-wrap"><table>
+    <tr><th>Index</th><th>Value</th><th>Assignment rule</th></tr>
+    <tr><td class="mono">0–5</td>
+      <td class="mono">
+        <span class="swatch" style="background:#e8542f"></span>#e8542f&nbsp;
+        <span class="swatch" style="background:#2f6fe8"></span>#2f6fe8&nbsp;
+        <span class="swatch" style="background:#28a06d"></span>#28a06d&nbsp;
+        <span class="swatch" style="background:#c4a11f"></span>#c4a11f&nbsp;
+        <span class="swatch" style="background:#9048c8"></span>#9048c8&nbsp;
+        <span class="swatch" style="background:#d2447e"></span>#d2447e
+      </td>
+      <td><code>COLORS[hashStr(name) % 6]</code> — deterministic: the same tag or person gets the same color on every page. (Entry-page member avatars use a legacy char-code hash — see Open issues.)</td></tr>
+  </table></div>
+
+  <h3>Breakpoints & containers</h3>
+  <div class="tbl-wrap"><table>
+    <tr><th>Name</th><th>Value</th><th>Effect</th></tr>
+    <tr><td>mobile</td><td class="mono">≤ 640px</td><td>grids collapse, floats un-float, venue/date input pair stacks, photo grid 3→2 col</td></tr>
+    <tr><td>column</td><td class="mono">≥ 900px</td><td>markdown <code>wide</code> figures may bleed ±6% past the column (below 900 they stay inside — overflow fix)</td></tr>
+    <tr><td>header</td><td class="mono">980px</td><td>SiteHeader max-width, padding 24 / 36, z-index 40 (above the homepage stage)</td></tr>
+    <tr><td>grid pages</td><td class="mono">1040px</td><td>Members, Research index (padding 32 / 24 / 40)</td></tr>
+    <tr><td>article pages</td><td class="mono">860px</td><td>Research entry (pad 12/24/96), curated (pad 28/24/96)</td></tr>
+    <tr><td>form pages</td><td class="mono">720px</td><td>Member area (pad 24/24/96), Research editor</td></tr>
+    <tr><td>profile / about</td><td class="mono">640px · 840px</td><td>Person page · About page</td></tr>
+  </table></div>
+
+  <h3>Tag chip system (one system, two sizes)</h3>
+  <div class="tbl-wrap"><table>
+    <tr><th>Context</th><th>Box</th><th>Type</th><th>Resting</th><th>Hover</th></tr>
+    <tr><td>Index card</td><td class="mono">pad 3×9 · r99 · no-shrink</td><td class="mono">11 / 600</td><td rowspan="2">bg <code>--card</code> · border <code>--line</code> · text <code>--muted</code></td><td rowspan="2">text+border = category color · bg = 10% tint (<code>color-mix</code>) · 0.12s ease</td></tr>
+    <tr><td>Entry page</td><td class="mono">pad 5×12 · r99</td><td class="mono">12.5 / 600</td></tr>
+  </table></div>
+  <p class="callout"><b>Rule:</b> tags are always <code>&lt;button type="button"&gt;</code> (future filtering), never nested inside an <code>&lt;a&gt;</code> — cards wrap the link around thumb+text only.</p>
+
+  <h3>Images</h3>
+  <p style="max-width:74ch; font-size:13px;">Every surface declares <code class="mono">sizes</code>; sources come from pre-generated ladders (avatars 128/256/512/1024 · research 800/1600/2400 · static <code class="mono">npm run images</code>). A srcset candidate must exist as a real file — full table in <code class="mono">docs/image-guidelines.md</code>.</p>
+</section>
+
+<!-- ============================================================ 1 HOME -->
+<section id="s1">
+  <div class="sec-head"><span class="sec-no">01</span><h2>Home — pixel mark</h2><span class="route">/</span></div>
+  <div class="files">Source: <code>components/Home.module.css</code> · <code>PixelMark.module.css</code> · <code>SiteHeader.module.css</code></div>
+  <div class="spec-row">
+    <div>
+      <div class="frame" style="width:560px; height:340px;">
+        <div class="zone clear" style="position:absolute; inset:0;">member tiles<span class="k" style="top:auto; bottom:8px; left:8px;">2</span></div>
+        <div class="zone" style="position:absolute; top:0; left:0; right:0; height:44px;"><span class="k">1</span>SiteHeader</div>
+        <div class="zone deep" style="position:absolute; top:120px; left:170px; width:140px; height:90px;"><span class="k">3</span>hover card</div>
+        <div class="zone" style="position:absolute; bottom:0; right:0; width:180px; height:30px;"><span class="k">4</span>footer</div>
+      </div>
+      <div class="frame-cap"><b>Full viewport.</b> Art surface — deliberately exempt from the column and type rules.</div>
+    </div>
+    <ol class="legend">
+      <li><span class="kk">1</span><div><b>SiteHeader</b> — always above the stage<span class="spec">max-w 980 · pad 24×36 · z-index 40 · wordmark 20/700 ("Lab" in accent) · links 13 muted → ink on hover</span></div></li>
+      <li><span class="kk">2</span><div><b>Pixel stage</b> — full-viewport member mosaic<span class="spec">position:fixed inset:0 · tile size var(--cell) · radius variants 10% / 50% / corner mixes · initials calc(cell × .38)</span></div></li>
+      <li><span class="kk">3</span><div><b>Hover card</b> — appears over the hovered tile<span class="spec">236w · r14 · pad 14 · avatar 46×46 r12 · name 15–17 · meta 12 · avatar via thumbUrl(128)</span></div></li>
+      <li><span class="kk">4</span><div><b>Footer</b><span class="spec">fixed bottom-right · pad 24×36 · 12 muted · pointer-events:none · z-20</span></div></li>
+    </ol>
+  </div>
+</section>
+
+<!-- ============================================================ 2 MEMBERS -->
+<section id="s2">
+  <div class="sec-head"><span class="sec-no">02</span><h2>Members directory</h2><span class="route">/members</span></div>
+  <div class="files">Source: <code>components/CardGrid.module.css</code> · <code>MembersIndex.tsx</code></div>
+  <div class="spec-row">
+    <div>
+      <div class="frame" style="width:560px; padding:20px 16px 16px;">
+        <div class="zone clear" style="height:24px; width:170px; margin-bottom:6px;"><span class="k">1</span>eyebrow</div>
+        <div class="zone clear" style="height:34px; width:220px; margin-bottom:7px;"><span class="k">2</span>title</div>
+        <div class="zone clear" style="height:26px; width:360px; margin-bottom:22px;"><span class="k">3</span>sub</div>
+        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:11px;">
+          <div style="border:1px solid var(--line); border-radius:8px; overflow:hidden;">
+            <div class="zone deep" style="aspect-ratio:1/1; border:none;"><span class="k">4</span>avatar 1:1</div>
+            <div class="zone" style="height:44px; border:none; border-top:1px dashed var(--line);"><span class="k">5</span>name · meta</div>
+          </div>
+          <div style="border:1px solid var(--line); border-radius:8px; overflow:hidden;"><div class="zone deep" style="aspect-ratio:1/1; border:none;"></div><div class="zone" style="height:44px; border:none;"></div></div>
+          <div style="border:1px solid var(--line); border-radius:8px; overflow:hidden;"><div class="zone deep" style="aspect-ratio:1/1; border:none;"></div><div class="zone" style="height:44px; border:none;"></div></div>
+          <div style="border:1px solid var(--line); border-radius:8px; overflow:hidden;"><div class="zone deep" style="aspect-ratio:1/1; border:none;"></div><div class="zone" style="height:44px; border:none;"></div></div>
+        </div>
+      </div>
+      <div class="frame-cap"><b>Column 1040 · pad 32/24/40.</b> Grid <span class="mono">auto-fill minmax(200px,1fr) · gap 20</span>.</div>
+    </div>
+    <ol class="legend">
+      <li><span class="kk">1</span><div><b>Eyebrow</b><span class="spec">12 / 600 · uppercase · letter-spacing .14em · accent · mb 8</span></div></li>
+      <li><span class="kk">2</span><div><b>Page title</b><span class="spec">40 · letter-spacing −.03em · mb 10</span></div></li>
+      <li><span class="kk">3</span><div><b>Subtitle</b><span class="spec">16/1.55 · muted · max-w 640 · mb 34</span></div></li>
+      <li><span class="kk">4</span><div><b>Avatar</b> — square, cover-cropped<span class="spec">aspect 1:1 · initials 40/700 on category color · thumbUrl(url,512) + srcset · sizes (max-width:640px) 94vw, 330px</span></div></li>
+      <li><span class="kk">5</span><div><b>Card body</b><span class="spec">pad 14/16/16 · gap 4 · name 18/700 · meta 13.5 muted ("Student|Alumni · first field") · card r16, hover lift −3px + shadow 0 12 30/8%</span></div></li>
+    </ol>
+  </div>
+</section>
+
+<!-- ============================================================ 3 RESEARCH INDEX -->
+<section id="s3">
+  <div class="sec-head"><span class="sec-no">03</span><h2>Research index</h2><span class="route">/research</span></div>
+  <div class="files">Source: <code>components/ResearchIndex.module.css</code> · <code>ResearchIndex.tsx</code></div>
+
+  <h3>Card — dimensioned drawing (left) and 1:1 reference render (right)</h3>
+  <div class="spec-row" style="grid-template-columns:auto auto; justify-content:start; gap:44px;">
+    <div>
+      <div class="frame" style="width:330px;">
+        <div class="zone deep" style="height:206px;"><span class="k">1</span>thumb 16:10</div>
+        <div style="padding:16px 18px 8px; display:flex; flex-direction:column; gap:7px;">
+          <div class="zone clear" style="height:18px; font-size:0;"><span class="k" style="top:0;">2</span></div>
+          <div class="zone clear" style="height:50px;"><span class="k">3</span>title · exactly 2 lines</div>
+          <div class="zone clear" style="height:42px;"><span class="k">4</span>description · exactly 2 lines</div>
+        </div>
+        <div class="zone" style="height:26px; margin:0 18px 16px;"><span class="k">5</span>tag row · slides →</div>
+        <div class="dim-side" style="right:-58px; top:95px;">206px</div>
+        <div class="dim-side" style="right:-58px; top:228px;">17.5px</div>
+        <div class="dim-side" style="right:-58px; top:262px;">50px</div>
+        <div class="dim-side" style="right:-58px; top:312px;">42px</div>
+        <div class="dim-side" style="right:-58px; top:355px;">26px</div>
+      </div>
+      <div class="frame-cap" style="margin-top:10px;"><b>Drawn 1:1 at 330px card width.</b> Zone heights are width-independent constants (em-based) except the 16:10 thumb.</div>
+    </div>
+    <div>
+      <div class="ref-card">
+        <div class="ref-thumb">OR</div>
+        <div class="ref-body">
+          <div class="ref-venue"><span class="v">IDC '19</span><span class="d">Jun 2019</span></div>
+          <div class="ref-title">Otto — a multi-modal parametric CAD tool for classrooms</div>
+          <div class="ref-desc">A one-to-one replica of the Otto write-up, rebuilt in the markdown page builder to stress-test every dialect feature.</div>
+        </div>
+        <div class="ref-chips">
+          <span class="ref-chip hov">Parametric CAD</span>
+          <span class="ref-chip">robotics</span>
+          <span class="ref-chip">fabrication</span>
+          <span class="ref-chip">education</span>
+        </div>
+      </div>
+      <div class="frame-cap" style="margin-top:10px;"><b>Reference render</b> — site tokens, real content. First chip shown in its hover state (category #d2447e, 10% tint).</div>
+    </div>
+  </div>
+
+  <ol class="legend" style="max-width:760px; margin-top:14px;">
+    <li><span class="kk">1</span><div><b>Thumb</b> — set from the editor's ★ toggle, else initials tile<span class="spec">aspect 16:10 · object-fit cover · srcset (avatar or research ladder) · sizes (max-width:640px) 94vw, 330px</span></div></li>
+    <li><span class="kk">2</span><div><b>Venue ⟷ date line</b><span class="spec">h 1.4em @ 12.5/600 · venue accent, ellipsis · date muted, no-shrink, right · fallback "ideaLab research" · date format "Jun 2026"</span></div></li>
+    <li><span class="kk">3</span><div><b>Title</b><span class="spec">20/700 · lh 1.25 · height 2.5em · line-clamp 2</span></div></li>
+    <li><span class="kk">4</span><div><b>Description</b><span class="spec">14/1.5 · muted · height 3em · line-clamp 2 · full text lives on the entry page</span></div></li>
+    <li><span class="kk">5</span><div><b>Tag row</b> — never wraps<span class="spec">h 26 · margin 0 18 16 (margin, not padding → tags clip at the text column edges) · scrollbar hidden · wheel ΔY → scrollLeft (non-passive) · mask fades 18px: left when scrollLeft&gt;2, right while more hidden · rendered even when empty · chips: 11/600, pad 3×9, r99, flex-shrink 0, buttons</span></div></li>
+  </ol>
+
+  <div class="tbl-wrap"><table>
+    <tr><th>Page furniture</th><th>Spec</th></tr>
+    <tr><td>Column / grid</td><td class="mono">1040 · pad 32/24/40 · grid auto-fill minmax(280,1fr) · gap 20</td></tr>
+    <tr><td>Header block</td><td class="mono">eyebrow 12 accent · title 40 · sub 16/1.55 max-w 640 · stat pills 11.5/600 pad 5×11 r99</td></tr>
+    <tr><td>Card container</td><td class="mono">div &gt; (Link: thumb+body) + TagRow · r16 · border --line · hover lift −3px + shadow</td></tr>
+    <tr><td>Ordering</td><td>curated first, then DB entries; on slug collision curated wins</td></tr>
+  </table></div>
+  <p class="callout"><b>Invariant:</b> all cards on the page are exactly the same width and height, independent of content. Verified 2026-08-04: 10 cards, one unique height.</p>
+</section>
+
+<!-- ============================================================ 4 RESEARCH ENTRY -->
+<section id="s4">
+  <div class="sec-head"><span class="sec-no">04</span><h2>Research entry (DB)</h2><span class="route">/research?id=&lt;public_id&gt;</span></div>
+  <div class="files">Source: <code>components/ResearchEntryView.module.css</code> · <code>markdown/Markdown.module.css</code> · <code>MarkdownPage.tsx</code></div>
+
+  <div class="spec-row">
+    <div>
+      <div class="frame" style="width:560px; padding:14px 16px 16px;">
+        <div style="display:flex; gap:17px; margin-bottom:16px;">
+          <div class="zone deep" style="width:78px; height:78px; border-radius:10px; flex-shrink:0;"><span class="k">1</span>pav</div>
+          <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+            <div class="zone clear" style="height:30px;"><span class="k">2</span>title + badge + Edit</div>
+            <div class="zone clear" style="height:22px; width:240px;"><span class="k">3</span>venue · date</div>
+            <div class="zone clear" style="height:24px; width:300px;"><span class="k">4</span>tag buttons</div>
+            <div class="zone clear" style="height:34px; width:400px;"><span class="k">5</span>description lede</div>
+          </div>
+        </div>
+        <div class="zone" style="height:38px; margin-bottom:14px;"><span class="k">6</span>members strip</div>
+        <div class="zone" style="height:150px;"><span class="k">7</span>MarkdownPage article · content ≤ 812px</div>
+      </div>
+      <div class="frame-cap"><b>Column 860 · pad 12/24/96 · hero gap 26 · sections mb 34.</b> Entries without a composed page render About (description) → Files grid <span class="mono">minmax(150,1fr)</span> 4:3 → Links instead of ⑦.</div>
+    </div>
+    <ol class="legend">
+      <li><span class="kk">1</span><div><b>Entry avatar (pav)</b><span class="spec">120×120 · r28 · initials 42/700 on ink · srcset · sizes 120px</span></div></li>
+      <li><span class="kk">2</span><div><b>Title row</b><span class="spec">title 34 · badge 10.5/700 caps pad 4×10 (live=ok tint / draft=amber tint) · Edit link shown to entry members only (RLS is the real gate)</span></div></li>
+      <li><span class="kk">3</span><div><b>Venue line</b><span class="spec">13/600 accent · mt 2 mb 8 · "IDC '26 · June 2026" (month long + year)</span></div></li>
+      <li><span class="kk">4</span><div><b>Tags</b> — same system as cards, page size<span class="spec">buttons 12.5/600 · pad 5×12 · r99 · gap 8 · mt 14 · hover = category color (hashStr — same color as on cards)</span></div></li>
+      <li><span class="kk">5</span><div><b>Description lede</b> — always visible<span class="spec">15.5/1.55 · muted · max-w 640 · mt 12 · rendered when a composed page exists (legacy pages show it in About instead) · source capped at 280 chars by the editor</span></div></li>
+      <li><span class="kk">6</span><div><b>Members strip</b> — members first, then externals (unlinked)<span class="spec">pill r99 · pad 6/16/6/6 · avatar 34 circle 13/700 · name 13.5/600 · role 11.5 muted · gap 14</span></div></li>
+      <li><span class="kk">7</span><div><b>Markdown article</b><span class="spec">one renderer for public page + editor preview — full element spec in the table below</span></div></li>
+    </ol>
+  </div>
+
+  <h3>Markdown article — hard rules</h3>
+  <div class="tbl-wrap"><table>
+    <tr><th>Element</th><th>Spec</th></tr>
+    <tr><td>Body</td><td class="mono">16/1.65 · mt 26 · overflow-wrap:break-word (links: anywhere)</td></tr>
+    <tr><td>h1 / h2</td><td class="mono">13 caps 0.1em muted 700 · mt 30 mb 10 · clear both</td></tr>
+    <tr><td>h3 / h4</td><td class="mono">16.5/700 · 14/700</td></tr>
+    <tr><td>Blockquote</td><td class="mono">3px accent bar · pad 6×18 · 17.5/1.5 italic</td></tr>
+    <tr><td>Code / pre</td><td class="mono">0.88em card-bg · block #17171a r12 pad 16×18, 13/1.55 #e8e6df, scrolls</td></tr>
+    <tr><td>Table</td><td class="mono">wrap scrolls · r12 card · th 11.5 caps · cell pad 10×14 · all-empty header row hidden</td></tr>
+    <tr><td>Figures</td><td class="mono">r14 · caption 13 muted mt8 · full=column · wide=±6% only ≥900 · inset max-440 centered · left/right float 25–60% (default 40), flat ≤640 · row = equal-col grid gap 12</td></tr>
+    <tr><td>Chart fence</td><td class="mono">card r14 pad 18 · SVG 640×300 · category palette · y from 0 · question = caption</td></tr>
+    <tr><td>Stats fence</td><td class="mono">pill chips 12.5/700 caps · value in accent</td></tr>
+    <tr><td>Display math</td><td class="mono">KaTeX · scrolls horizontally in place</td></tr>
+    <tr><td>Fence errors</td><td class="mono">1.5px dashed danger · r10 · mono 13.5 — never silent</td></tr>
+  </table></div>
+  <p class="callout"><b>Right-edge invariant:</b> nothing may extend past the centered column — long strings wrap, wide media scrolls in place, <code>wide</code> bleeds only ≥900px. Verified at a 700px viewport: 0 overflowing elements.</p>
+</section>
+
+<!-- ============================================================ 5 CURATED -->
+<section id="s5">
+  <div class="sec-head"><span class="sec-no">05</span><h2>Curated research</h2><span class="route">/research?id=&lt;slug&gt; (8 write-ups)</span></div>
+  <div class="files">Source: <code>components/ResearchView.module.css</code> · data: <code>lib/data/research.ts</code> · body: <code>public/research/*.html</code></div>
+  <div class="tbl-wrap"><table>
+    <tr><th>Zone</th><th>Spec</th></tr>
+    <tr><td>Column</td><td class="mono">860 · pad 28/24/96</td></tr>
+    <tr><td>Hero</td><td class="mono">title 34 · meta 14 · tags 12 pad 4×10 · from research.ts metadata</td></tr>
+    <tr><td>Body</td><td>preserved original HTML rendered in a <b>Shadow DOM</b> — the old page's own styles apply inside; site rules deliberately do not reach in</td></tr>
+    <tr><td>Card thumbs</td><td class="mono">public/research/thumb/*.jpg · 640px wide (source-limited, adequate at card size)</td></tr>
+  </table></div>
+  <p class="callout"><b>Slug collision rule:</b> curated wins — a DB entry with the same public_id is hidden from the index.</p>
+</section>
+
+<!-- ============================================================ 6 PERSON -->
+<section id="s6">
+  <div class="sec-head"><span class="sec-no">06</span><h2>Person profile</h2><span class="route">/person?id=&lt;public_id&gt;</span></div>
+  <div class="files">Source: <code>components/PersonView.module.css</code></div>
+  <div class="spec-row">
+    <div>
+      <div class="frame" style="width:440px; padding:16px;">
+        <div style="display:flex; gap:16px; align-items:center; margin-bottom:16px;">
+          <div class="zone deep" style="width:74px; height:74px; border-radius:10px; flex-shrink:0;"><span class="k">1</span>108</div>
+          <div style="flex:1; display:flex; flex-direction:column; gap:5px;">
+            <div class="zone clear" style="height:26px;"><span class="k">2</span>name + badge</div>
+            <div class="zone clear" style="height:16px; width:180px;">meta 14 muted</div>
+          </div>
+        </div>
+        <div class="zone clear" style="height:24px; width:280px; margin-bottom:14px;"><span class="k">3</span>field chips</div>
+        <div class="zone clear" style="height:52px; margin-bottom:14px;"><span class="k">4</span>bio</div>
+        <div class="zone clear" style="height:30px; width:250px; margin-bottom:14px;"><span class="k">5</span>buttons</div>
+        <div class="zone" style="height:44px;"><span class="k">6</span>research row</div>
+      </div>
+      <div class="frame-cap"><b>Column 640 · pad 24/24/80</b> — the narrowest column on the site.</div>
+    </div>
+    <ol class="legend">
+      <li><span class="kk">1</span><div><b>Avatar</b><span class="spec">108×108 · r28 · initials 38/700 · srcset · sizes 108px</span></div></li>
+      <li><span class="kk">2</span><div><b>Name row</b><span class="spec">name 30 · badge 10.5/700 caps pad 4×10 (student=ok tint · alumni=accent tint) · meta 14 muted mt 5</span></div></li>
+      <li><span class="kk">3</span><div><b>Field chips</b><span class="spec">12.5/600 · pad 6×12 · r99 · solid ink pills — off-system, see Open issues</span></div></li>
+      <li><span class="kk">4</span><div><b>Bio</b><span class="spec">15.5/1.65 · pre-wrap · mb 26</span></div></li>
+      <li><span class="kk">5</span><div><b>Actions</b><span class="spec">14/600 · pad 10×18 · r11 · solid (ink→accent hover) + ghost (1.5px line→ink)</span></div></li>
+      <li><span class="kk">6</span><div><b>Research refs</b><span class="spec">row r14 · pad 14×16 · pav 44 r12 · title 15/700 · meta 12.5 muted</span></div></li>
+    </ol>
+  </div>
+</section>
+
+<!-- ============================================================ 7 ABOUT -->
+<section id="s7">
+  <div class="sec-head"><span class="sec-no">07</span><h2>About Us</h2><span class="route">/about</span></div>
+  <div class="files">Source: <code>components/AboutPage.module.css</code> · assets: <code>public/about/*</code> (committed ladders)</div>
+  <div class="tbl-wrap"><table>
+    <tr><th>Zone</th><th>Spec</th></tr>
+    <tr><td>Column</td><td class="mono">840 · pad 32/24/40 · eyebrow 12 accent · title 40</td></tr>
+    <tr><td>Prose</td><td class="mono">16/1.65 · section heads 13 caps muted · PS line 14 muted</td></tr>
+    <tr><td>Figures</td><td class="mono">full-width r14 · motto inset max-440 centered · srcset over -w800/1600/2400 variants</td></tr>
+    <tr><td>Photo grid</td><td class="mono">3 col gap 12 (2 col ≤640) · photos 4:3 cover r14 · sizes 47vw/272px</td></tr>
+    <tr><td>Known limit</td><td><code class="mono">stat.jpg</code> source is 1226px — slightly soft at full column on retina; no larger original exists</td></tr>
+  </table></div>
+</section>
+
+<!-- ============================================================ 8 MEMBER AREA -->
+<section id="s8">
+  <div class="sec-head"><span class="sec-no">08</span><h2>Member area</h2><span class="route">/member (auth-gated)</span></div>
+  <div class="files">Source: <code>components/MemberArea.module.css</code> · <code>member/Dashboard.module.css</code> · <code>member/Onboarding.module.css</code></div>
+  <div class="tbl-wrap"><table>
+    <tr><th>Zone</th><th>Spec</th></tr>
+    <tr><td>Column</td><td class="mono">720 · pad 24/24/96 (header row 980)</td></tr>
+    <tr><td>Panels</td><td class="mono">card r16 · pad 28 · h2 15 · sub 14/1.5</td></tr>
+    <tr><td>Inputs</td><td class="mono">14.5 · pad 10×12 · r10 · bg #fbfaf7 · focus 2px accent outline · labels 12.5/600 · textarea min-h 90</td></tr>
+    <tr><td>Avatar block</td><td class="mono">preview 84 r22 (srcset 256) · requirement: square, ≥512×512 · color swatches fallback</td></tr>
+    <tr><td>Notices</td><td class="mono">13.5 · pad 13×16 · r12 (amber draft / green live)</td></tr>
+    <tr><td>States</td><td>onboarding (first sign-in) → dashboard; delete account = danger-bordered panel with typed confirmation</td></tr>
+  </table></div>
+</section>
+
+<!-- ============================================================ 9 EDITOR -->
+<section id="s9">
+  <div class="sec-head"><span class="sec-no">09</span><h2>Research editor</h2><span class="route">/research/edit?id=&lt;public_id&gt; (members of the entry only)</span></div>
+  <div class="files">Source: <code>components/ResearchEditor.module.css</code> · <code>markdown/Editor.module.css</code></div>
+  <div class="spec-row">
+    <div>
+      <div class="frame" style="width:500px; padding:14px 16px;">
+        <div class="zone" style="height:36px; margin-bottom:12px;"><span class="k">1</span>publish notice</div>
+        <div class="zone clear" style="height:26px; margin-bottom:8px;">TITLE — input</div>
+        <div class="zone clear" style="height:44px; margin-bottom:8px;"><span class="k">2</span>DESCRIPTION · n/280</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-bottom:8px;">
+          <div class="zone clear" style="height:26px;">VENUE</div>
+          <div class="zone clear" style="height:26px;">DATE</div>
+        </div>
+        <div class="zone clear" style="height:24px; margin-bottom:10px;">PUBLIC URL + availability hint</div>
+        <div class="zone" style="height:30px; margin-bottom:10px;"><span class="k">3</span>tag pills</div>
+        <div class="zone" style="height:54px; margin-bottom:10px;"><span class="k">4</span>Page — Write | Preview</div>
+        <div class="zone" style="height:44px; margin-bottom:10px;"><span class="k">5</span>Files + ★ thumbnail</div>
+        <div class="zone" style="height:38px; margin-bottom:10px;"><span class="k">6</span>Members</div>
+        <div class="zone" style="height:26px;">Links · Danger zone</div>
+      </div>
+      <div class="frame-cap"><b>Column 720 · panels r16 pad 24 · labels 12.5/600 · inputs 14.5 pad 10×12 r10.</b> VENUE | DATE stack ≤640.</div>
+    </div>
+    <ol class="legend">
+      <li><span class="kk">1</span><div><b>Publish notice</b><span class="spec">13.5 · pad 14×16 · r12 · amber (draft, with Publish button) / green (live, with Unpublish)</span></div></li>
+      <li><span class="kk">2</span><div><b>Description</b><span class="spec">textarea min-h 110 · maxLength 280 · live counter in label · soft UI limit, no DB constraint — budget = 2 card lines + 1 lede paragraph</span></div></li>
+      <li><span class="kk">3</span><div><b>Interest tags</b><span class="spec">pill 13/600 pad 7×13 · selected = solid ink · "+ new field" dashed input 170w</span></div></li>
+      <li><span class="kk">4</span><div><b>Page editor</b><span class="spec">tabs 13 pad 7×16 · insert buttons 12.5 pad 5×11 (Image/Chart/Stats/Equation/Table) · Preview = the same MarkdownPage renderer as the public page — cannot drift</span></div></li>
+      <li><span class="kk">5</span><div><b>Files</b><span class="spec">row: thumb 44 r8 (loads -w800 variant) · name 14 · "Set as thumbnail" / ★ pill 12 (active = accent) · ✕ remove (clears thumbnail pointer if it was the card image) · requirements text: images ≥2000px long edge ≤15MB, PDFs ≤10MB</span></div></li>
+      <li><span class="kk">6</span><div><b>Members</b><span class="spec">role input 160w saves on blur · ↑↓ reorder (sort_order) · picker: type-to-search, Enter on no match = external author · all members equal, no creator distinction</span></div></li>
+    </ol>
+  </div>
+  <p class="callout"><b>Access:</b> UI mirrors RLS — only entry members reach this page; the database enforces it regardless of the UI.</p>
+</section>
+
+<!-- ============================================================ STATES -->
+<section id="states">
+  <div class="sec-head"><span class="sec-no">S</span><h2>Interaction states</h2></div>
+  <div class="tbl-wrap"><table>
+    <tr><th>Element</th><th>Rest</th><th>Hover / active</th></tr>
+    <tr><td>Card (grid pages)</td><td class="mono">border --line</td><td class="mono">translateY(−3px) · border --ink · shadow 0 12 30 / 8% · 0.15s</td></tr>
+    <tr><td>Tag chip</td><td class="mono">muted on card-bg, hairline</td><td class="mono">category color text+border · 10% tint bg · 0.12s</td></tr>
+    <tr><td>Tag row fades</td><td class="mono">none when row fits</td><td class="mono">right = more ahead · left = scrolled · both mid-scroll (18px masks)</td></tr>
+    <tr><td>Solid button</td><td class="mono">--ink bg</td><td class="mono">--accent bg</td></tr>
+    <tr><td>Ghost button</td><td class="mono">1.5px --line border</td><td class="mono">border --ink</td></tr>
+    <tr><td>Nav link</td><td class="mono">13 muted</td><td class="mono">--ink</td></tr>
+    <tr><td>Publish badge</td><td colspan="2" class="mono">live = ok 13% tint · draft = amber 15% tint · 10.5/700 caps</td></tr>
+    <tr><td>Motion</td><td colspan="2">spinners and transitions respect <code>prefers-reduced-motion</code></td></tr>
+  </table></div>
+</section>
+
+<!-- ============================================================ ISSUES -->
+<section id="issues" style="border-bottom:none;">
+  <div class="sec-head"><span class="sec-no">!</span><h2>Open issues (found by this audit, not yet fixed)</h2></div>
+  <ul class="issues">
+    <li><span class="open">OPEN</span> Member cards: name/meta not line-clamped — a long name breaks row-height uniformity (apply the §03 fixed-budget pattern).</li>
+    <li><span class="open">OPEN</span> Person page field chips are solid-ink pills — inconsistent with the §F tag system; unify when tags become clickable site-wide.</li>
+    <li><span class="open">OPEN</span> Entry-page member avatars use a legacy char-code hash for color; tags already use <code>hashStr</code> — the same person can differ in color between the pixel wall and an entry roster.</li>
+    <li><span class="open">OPEN</span> <code>ResearchView.module.css</code> still carries a legacy 560px breakpoint (system is 640/900) — migrate when touched.</li>
+    <li><span class="open">OPEN</span> Curated <code>authors: []</code> arrays in <code>lib/data/research.ts</code> are still empty.</li>
+    <li><span class="open">OPEN</span> <code>stat.jpg</code> (About) is source-limited at 1226px.</li>
+  </ul>
+</section>
+
+</div>
+</body>
+</html>
