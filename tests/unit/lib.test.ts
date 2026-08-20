@@ -124,12 +124,14 @@ describe('isLocalHost', () => {
 });
 
 describe('academicYear / cohortFor', () => {
+  // local-time constructors — ISO date strings parse as UTC midnight, which
+  // lands on the previous local day west of UTC and broke these in EDT
   it('flips on July 1', () => {
-    expect(academicYear(new Date('2026-06-30'))).toBe(2026);
-    expect(academicYear(new Date('2026-07-01'))).toBe(2027);
+    expect(academicYear(new Date(2026, 5, 30))).toBe(2026);
+    expect(academicYear(new Date(2026, 6, 1))).toBe(2027);
   });
   it('classifies students vs alumni relative to the academic year', () => {
-    const now = new Date('2026-09-01'); // academic year 2027
+    const now = new Date(2026, 8, 1); // academic year 2027
     expect(cohortFor(2027, now)).toBe('student');
     expect(cohortFor(2026, now)).toBe('alumni');
   });
