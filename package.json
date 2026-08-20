@@ -12,6 +12,8 @@
     "db:psql": "docker exec -it $(docker ps --format '{{.Names}}' | grep supabase_db | head -1) psql -U postgres -d postgres",
     "test": "vitest run",
     "test:unit": "vitest run",
+    "e2e": "playwright test",
+    "e2e:build": "next build && playwright test",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "images": "node scripts/image-ladder.mjs public/about",
@@ -33,6 +35,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.13.0",
+    "@playwright/test": "^1.62.1",
     "@types/node": "^22.10.7",
     "@types/react": "^19.0.7",
     "@types/react-dom": "^19.0.3",

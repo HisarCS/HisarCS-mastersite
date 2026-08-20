@@ -24,7 +24,28 @@ jobs:
       - name: Unit tests
         run: npm run test:unit
 
-# Note: there is no e2e suite in CI. The old Playwright suite (which drove the
-# static site + read config.js) was removed in the Next migration; `npm test`
-# now runs the vitest unit suite. A Next-aware e2e (Playwright vs. the built
-# `out/` + supabase/setup-cli `supabase start`) could be added here later.
+  # E2E: Playwright drives the built static export (exactly what Pages serves)
+  # in Chromium, with Supabase mocked at the network edge — no live stack, no
+  # GitHub, fully deterministic. See tests/e2e/ and playwright.config.ts.
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+      - name: Build static export
+        run: npm run build
+      - name: E2E tests
+        run: npm run e2e
+      - name: Upload traces on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
