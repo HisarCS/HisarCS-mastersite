@@ -1,5 +1,11 @@
 import { expect, test } from '@playwright/test';
-import { GH_LOGIN, mockSupabase, profileRow, seedSession } from './support/supabase';
+import {
+  GH_LOGIN,
+  mockSupabase,
+  profileRow,
+  researchEntryRow,
+  seedSession,
+} from './support/supabase';
 
 /**
  * Member area — the auth state machine end to end: signed-out, first sign-in
@@ -73,7 +79,8 @@ test('a GitHub user outside the org is bounced', async ({ page }) => {
   await page.goto('/member/');
 
   await expect(page.getByRole('heading', { name: 'Not one of us — yet' })).toBeVisible();
-  await expect(page.getByText('@intruder')).toBeVisible();
+  // scope to the card: the header may still show @intruder until sign-out lands
+  await expect(page.getByRole('main').getByText('@intruder')).toBeVisible();
   // the bounce also revokes the browser session
   await expect.poll(() => mock.calls('/auth/v1/logout')).toBeGreaterThan(0);
 });
@@ -141,6 +148,21 @@ test('danger zone: deletion requires the exact GitHub handle, then signs out', a
   await expect(page.getByRole('heading', { name: 'Member sign in' })).toBeVisible();
   expect(mock.calls('delete_my_account')).toBe(1);
   expect(mock.calls('/storage/v1/object/list/')).toBeGreaterThan(0);
+});
+
+test('the research editor offers the avatar builder to an entry member', async ({ page }) => {
+  await seedSession(page);
+  await mockSupabase(page, {
+    myProfile: profileRow(),
+    researchEntry: researchEntryRow(),
+    fields: FIELDS,
+  });
+  await page.goto('/research/edit/?id=sensor-garden');
+
+  await expect(page.getByRole('heading', { name: 'Avatar' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Upload avatar' })).toBeVisible();
+  // no dedicated avatar yet → the tile previews the title's initials
+  await expect(page.getByText('SG', { exact: true })).toBeVisible();
 });
 
 test('the shared header reflects the session everywhere and can sign out', async ({ page }) => {

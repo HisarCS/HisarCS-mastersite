@@ -74,15 +74,21 @@ export function avatarSrcSet(url: string | null | undefined): string | undefined
  * uploads and external URLs return undefined.
  */
 export function researchImgSrcSet(url: string | null | undefined): string | undefined {
-  if (!url || !/-w2400\.jpg$/i.test(url)) return undefined;
-  return RESEARCH_IMG_LADDER.map((w) => `${url.replace(/-w2400\.jpg$/i, `-w${w}.jpg`)} ${w}w`).join(
-    ', ',
-  );
+  if (!url) return undefined;
+  // tolerate a ?v= cache-buster after the filename (dedicated avatar uploads)
+  const [base, q] = url.split('?');
+  if (!/-w2400\.jpg$/i.test(base!)) return undefined;
+  const suffix = q ? `?${q}` : '';
+  return RESEARCH_IMG_LADDER.map(
+    (w) => `${base!.replace(/-w2400\.jpg$/i, `-w${w}.jpg`)}${suffix} ${w}w`,
+  ).join(', ');
 }
 
 /** Smallest ladder variant of a research image — for editor thumbnails. */
 export function researchImgSmall(url: string): string {
-  return url.replace(/-w2400\.jpg$/i, '-w800.jpg');
+  // tolerate a ?v= cache-buster after the filename (dedicated avatar uploads)
+  const [base, q] = url.split('?');
+  return base!.replace(/-w2400\.jpg$/i, '-w800.jpg') + (q ? `?${q}` : '');
 }
 
 export interface UploadSpec {

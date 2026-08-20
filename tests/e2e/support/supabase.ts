@@ -46,6 +46,7 @@ export function directoryRow(over: Record<string, unknown> = {}) {
     public_id: 'ada-lovelace',
     full_name: 'Ada Lovelace',
     cohort: 'student',
+    graduation_year: 2027,
     avatar_url: null,
     avatar_color: '#e8542f',
     fields: ['Robotics'],
@@ -75,7 +76,8 @@ export function personRow(over: Record<string, unknown> = {}) {
   };
 }
 
-/** A published `research` row for the research index (listResearchEntries). */
+/** A published `research` row — carries both the card fields and the detail
+ *  fields (getResearchEntry's select), so one helper serves list and lookup. */
 export function researchEntryRow(over: Record<string, unknown> = {}) {
   return {
     id: 'res-1',
@@ -85,7 +87,24 @@ export function researchEntryRow(over: Record<string, unknown> = {}) {
     avatar_url: null,
     venue: 'ideaLab',
     presented_on: '2026-05-01',
-    research_fields: [{ fields: { name: 'Electronics' } }],
+    is_published: true,
+    external_authors: [],
+    page: null,
+    research_fields: [{ field_id: 1, fields: { name: 'Electronics' } }],
+    research_members: [
+      {
+        role: 'lead',
+        sort_order: 0,
+        people: {
+          id: 'person-1',
+          public_id: 'octo-maker',
+          full_name: 'Octo Maker',
+          avatar_color: '#2f6fe8',
+        },
+      },
+    ],
+    research_links: [],
+    research_files: [],
     ...over,
   };
 }
@@ -99,6 +118,8 @@ export interface MockOptions {
   person?: Record<string, unknown> | null;
   /** Published member research rows for the research index. Default []. */
   researchEntries?: unknown[];
+  /** Full research row served for public_id lookups (entry page / editor). */
+  researchEntry?: Record<string, unknown> | null;
   /** Rows for the fields table (onboarding/dashboard chips). Default []. */
   fields?: { id: number; name: string; created_by: string | null }[];
   /** verify-org-member response: a verdict, or an error status. */
@@ -264,8 +285,12 @@ export async function mockSupabase(page: Page, opts: MockOptions = {}): Promise<
     if (path === '/rest/v1/person_fields')
       return fulfillJson(route, [], method === 'POST' ? 201 : 200);
 
-    if (path === '/rest/v1/research' && method === 'GET')
+    if (path === '/rest/v1/research' && method === 'GET') {
+      if ((url.searchParams.get('public_id') ?? '').startsWith('eq.')) {
+        return opts.researchEntry ? fulfillJson(route, opts.researchEntry) : fulfillNoRows(route);
+      }
       return fulfillJson(route, opts.researchEntries ?? []);
+    }
 
     // anything unmocked answers an empty list — visible in `requests` when a
     // test needs to notice a call it didn't expect

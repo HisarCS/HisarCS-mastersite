@@ -28,63 +28,75 @@
   font-size: 15px;
 }
 
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 20px;
+/* yearbook: one hairline-ruled row per graduating class, portraits inside */
+.classSection {
+  border-top: 1px solid var(--line);
+  padding: 20px 0 26px;
 }
-.card {
+.classSection:first-of-type {
+  border-top: none;
+  padding-top: 0;
+}
+.classHeading {
+  font-size: 12.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.11em;
+  color: var(--muted);
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+.portraitRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px 18px;
+}
+.portrait {
+  width: 104px;
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  overflow: hidden;
-  background: var(--card);
+  align-items: center;
+  gap: 8px;
+  text-align: center;
   text-decoration: none;
   color: inherit;
-  transition:
-    transform 0.15s ease,
-    box-shadow 0.15s ease,
-    border-color 0.15s ease;
 }
-.card:hover {
-  transform: translateY(-3px);
-  border-color: var(--ink);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
-}
-.avatar {
-  aspect-ratio: 1 / 1;
+/* the classic yearbook shape: a portrait-oriented frame */
+.photo {
+  width: 96px;
+  height: 116px;
+  border-radius: 8px;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
+  color: #fff;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  transition: transform 0.15s ease;
 }
-.avatarImg {
+.photo img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
 }
-.avatarInitials {
-  color: #fff;
-  font-size: 40px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+.portrait:hover .photo {
+  transform: translateY(-2px);
 }
-.body {
-  padding: 14px 16px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+.pname {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.25;
 }
-.cardTitle {
-  font-size: 18px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
+.portrait:hover .pname {
+  color: var(--accent);
 }
-.meta {
+.pfield {
+  font-size: 11.5px;
   color: var(--muted);
-  font-size: 13.5px;
+  line-height: 1.2;
+  min-height: 1.2em; /* keep rows aligned when a member has no field */
 }
 .footer {
   text-align: center;

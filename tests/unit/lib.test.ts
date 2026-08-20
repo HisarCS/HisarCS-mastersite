@@ -87,6 +87,12 @@ describe('researchImgSrcSet', () => {
   it('returns undefined for pre-ladder uploads', () => {
     expect(researchImgSrcSet('abc/171-photo.jpg')).toBeUndefined();
   });
+  it('tolerates a cache-buster query (dedicated avatar uploads)', () => {
+    const s = researchImgSrcSet('abc/avatar-w2400.jpg?v=42')!;
+    expect(s).toBe(
+      'abc/avatar-w800.jpg?v=42 800w, abc/avatar-w1600.jpg?v=42 1600w, abc/avatar-w2400.jpg?v=42 2400w',
+    );
+  });
 });
 
 describe('checkFile', () => {

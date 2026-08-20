@@ -14,6 +14,7 @@ const TWO_MEMBERS = [
     public_id: 'grace-hopper',
     full_name: 'Grace Hopper',
     cohort: 'alumni',
+    graduation_year: 2020,
     fields: ['CS & AI'],
   }),
 ];
@@ -33,13 +34,18 @@ test('homepage shows the nav, the pixel mark, and the footer', async ({ page }) 
   await expect(page.getByRole('link', { name: 'Grace Hopper — view profile' })).toBeVisible();
 });
 
-test('members index lists backend members and links each card to its profile', async ({ page }) => {
+test('members index groups the yearbook by graduating class and links portraits', async ({
+  page,
+}) => {
   await mockSupabase(page, { directory: TWO_MEMBERS, person: personRow() });
   await page.goto('/members/');
 
   await expect(page.getByRole('heading', { name: 'Members' })).toBeVisible();
+  // one class row per graduation year, newest first
+  await expect(page.getByRole('heading', { name: 'Class of 2027' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Class of 2020' })).toBeVisible();
   await expect(page.getByText('Grace Hopper')).toBeVisible();
-  await expect(page.getByText('Alumni · CS & AI')).toBeVisible();
+  await expect(page.getByText('CS & AI')).toBeVisible();
 
   await page.getByRole('link', { name: /Ada Lovelace/ }).click();
   await expect(page).toHaveURL(/\/person\/?\?id=ada-lovelace/);
