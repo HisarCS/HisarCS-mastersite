@@ -89,12 +89,6 @@
   color: var(--ok);
 }
 
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 14px;
-}
 /* same visual system as the index-card tags (pill, hairline border,
    category color on hover), sized up slightly for the page context */
 .chip {
@@ -125,6 +119,7 @@
   color: var(--muted);
   font-size: 15.5px;
   line-height: 1.55;
+  white-space: pre-wrap; /* keep the author's paragraph breaks */
   overflow-wrap: anywhere; /* pasted URLs / unbroken strings must never bleed out */
 }
 
@@ -175,12 +170,12 @@
   color: var(--muted);
 }
 
-.desc {
-  font-size: 15.5px;
-  line-height: 1.65;
-  max-width: 640px;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere; /* pasted URLs / unbroken strings must never bleed out */
+/* the tags' own row — no panel, no border, just the chips */
+.tagBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 30px;
 }
 
 .files {
