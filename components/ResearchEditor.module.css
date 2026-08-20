@@ -209,6 +209,8 @@
 .panel textarea {
   resize: vertical;
   min-height: 110px;
+  line-height: 1.55;
+  overflow-wrap: anywhere; /* long pasted URLs wrap instead of forcing a scrollbar */
 }
 .panel input:focus,
 .panel textarea:focus {
@@ -436,4 +438,38 @@
 .orderBtn:disabled {
   opacity: 0.35;
   cursor: default;
+}
+
+/* avatar builder — mirrors the profile dashboard's avatar row */
+.avatarRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+}
+.avatarTile {
+  width: 84px;
+  height: 84px;
+  border-radius: 22px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--ink);
+  color: #fff;
+  font-size: 26px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.avatarTile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.avatarBtns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
 }

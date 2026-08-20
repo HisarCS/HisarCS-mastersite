@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { listMembers } from '@/lib/data/members';
 import { mockMembers } from '@/lib/data/mock';
@@ -22,7 +22,28 @@ const initials = (s: string) =>
     .join('')
     .toUpperCase();
 
-/** Members index — a grid of member cards, each linking to its profile page. */
+/** Classes newest first, unlabelled members last; alphabetical inside a class. */
+function groupByClass(members: MemberCard[]): { year: number | null; list: MemberCard[] }[] {
+  const by = new Map<number | null, MemberCard[]>();
+  for (const m of members) {
+    const y = m.gradYear ?? null;
+    const list = by.get(y);
+    if (list) list.push(m);
+    else by.set(y, [m]);
+  }
+  return [...by.entries()]
+    .sort(([a], [b]) => (b ?? -Infinity) - (a ?? -Infinity))
+    .map(([year, list]) => ({
+      year,
+      list: [...list].sort((a, b) => a.name.localeCompare(b.name)),
+    }));
+}
+
+/**
+ * Members index — a classic yearbook: one row of portraits per graduating
+ * class, newest class first, kept deliberately minimal (a hairline rule and a
+ * small-caps class label per row).
+ */
 export function MembersIndex() {
   const [members, setMembers] = useState<MemberCard[]>([]);
 
@@ -39,6 +60,8 @@ export function MembersIndex() {
     };
   }, []);
 
+  const classes = useMemo(() => groupByClass(members), [members]);
+
   return (
     <>
       <SiteHeader />
@@ -46,48 +69,48 @@ export function MembersIndex() {
         <div className={styles.eyebrow}>Students &amp; alumni</div>
         <h1 className={styles.title}>Members</h1>
         <p className={styles.sub}>
-          The makers of ideaLab — current students and alumni across a decade of the lab.
+          The makers of ideaLab, class by class — current students and alumni across a decade of the
+          lab.
         </p>
 
         {members.length === 0 ? (
           <div className={styles.empty}>No members to show yet.</div>
         ) : (
-          <div className={styles.grid}>
-            {members.map((m) => (
-              <Link
-                key={m.id}
-                href={`/person?id=${encodeURIComponent(m.publicId)}`}
-                className={styles.card}
-              >
-                <div
-                  className={styles.avatar}
-                  style={{ background: m.avatarColor || colorFor(m.id) }}
-                >
-                  {m.avatarUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={thumbUrl(m.avatarUrl, 512) ?? ''}
-                      srcSet={avatarSrcSet(m.avatarUrl)}
-                      sizes="(max-width: 640px) 94vw, 330px"
-                      alt=""
-                      loading="lazy"
-                      decoding="async"
-                      className={styles.avatarImg}
-                    />
-                  ) : (
-                    <span className={styles.avatarInitials}>{initials(m.name)}</span>
-                  )}
-                </div>
-                <div className={styles.body}>
-                  <div className={styles.cardTitle}>{m.name}</div>
-                  <div className={styles.meta}>
-                    {m.cohort === 'alumni' ? 'Alumni' : 'Student'}
-                    {m.fields[0] ? ` · ${m.fields[0]}` : ''}
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
+          classes.map(({ year, list }) => (
+            <section key={year ?? 'other'} className={styles.classSection}>
+              <h2 className={styles.classHeading}>{year ? `Class of ${year}` : 'ideaLab'}</h2>
+              <div className={styles.portraitRow}>
+                {list.map((m) => (
+                  <Link
+                    key={m.id}
+                    href={`/person?id=${encodeURIComponent(m.publicId)}`}
+                    className={styles.portrait}
+                  >
+                    <span
+                      className={styles.photo}
+                      style={{ background: m.avatarColor || colorFor(m.id) }}
+                    >
+                      {m.avatarUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={thumbUrl(m.avatarUrl, 256) ?? ''}
+                          srcSet={avatarSrcSet(m.avatarUrl)}
+                          sizes="104px"
+                          alt=""
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      ) : (
+                        initials(m.name)
+                      )}
+                    </span>
+                    <span className={styles.pname}>{m.name}</span>
+                    <span className={styles.pfield}>{m.fields[0] ?? ' '}</span>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          ))
         )}
       </main>
       <footer className={styles.footer}>Hisar School · ideaLab</footer>

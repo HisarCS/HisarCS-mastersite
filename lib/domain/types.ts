@@ -9,6 +9,8 @@ export interface MemberCard {
   publicId: string;
   name: string;
   cohort: Cohort;
+  /** Graduation year — the yearbook groups the directory by this. */
+  gradYear: number | null;
   avatarUrl: string | null;
   avatarColor: string | null;
   fields: string[];

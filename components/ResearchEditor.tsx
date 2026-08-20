@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { getAuthUser, getMyProfile } from '@/lib/data/auth';
 import { listFields, createField } from '@/lib/data/profile';
 import { listMembers } from '@/lib/data/members';
-import { uploadResearchFile, deleteResearchFile } from '@/lib/data/storage';
+import { uploadResearchAvatar, uploadResearchFile, deleteResearchFile } from '@/lib/data/storage';
 import { researchImgSmall } from '@/lib/util/media';
 import {
   addResearchLink,
@@ -74,6 +74,7 @@ export function ResearchEditor({ id }: { id: string }) {
   const [busy, setBusy] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
+  const avatarInput = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
     const entry = await getResearchEntry(id);
@@ -256,6 +257,27 @@ export function ResearchEditor({ id }: { id: string }) {
       return;
     }
     setFileHint('');
+    await load();
+  };
+
+  /** Dedicated avatar upload: store the ladder, then point avatar_url at it. */
+  const onAvatarFile = async (file: File | undefined) => {
+    if (!file) return;
+    setBusy(true);
+    setFileHint('optimizing & uploading avatar…');
+    const { url, error } = await uploadResearchAvatar(entry.dbId, file);
+    if (error || !url) {
+      setBusy(false);
+      setFileHint(`✕ ${error ?? 'upload failed'}`);
+      return;
+    }
+    const err = await setResearchThumbnail(entry.dbId, url);
+    setBusy(false);
+    if (err) {
+      setFileHint(`✕ ${err}`);
+      return;
+    }
+    setFileHint('✓ avatar updated');
     await load();
   };
 
@@ -610,6 +632,58 @@ export function ResearchEditor({ id }: { id: string }) {
             <button className={styles.btnGhost} onClick={addLink} disabled={busy}>
               Add link
             </button>
+          </div>
+        </div>
+
+        <div className={styles.panel}>
+          <h2>Avatar</h2>
+          <div className={styles.avatarRow}>
+            <div className={styles.avatarTile}>
+              {entry.avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={researchImgSmall(entry.avatarUrl)} alt="" />
+              ) : (
+                (title || 'R')
+                  .trim()
+                  .split(/\s+/)
+                  .map((w) => w[0])
+                  .slice(0, 2)
+                  .join('')
+                  .toUpperCase()
+              )}
+            </div>
+            <div>
+              <div className={styles.avatarBtns}>
+                <button
+                  className={styles.btnGhost}
+                  onClick={() => avatarInput.current?.click()}
+                  disabled={busy}
+                >
+                  Upload avatar
+                </button>
+                {entry.avatarUrl && (
+                  <button
+                    className={styles.btnGhost}
+                    onClick={() => setThumb(null)}
+                    disabled={busy}
+                  >
+                    Reset to initials
+                  </button>
+                )}
+              </div>
+              <input
+                ref={avatarInput}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                hidden
+                onChange={(e) => void onAvatarFile(e.target.files?.[0])}
+              />
+              <p className={styles.sub}>
+                The face of this research — on its card (cropped to 16:10) and at the top of its
+                page. Upload a dedicated image here, or mark any image below with ★; with neither,
+                the card shows the title&apos;s initials.
+              </p>
+            </div>
           </div>
         </div>
 

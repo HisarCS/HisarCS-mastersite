@@ -120,7 +120,9 @@ export function mockMembers(): MemberCard[] {
     id: `p${i + 1}`,
     publicId: mockSlug(name),
     name,
-    cohort: i % 3 === 0 ? 'alumni' : 'student',
+    cohort: i % 3 === 0 ? ('alumni' as const) : ('student' as const),
+    // deterministic spread of classes so the yearbook grouping has shape
+    gradYear: i % 3 === 0 ? 2019 + (i % 7) : 2026 + (i % 3),
     avatarUrl: `https://i.pravatar.cc/120?img=${(i % 70) + 1}`,
     avatarColor: null,
     fields: [disciplines[i % disciplines.length]!],

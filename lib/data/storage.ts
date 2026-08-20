@@ -173,6 +173,37 @@ export async function uploadResearchFile(
   }
 }
 
+/**
+ * Dedicated card-avatar upload for a research entry. Writes the responsive
+ * ladder to the FIXED paths `research-files/{researchId}/avatar-w<w>.jpg`
+ * (upsert — a new upload replaces the old, and nothing joins the entry's Files
+ * list), and returns the -w2400 master URL for research.avatar_url. The ladder
+ * naming keeps researchImgSrcSet working; RLS keys off the folder name =
+ * entry id, same as every research upload.
+ */
+export async function uploadResearchAvatar(researchId: string, file: File): Promise<UploadResult> {
+  const bad = checkFile(file, UPLOAD_SPECS.researchImage);
+  if (bad) return { url: null, error: bad };
+  const sb = getSupabase();
+  if (!sb) return { url: null, error: 'no backend' };
+  try {
+    for (const w of RESEARCH_IMG_LADDER) {
+      const blob = await optimizeImage(file, w, {});
+      const { error } = await sb.storage
+        .from('research-files')
+        .upload(`${researchId}/avatar-w${w}.jpg`, blob, {
+          upsert: true,
+          cacheControl: '31536000',
+          contentType: 'image/jpeg',
+        });
+      if (error) throw error;
+    }
+    return { url: publicUrl(sb, 'research-files', `${researchId}/avatar-w2400.jpg`), error: null };
+  } catch (e: any) {
+    return { url: null, error: e?.message ?? 'upload failed' };
+  }
+}
+
 /** Remove a research file: the storage object first, then its metadata row. */
 export async function deleteResearchFile(
   fileId: string,

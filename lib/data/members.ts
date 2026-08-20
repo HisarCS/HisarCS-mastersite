@@ -15,7 +15,9 @@ export async function listMembers(): Promise<MemberCard[]> {
   try {
     ({ data, error } = await sb
       .from('people_directory')
-      .select('id, public_id, full_name, cohort, avatar_url, avatar_color, fields'));
+      .select(
+        'id, public_id, full_name, cohort, graduation_year, avatar_url, avatar_color, fields',
+      ));
   } catch {
     return [];
   }
@@ -25,6 +27,7 @@ export async function listMembers(): Promise<MemberCard[]> {
     publicId: r.public_id,
     name: r.full_name,
     cohort: r.cohort as MemberCard['cohort'],
+    gradYear: r.graduation_year ?? null,
     avatarUrl: r.avatar_url,
     avatarColor: r.avatar_color,
     fields: (r.fields ?? []) as string[],
