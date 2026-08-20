@@ -18,8 +18,9 @@ e2e (`tests/e2e.spec.js` + `playwright.config.js`, tied to `config.js`), and the
 Next-aware flat ESLint config (`eslint.config.mjs`, FlatCompat → `next/core-web-vitals`
 
 - `next/typescript`, ignores `supabase/`); `lint` runs `eslint .` and is now part of
-  `check`. `research.html`/`research/*` stay in `public/` (still linked). FOLLOW-UP: e2e
-  coverage could be re-added against the Next app (was deleted, not ported).
+  `check`. `research.html`/`research/*` stay in `public/` (still linked). FOLLOW-UP done:
+  e2e coverage was re-added against the Next app (`tests/e2e/`, Playwright over the
+  built export with Supabase mocked at the network edge; `e2e` job in CI).
 
 ## Done (committed)
 

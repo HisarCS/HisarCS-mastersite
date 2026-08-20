@@ -36,6 +36,7 @@ Browser (GitHub Pages, static export)         Supabase (cloud or local Docker)
 | `public/`      | Static assets served as-is, including the preserved curated write-ups (`research/<slug>.html`) and their thumbnails.                                                                                                                                                               |
 | `supabase/`    | Backend + local dev: `migrations/` (append-only — see below), `functions/` (Deno edge functions), `seed.sql` (local-only mock data, never pushed), `config.toml`.                                                                                                                  |
 | `tests/unit/`  | vitest suite over the pure logic in `lib/`. Run with `npm test`.                                                                                                                                                                                                                   |
+| `tests/e2e/`   | Playwright suite driving the built static export in Chromium, Supabase mocked at the network edge (`tests/e2e/support/supabase.ts`). Run with `npm run e2e:build`.                                                                                                                 |
 | `docs/`        | Architecture decisions (ADRs), local development + debugging guides, the research publishing framework.                                                                                                                                                                            |
 | `package.json` | npm scripts (`dev`, `build`, `check`, `stack`, `logs:edge`, `db:push`) + dependencies.                                                                                                                                                                                             |
 
@@ -228,6 +229,8 @@ Studio (DB admin UI): http://127.0.0.1:54323.
 | `npm run stack:reset` | Clean DB rebuilt from migrations + seed.                     |
 | `npm run check`       | Format check + lint + typecheck + unit tests.                |
 | `npm test`            | vitest unit suite.                                           |
+| `npm run e2e`         | Playwright e2e suite against an existing `out/` build.       |
+| `npm run e2e:build`   | `next build` + the e2e suite in one go.                      |
 | `npm run logs:edge`   | Tail local edge-function logs.                               |
 | `npm run db:psql`     | psql shell on the local database.                            |
 
