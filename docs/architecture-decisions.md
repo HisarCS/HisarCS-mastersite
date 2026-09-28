@@ -499,6 +499,19 @@ shape is read as null (its entries fall back to `description`; none existed in
 production). `page.version` bumps only on breaking shape changes, paired with a
 read-time migration in `lib/domain/page.ts`.
 
+**Amendment (2026-09-28) — fence registry + three layout fences.** Comparing
+the curated Otto write-up with its Markdown replica showed the text survived
+but three layouts flattened: the side-by-side mode cards, the big-number
+pilot tiles, and the toned findings list. They are now fences — ` ```cards `,
+` ```tiles `, ` ```findings ` — and every fence lives in one registry
+(`components/markdown/fences.tsx`: parser + renderer + editor snippet +
+syntax-reference text per entry). The renderer, the editor's insert buttons,
+and its syntax reference all read that table, so a new fence is one entry plus
+a pure, unit-tested parser. `tiles` reuses the stats grammar; `cards` and
+`findings` share `lib/util/recordSpec.ts` (`# label | Title`, body lines,
+`> ` snippet lines). Colors stay out of authors' hands: card tones follow
+position, finding tones are a closed set (good · note · issue).
+
 One clarification to the append-only migration rule (ADR-0003) came out of this
 pivot: the applied migration that added the column
 (`20260728090000_research_page_blocks.sql`) described the v1 block format in

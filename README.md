@@ -89,7 +89,9 @@ erDiagram
   concepts merged — ADR-0018.)
   - `page` (jsonb, nullable) is the composed body as a Markdown document
     (`{version: 2, markdown}`); null falls back to `description`. Dialect +
-    rationale: ADR-0019 (the full syntax reference lives inside the editor).
+    rationale: ADR-0019 (the full syntax reference lives inside the editor;
+    custom fences — chart, stats, tiles, findings, cards — are registered in
+    `components/markdown/fences.tsx`).
   - `external_authors` (jsonb) credits collaborators who have no account —
     display-only, no permissions.
   - The eight **curated** write-ups are _not_ in the database — they're static
