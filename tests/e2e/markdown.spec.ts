@@ -39,3 +39,16 @@ test('an unregistered fence language renders as ordinary code', async ({ page })
   await openPage(page, fence('python', 'print("hi")'));
   await expect(page.locator('pre')).toContainText('print("hi")');
 });
+
+test('tiles fence draws each value above its label', async ({ page }) => {
+  await openPage(
+    page,
+    fence('tiles', '10 | students\n10 / 10 | left with a fabrication-ready model'),
+  );
+
+  const tiles = page.locator('article').getByRole('listitem');
+  await expect(tiles).toHaveCount(2);
+  await expect(tiles.nth(1)).toContainText('10 / 10');
+  await expect(tiles.nth(1)).toContainText('left with a fabrication-ready model');
+  await expect(page.locator('pre')).toHaveCount(0);
+});
