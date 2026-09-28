@@ -143,9 +143,23 @@ export function buildSnapshot(rows, { prodUrl, localUrl }) {
   }
   lines.push(
     "select setval(pg_get_serial_sequence('public.fields', 'id'), coalesce(max(id), 1)) from public.fields;",
-    'commit;',
   );
-  return { sql: lines.join('\n') + '\n', objects: [...objects.values()], counts: count(out) };
+  // interest areas: production's when it has the table (null = not migrated
+  // there yet → keep the local rows its migration seeded)
+  const areas = Array.isArray(rows.interest_areas) ? rows.interest_areas : null;
+  if (areas) {
+    lines.push('delete from public.interest_areas;');
+    if (areas.length)
+      lines.push(
+        `insert into public.interest_areas (area, tag, sort) values\n  ${areas
+          .map((a) => `(${sqlLiteral(a.area)}, ${sqlLiteral(a.tag)}, ${sqlLiteral(a.sort)})`)
+          .join(',\n  ')};`,
+      );
+  }
+  lines.push('commit;');
+  const counts = count(out);
+  if (areas) counts.interest_areas = areas.length;
+  return { sql: lines.join('\n') + '\n', objects: [...objects.values()], counts };
 }
 
 const count = (out) => Object.fromEntries(Object.entries(out).map(([k, v]) => [k, v.length]));

@@ -42,10 +42,12 @@ const dbContainer = execFileSync('docker', ['ps', '--format', '{{.Names}}'], { e
   .find((n) => n.startsWith('supabase_db_'));
 if (!dbContainer) throw new Error('local Supabase DB container not running — npm run stack first');
 
-const read = async (path) => {
+const read = async (path, { optional = false } = {}) => {
   const res = await fetch(`${prodUrl}/rest/v1/${path}`, {
     headers: { apikey: prodKey, Authorization: `Bearer ${prodKey}` },
   });
+  // a table production doesn't have yet (migration not pushed) → null
+  if (optional && res.status === 404) return null;
   if (!res.ok) throw new Error(`production read ${path}: ${res.status} ${await res.text()}`);
   return res.json();
 };
@@ -63,6 +65,7 @@ const rows = {
   research_members: await read('research_members?select=*'),
   research_links: await read('research_links?select=*'),
   research_files: await read('research_files?select=*'),
+  interest_areas: await read('interest_areas?select=area,tag,sort', { optional: true }),
 };
 
 const snap = buildSnapshot(rows, { prodUrl, localUrl });
