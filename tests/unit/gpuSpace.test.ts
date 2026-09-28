@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { cameraFor, frameToWorld, pxToWorld, type View } from '../../lib/graph/gpuSpace';
+import {
+  cameraFor,
+  frameToWorld,
+  parseColor,
+  pxToWorld,
+  type View,
+} from '../../lib/graph/gpuSpace';
 
 /**
  * animoo's vertex shaders place a point at
@@ -78,5 +84,27 @@ describe('pxToWorld', () => {
       expect(onScreenX).toBeCloseTo(10, 9);
       expect(onScreenY).toBeCloseTo(10, 9);
     }
+  });
+});
+
+describe('parseColor', () => {
+  it('reads #rrggbb and #rrggbbaa as 0–1 channels', () => {
+    expect(parseColor('#ff8000')).toEqual({ r: 1, g: 128 / 255, b: 0, a: 1 });
+    expect(parseColor('#00000080').a).toBeCloseTo(128 / 255, 9);
+  });
+
+  it('reads rgb() and rgba()', () => {
+    expect(parseColor('rgba(138, 124, 246, 0.22)')).toEqual({
+      r: 138 / 255,
+      g: 124 / 255,
+      b: 246 / 255,
+      a: 0.22,
+    });
+    expect(parseColor('rgb(0,0,255)')).toEqual({ r: 0, g: 0, b: 1, a: 1 });
+  });
+
+  it('rejects anything else rather than guessing', () => {
+    expect(() => parseColor('purple')).toThrow(/color/);
+    expect(() => parseColor('var(--accent)')).toThrow(/color/);
   });
 });

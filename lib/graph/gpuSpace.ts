@@ -46,3 +46,30 @@ export function cameraFor(view: View, f: Frame): { x: number; y: number; scale: 
     scale: k,
   };
 }
+
+/** "#rrggbb[aa]" or "rgb[a](…)" → 0–1 channels, for GPU colors. Anything else
+ *  (named colors, var(…)) throws — theme colors must be concrete. */
+export function parseColor(css: string): { r: number; g: number; b: number; a: number } {
+  const s = css.trim();
+  const hex = s.match(/^#([0-9a-f]{6})([0-9a-f]{2})?$/i);
+  if (hex) {
+    const n = parseInt(hex[1]!, 16);
+    return {
+      r: ((n >> 16) & 255) / 255,
+      g: ((n >> 8) & 255) / 255,
+      b: (n & 255) / 255,
+      a: hex[2] ? parseInt(hex[2], 16) / 255 : 1,
+    };
+  }
+  const fn = s.match(
+    /^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*(?:,\s*([\d.]+)\s*)?\)$/i,
+  );
+  if (fn)
+    return {
+      r: Number(fn[1]) / 255,
+      g: Number(fn[2]) / 255,
+      b: Number(fn[3]) / 255,
+      a: fn[4] === undefined ? 1 : Number(fn[4]),
+    };
+  throw new Error(`not a concrete color: "${css}"`);
+}
