@@ -25,13 +25,13 @@ The team's own workflow diagram color-codes every step by which of three stages 
 
 ```cards
 # L — Learning | Follow the booklet
-Nine tutorials, from a simple cube to a full space rocket. Each is broken into plain-language steps that introduce one new parametric concept before asking the student to try it themselves. *9 TUTORIALS · CUBE → ROCKET*
+Nine tutorials, from a simple cube to a full space rocket. Each is broken into plain-language steps that introduce one new parametric concept before asking the student to try it themselves. *9 TUTORIALS · CUBE → ROCKET.*
 
 # P — Programming | Prompt the model
-Type what you want in plain English. A fine-tuned language model parses intent into structured parametric data, extruded live in the construction environment via a JSON editor. *FLAN-T5, FINE-TUNED IN-HOUSE*
+Type what you want in plain English. A fine-tuned language model parses intent into structured parametric data, extruded live in the construction environment via a JSON editor. *FLAN-T5, FINE-TUNED IN-HOUSE.*
 
 # M — 3D Printing | Send it to the machine
-Export as STL for 3D printing or DXF for laser cutting. Slice in a tool like Bambu Studio, and watch a typed sentence become a physical part. *STL · DXF EXPORT*
+Export as STL for 3D printing or DXF for laser cutting. Slice in a tool like Bambu Studio, and watch a typed sentence become a physical part. *STL · DXF EXPORT.*
 ```
 
 ![The nine-step Parametrix workflow — red for learning, blue for programming, gold for 3D printing.](/research/parametrix/02-the-nine-step-parametrix-workflo-w2400.jpg)

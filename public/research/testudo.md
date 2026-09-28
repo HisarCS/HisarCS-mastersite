@@ -23,13 +23,13 @@ Once a student builds their tortoise, a custom-trained AI model starts learning 
 
 ```cards
 # Hardware | Built to be built
-FDM-printed in PLA — 2 hours 7 minutes per kit — and assembled with magnets and snap-fit joints so it stays easy to put together without sacrificing durability. Powered by a Raspberry Pi 4, a ReSpeaker 2-Mic Hat, and an Adafruit 16-channel PWM driver running 4 SG90 servos. *~$122 / 4,650 TL TOTAL*
+FDM-printed in PLA — 2 hours 7 minutes per kit — and assembled with magnets and snap-fit joints so it stays easy to put together without sacrificing durability. Powered by a Raspberry Pi 4, a ReSpeaker 2-Mic Hat, and an Adafruit 16-channel PWM driver running 4 SG90 servos. *~$122 / 4,650 TL TOTAL.*
 
 # Voice & AI | A model that's actually listening
-Say "Testudo" to wake it. Real-time speech-to-text captures what follows, and a locally-hosted Wizard Vicuna language model — run through LMStudio in the ideaLab — combines NLP, prompt engineering, and context management to hold a real conversation. *WAKE WORD → STT → LOCAL LLM → TTS*
+Say "Testudo" to wake it. Real-time speech-to-text captures what follows, and a locally-hosted Wizard Vicuna language model — run through LMStudio in the ideaLab — combines NLP, prompt engineering, and context management to hold a real conversation. *WAKE WORD → STT → LOCAL LLM → TTS.*
 
 # Personalization | Keeps evolving after assembly
-Every interaction is logged to a per-student JSON profile. The model reads that profile back into each conversation, adjusting TESTUDO's development path and unlocking more advanced build guides as a student's skills grow. *USER DATA → ADAPTIVE GUIDES*
+Every interaction is logged to a per-student JSON profile. The model reads that profile back into each conversation, adjusting TESTUDO's development path and unlocking more advanced build guides as a student's skills grow. *USER DATA → ADAPTIVE GUIDES.*
 ```
 
 ## Under the hood — Say "Testudo," and it's listening

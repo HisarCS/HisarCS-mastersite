@@ -23,13 +23,13 @@ The team drew inspiration from the **Stanford Pupper**, an open-source quadruped
 
 ```cards
 # 01Lime | Assembly, electronics, and code — from scratch
-Students learn to integrate servo motors into a design, wire them through a Raspberry Pi Pico, and move them with Adafruit CircuitPython — simple and compatible enough to teach a real coding foundation. Once the fish moves, the actual lesson starts: modify it, color it, customize it to reflect their own identity. *SERVOS · RASPBERRY PI PICO · CIRCUITPYTHON*
+Students learn to integrate servo motors into a design, wire them through a Raspberry Pi Pico, and move them with Adafruit CircuitPython — simple and compatible enough to teach a real coding foundation. Once the fish moves, the actual lesson starts: modify it, color it, customize it to reflect their own identity. *SERVOS · RASPBERRY PI PICO · CIRCUITPYTHON.*
 
 # 02Satsuma | More complex movement, more complex electronics
-Satsuma builds on Lime's foundation by adding electronic breadboards, voltage regulators, and servo boards — enough to allow noticeably more complicated movement — plus ultrasonic sensors that improve the model thematically as well as functionally. *BREADBOARDS · VOLTAGE REGULATORS · ULTRASONIC SENSORS*
+Satsuma builds on Lime's foundation by adding electronic breadboards, voltage regulators, and servo boards — enough to allow noticeably more complicated movement — plus ultrasonic sensors that improve the model thematically as well as functionally. *BREADBOARDS · VOLTAGE REGULATORS · ULTRASONIC SENSORS.*
 
 # 03Lemon | Inverse kinematics — and a dog that acts like one
-The final model adds inverse kinematics to the coding process, the hardest skill layer in the kit. Paired with ultrasonic sensors and a speaker system, the finished prototype can replicate specific dog behaviors — following a person, barking. *INVERSE KINEMATICS · SPEAKER · SENSING*
+The final model adds inverse kinematics to the coding process, the hardest skill layer in the kit. Paired with ultrasonic sensors and a speaker system, the finished prototype can replicate specific dog behaviors — following a person, barking. *INVERSE KINEMATICS · SPEAKER · SENSING.*
 ```
 
 ## Built to be customized — Every fish comes out different
