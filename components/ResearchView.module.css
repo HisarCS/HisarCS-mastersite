@@ -73,6 +73,14 @@
   border-radius: 99px;
   border: 1px solid var(--line);
   color: var(--muted);
+  text-decoration: none;
+  transition:
+    color 0.12s ease,
+    border-color 0.12s ease;
+}
+.chip:hover {
+  color: var(--accent);
+  border-color: var(--accent);
 }
 
 .summary {

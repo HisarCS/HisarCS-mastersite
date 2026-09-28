@@ -202,6 +202,39 @@ test.describe('shareable explorer links', () => {
   });
 });
 
+test.describe('tags lead to the filtered directory', () => {
+  test('a tag on a write-up opens research filtered to its interest area', async ({ page }) => {
+    await mockSupabase(page, { researchEntries: [researchEntryRow()] });
+    await page.goto('/research/?id=otto');
+    await page.getByRole('link', { name: 'Parametric CAD' }).click();
+    await expect(page).toHaveURL(/\/research\/?\?interest=Parametric\+Design$/);
+    await expect(status(page)).toContainText('2 of 9 research'); // Otto + Parametrix
+  });
+
+  test("a venue tag opens that conference's research", async ({ page }) => {
+    await mockSupabase(page, { researchEntries: [researchEntryRow()] });
+    await page.goto('/research/?id=automata');
+    await page.getByRole('link', { name: "Constructionism '25" }).click();
+    await expect(status(page)).toContainText('3 of 9 research');
+  });
+
+  test("a member entry's tag and a profile's interest are links too", async ({ page }) => {
+    await mockSupabase(page, {
+      researchEntry: researchEntryRow(),
+      person: personRow(),
+      directory: [directoryRow()],
+    });
+    await page.goto('/research/?id=sensor-garden');
+    await expect(page.getByRole('link', { name: 'Electronics' })).toHaveAttribute(
+      'href',
+      /\/research\/?\?interest=Electronics$/,
+    );
+    await page.goto('/person/?id=ada-lovelace');
+    await page.getByRole('link', { name: 'Robotics' }).click();
+    await expect(page).toHaveURL(/\/members\/?\?interest=Robotics$/);
+  });
+});
+
 test.describe('members explorer', () => {
   const MEMBERS = [
     directoryRow(),

@@ -13,6 +13,8 @@ import { initials, PALETTE, paletteColor } from '@/lib/util/palette';
 import type { ResearchEntry } from '@/lib/domain/types';
 import { MarkdownPage } from './markdown/MarkdownPage';
 import { citationFromEntry } from '@/lib/domain/citation';
+import { researchTagFilter } from '@/lib/domain/directoryFacets';
+import { explorerLink } from '@/lib/domain/explorerUrl';
 import { CiteButton } from './CiteButton';
 import { SiteHeader } from './SiteHeader';
 import { Unavailable } from './Unavailable';
@@ -143,16 +145,20 @@ export function ResearchEntryView({ id, embedded = false }: { id: string; embedd
         {/* tags sit in their own borderless row, above the members list */}
         {p.fields.length > 0 && (
           <div className={styles.tagBar}>
-            {p.fields.map((f) => (
-              <button
-                key={f}
-                type="button"
-                className={styles.chip}
-                style={{ '--chip-c': paletteColor(f) } as CSSProperties}
-              >
-                {f}
-              </button>
-            ))}
+            {p.fields.map((f) => {
+              const { facet, value } = researchTagFilter(f);
+              return (
+                <Link
+                  key={f}
+                  href={explorerLink('/research', facet, value)}
+                  title={`All research in ${value}`}
+                  className={styles.chip}
+                  style={{ '--chip-c': paletteColor(f) } as CSSProperties}
+                >
+                  {f}
+                </Link>
+              );
+            })}
           </div>
         )}
 

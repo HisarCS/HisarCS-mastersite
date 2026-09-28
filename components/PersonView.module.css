@@ -98,6 +98,11 @@
   border-radius: 99px;
   background: var(--ink);
   color: var(--bg);
+  text-decoration: none;
+  transition: background-color 0.12s ease;
+}
+.chip:hover {
+  background: var(--accent);
 }
 
 .bio {

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { getMember } from '@/lib/data/members';
+import { explorerLink } from '@/lib/domain/explorerUrl';
 import { mockPerson } from '@/lib/data/mock';
 import { mocksEnabled } from '@/lib/env';
 import { safeUrl } from '@/lib/util/html';
@@ -104,9 +105,14 @@ export function PersonView({ id, embedded = false }: { id: string; embedded?: bo
 
         <div className={styles.chips}>
           {p.fields.map((f) => (
-            <span key={f} className={styles.chip}>
+            <Link
+              key={f}
+              href={explorerLink('/members', 'interest', f)}
+              title={`Everyone into ${f}`}
+              className={styles.chip}
+            >
               {f}
-            </span>
+            </Link>
           ))}
         </div>
 

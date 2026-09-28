@@ -101,6 +101,7 @@
   background: var(--card);
   color: var(--muted);
   cursor: pointer;
+  text-decoration: none;
   white-space: nowrap;
   transition:
     color 0.12s ease,

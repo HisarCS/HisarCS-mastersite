@@ -57,6 +57,14 @@ export const RESEARCH_FACETS: Facet<ResearchDirItem>[] = [
 
 export const researchText = (r: ResearchDirItem) => `${r.title} ${r.summary ?? ''}`;
 
+/** The research filter a single tag stands for: a venue tag ("IDC '26") → its
+ *  conference; anything else → its interest area. For tag chips and links. */
+export function researchTagFilter(tag: string): { facet: string; value: string } {
+  return isVenueTag(tag)
+    ? { facet: 'conference', value: conferenceOf(tag) ?? tag }
+    : { facet: 'interest', value: interestAreasOf([tag])[0] ?? tag };
+}
+
 export const MEMBER_FACETS: Facet<MemberCard>[] = [
   { key: 'interest', label: 'Interest', values: (m) => m.fields },
   {

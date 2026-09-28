@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   MEMBER_FACETS,
   RESEARCH_FACETS,
+  researchTagFilter,
   researchYear,
   type ResearchDirItem,
 } from '../../lib/domain/directoryFacets';
@@ -87,5 +88,22 @@ describe('MEMBER_FACETS', () => {
 
   it('a member without a year has no class', () => {
     expect(facet(MEMBER_FACETS, 'class').values({ ...ada, gradYear: null })).toEqual([]);
+  });
+});
+
+describe('researchTagFilter', () => {
+  it('an interest tag filters by its interest area', () => {
+    expect(researchTagFilter('Parametric CAD')).toEqual({
+      facet: 'interest',
+      value: 'Parametric Design',
+    });
+  });
+
+  it('a venue tag filters by its conference, without the year', () => {
+    expect(researchTagFilter("SCF Adjunct '25")).toEqual({ facet: 'conference', value: 'SCF' });
+  });
+
+  it("an unfiled tag filters by itself (it's its own area)", () => {
+    expect(researchTagFilter('Ceramics')).toEqual({ facet: 'interest', value: 'Ceramics' });
   });
 });

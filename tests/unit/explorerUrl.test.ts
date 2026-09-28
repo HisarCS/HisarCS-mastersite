@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   decodeExplorerState,
   encodeExplorerState,
+  explorerLink,
   type ExplorerUrlState,
 } from '../../lib/domain/explorerUrl';
 
@@ -76,6 +77,16 @@ describe('decodeExplorerState', () => {
   it('drops empty and duplicate values', () => {
     expect(decodeExplorerState('?interest=&interest=AI&interest=AI', OPTS).selected).toEqual({
       interest: ['AI'],
+    });
+  });
+});
+
+describe('explorerLink', () => {
+  it('links a directory filtered to one value, and decodes back to it', () => {
+    const href = explorerLink('/research', 'interest', 'HCI & AR');
+    expect(href).toBe('/research?interest=HCI+%26+AR');
+    expect(decodeExplorerState(href.split('?')[1]!, OPTS).selected).toEqual({
+      interest: ['HCI & AR'],
     });
   });
 });

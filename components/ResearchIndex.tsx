@@ -10,9 +10,12 @@ import { mocksEnabled } from '@/lib/env';
 import { avatarSrcSet, researchImgSrcSet, thumbUrl } from '@/lib/util/media';
 import { initials, paletteColor as colorFor } from '@/lib/util/palette';
 import type { ResearchEntryCard } from '@/lib/domain/types';
-import { conferenceOf, isVenueTag } from '@/lib/domain/facets';
-import { interestAreasOf } from '@/lib/domain/interests';
-import { RESEARCH_FACETS, researchText, type ResearchDirItem } from '@/lib/domain/directoryFacets';
+import {
+  RESEARCH_FACETS,
+  researchTagFilter,
+  researchText,
+  type ResearchDirItem,
+} from '@/lib/domain/directoryFacets';
 import { Explorer, type ExplorerApi } from './explorer/Explorer';
 import { SiteHeader } from './SiteHeader';
 import styles from './ResearchIndex.module.css';
@@ -78,9 +81,7 @@ function TagRow({ tags, api }: { tags: string[]; api: ExplorerApi }) {
   return (
     <div className={cls} ref={ref}>
       {tags.map((t) => {
-        const [facet, value] = isVenueTag(t)
-          ? ['conference', conferenceOf(t) ?? t]
-          : ['interest', interestAreasOf([t])[0] ?? t];
+        const { facet, value } = researchTagFilter(t);
         const on = api.isOn(facet, value);
         return (
           <button
