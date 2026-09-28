@@ -6,11 +6,11 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
 import type { Element } from 'hast';
-import { researchFileUrl } from '@/lib/data/researchEntries';
 import { safeUrl } from '@/lib/util/html';
-import { researchImgSrcSet, resolveMediaSrc } from '@/lib/util/media';
+import { researchImgSrcSet } from '@/lib/util/media';
 import { parsePlacement } from '@/lib/util/chartSpec';
 import { fenceFor } from './fences';
+import { mediaUrl } from './media';
 import styles from './Markdown.module.css';
 
 /**
@@ -20,10 +20,6 @@ import styles from './Markdown.module.css';
  * Raw HTML in the markdown is never rendered (react-markdown default), and
  * every URL passes safeUrl.
  */
-
-/** image src: site asset ("/…"), uploaded-file storage path, or https URL. */
-const mediaUrl = (src: string) =>
-  resolveMediaSrc(src, process.env.NEXT_PUBLIC_BASE_PATH ?? '', researchFileUrl);
 
 /** The article column is ~840 CSS px; `sizes` tells the browser how much of
  *  it a figure occupies so it can pick the right ladder variant. */
