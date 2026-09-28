@@ -1,4 +1,5 @@
 import { conferenceOf, isVenueTag, type Facet } from './facets';
+import { interestAreasOf } from './interests';
 import type { MemberCard } from './types';
 
 /** "2026" before "2025"; "Class of 2027" before "Class of 2019". */
@@ -32,7 +33,8 @@ export const RESEARCH_FACETS: Facet<ResearchDirItem>[] = [
   {
     key: 'interest',
     label: 'Interest',
-    values: (r) => r.tags.filter((t) => !isVenueTag(t)),
+    // umbrella areas, not raw tags — near-duplicates meet in one cluster
+    values: (r) => interestAreasOf(r.tags.filter((t) => !isVenueTag(t))),
   },
   {
     key: 'conference',

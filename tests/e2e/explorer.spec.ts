@@ -34,7 +34,8 @@ test.describe('research explorer', () => {
       .first()
       .click();
 
-    await expect(status(page)).toContainText('2 of 9 research'); // Pomelo + TESTUDO
+    // the Robotics area: Pomelo, TESTUDO, Lemon (biomimetic robots), Automata (mechanics)
+    await expect(status(page)).toContainText('4 of 9 research');
     await expect(page.getByRole('link', { name: /TESTUDO/ })).toBeVisible();
     await expect(
       page.getByRole('group', { name: 'Filter by Interest' }).getByRole('button', {
@@ -73,8 +74,8 @@ test.describe('research explorer', () => {
     await expect(graph.getByRole('link', { name: 'Open Otto' })).toHaveCount(1);
 
     await graph.getByRole('button', { name: 'Filter by Robotics' }).click();
-    await expect(status(page)).toContainText('2 of 9 research');
-    await expect(graph.getByRole('link')).toHaveCount(2);
+    await expect(status(page)).toContainText('4 of 9 research');
+    await expect(graph.getByRole('link')).toHaveCount(4);
 
     await graph.getByRole('link', { name: 'Open Pomelo' }).focus();
     await page.keyboard.press('Enter');
@@ -94,6 +95,17 @@ test.describe('research explorer', () => {
     await expect(graph.getByRole('button', { name: 'Filter by 2019' })).toBeVisible();
   });
 
+  test('near-duplicate tags meet in one interest area (Otto + Parametrix)', async ({ page }) => {
+    await openResearch(page);
+    await page.getByRole('group', { name: 'View' }).getByRole('button', { name: 'Graph' }).click();
+    const graph = page.getByRole('group', { name: 'research by interest' });
+    await expect(graph.getByRole('button', { name: /Parametric CAD/ })).toHaveCount(0);
+    await graph.getByRole('button', { name: 'Filter by Parametric Design' }).click();
+    await expect(graph.getByRole('link')).toHaveCount(2);
+    await expect(graph.getByRole('link', { name: 'Open Otto' })).toBeVisible();
+    await expect(graph.getByRole('link', { name: 'Open Parametrix' })).toBeVisible();
+  });
+
   test('tags differing only in case are one filter', async ({ page }) => {
     await mockSupabase(page, {
       researchEntries: [
@@ -104,7 +116,7 @@ test.describe('research explorer', () => {
     const chips = page.getByRole('group', { name: 'Filter by Interest' });
     await expect(chips.getByRole('button', { name: /^robotics/i })).toHaveCount(1);
     await chips.getByRole('button', { name: /^Robotics/ }).click();
-    await expect(status(page)).toContainText('3 of 9 research'); // Pomelo, TESTUDO, Sensor Garden
+    await expect(status(page)).toContainText('5 of 9 research'); // the Robotics area + Sensor Garden
   });
 
   test('nothing matching shows an honest empty state', async ({ page }) => {
