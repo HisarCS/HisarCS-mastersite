@@ -1,6 +1,13 @@
 'use client';
 
-import { useMemo, useState, type CSSProperties, type ReactNode } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from 'react';
 import {
   facetValues,
   filterItems,
@@ -9,6 +16,7 @@ import {
   type Facet,
   type Selection,
 } from '@/lib/domain/facets';
+import { decodeExplorerState, encodeExplorerState } from '@/lib/domain/explorerUrl';
 import { buildNetwork } from '@/lib/graph/network';
 import { paletteColor } from '@/lib/util/palette';
 import { GRAPH_THEMES, type GraphThemeKey } from './graphThemes';
@@ -28,7 +36,8 @@ export interface ExplorerApi {
  * A directory you can search, filter, group, and see as a network — the one
  * shell both /research and /members use. Everything it offers comes from the
  * `facets` table it is given; the page supplies how one group of items looks
- * as a grid, and where an item opens.
+ * as a grid, and where an item opens. The state lives in the URL
+ * (lib/domain/explorerUrl.ts), so any view can be shared as a link.
  */
 export function Explorer<T>({
   items,
@@ -71,14 +80,55 @@ export function Explorer<T>({
     () => new Map(facets.map((f) => [f.key, facetValues(items, f)])),
     [facets, items],
   );
-  /** a value as the facet displays it (card tags arrive in their own casing) */
-  const canon = (facet: string, value: string) =>
-    valueLists.get(facet)?.find((v) => v.value.toLowerCase() === value.toLowerCase())?.value ??
-    value;
+  /** a value as the facet displays it (card tags and links arrive in any casing) */
+  const canon = useCallback(
+    (facet: string, value: string) =>
+      valueLists.get(facet)?.find((v) => v.value.toLowerCase() === value.toLowerCase())?.value ??
+      value,
+    [valueLists],
+  );
+  /** the ticked values, canonicalized */
+  const active = useMemo<Selection>(
+    () =>
+      Object.fromEntries(
+        Object.entries(selected).map(([k, vs]) => [k, [...new Set(vs.map((v) => canon(k, v)))]]),
+      ),
+    [selected, canon],
+  );
+
+  // ---- URL ⇄ state: read once on mount, then mirror every change ----
+  const urlOpts = useMemo(
+    () => ({
+      facetKeys: rawFacets.map((f) => f.key),
+      styles: Object.keys(GRAPH_THEMES),
+      defaults: { group: defaultGroup, view: 'grid' as const, style: 'paper' },
+    }),
+    [rawFacets, defaultGroup],
+  );
+  const [urlRead, setUrlRead] = useState(false);
+  useEffect(() => {
+    const s = decodeExplorerState(window.location.search, urlOpts);
+    setQuery(s.query);
+    setSelected(s.selected);
+    setGroupKey(s.group);
+    setView(s.view);
+    setThemeKey(s.style as GraphThemeKey);
+    setUrlRead(true);
+  }, [urlOpts]);
+  useEffect(() => {
+    if (!urlRead) return; // don't overwrite a shared link before reading it
+    const qs = encodeExplorerState(
+      { query, selected: active, group: groupKey, view, style: themeKey },
+      urlOpts.defaults,
+    );
+    const url = `${window.location.pathname}${qs}${window.location.hash}`;
+    if (url !== `${window.location.pathname}${window.location.search}${window.location.hash}`)
+      window.history.replaceState(window.history.state, '', url);
+  }, [urlRead, query, active, groupKey, view, themeKey, urlOpts]);
 
   const shown = useMemo(
-    () => filterItems(items, { query, selected }, facets, text),
-    [items, query, selected, facets, text],
+    () => filterItems(items, { query, selected: active }, facets, text),
+    [items, query, active, facets, text],
   );
   const group = facets.find((f) => f.key === groupKey) ?? null;
   // the graph always needs hubs: fall back to the first facet
@@ -89,23 +139,24 @@ export function Explorer<T>({
   );
 
   const isOn = (facet: string, value: string) =>
-    selected[facet]?.includes(canon(facet, value)) ?? false;
+    active[facet]?.includes(canon(facet, value)) ?? false;
   const toggle = (facet: string, raw: string) => {
     const value = canon(facet, raw);
     setSelected((s) => {
       const cur = s[facet] ?? [];
-      const next = cur.includes(value) ? cur.filter((v) => v !== value) : [...cur, value];
+      const on = cur.some((v) => canon(facet, v) === value);
+      const next = on ? cur.filter((v) => canon(facet, v) !== value) : [...cur, value];
       return { ...s, [facet]: next };
     });
   };
   const api: ExplorerApi = { toggle, isOn };
-  const filtering = query.trim() !== '' || Object.values(selected).some((v) => v.length > 0);
+  const filtering = query.trim() !== '' || Object.values(active).some((v) => v.length > 0);
   const clear = () => {
     setQuery('');
     setSelected({});
   };
   const selectedHubs = new Set(
-    Object.entries(selected).flatMap(([k, vs]) => vs.map((v) => `${k}:${v}`)),
+    Object.entries(active).flatMap(([k, vs]) => vs.map((v) => `${k}:${v}`)),
   );
 
   return (
