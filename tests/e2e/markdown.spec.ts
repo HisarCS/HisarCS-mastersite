@@ -88,3 +88,25 @@ test('cards fence draws side-by-side cards with label, title, body and snippet',
   // the snippet keeps its line breaks and indentation
   await expect(cards.first().locator('pre')).toHaveText('shape polygon hex {\n  sides: 6\n}');
 });
+
+test('card and finding bodies render inline markdown, links sanitized', async ({ page }) => {
+  await openPage(
+    page,
+    [
+      fence('findings', '# Result\nIt worked **twice**, *not* once.'),
+      fence('cards', '# Card\nSee [evil](javascript:alert(1)) and [docs](https://example.org).'),
+    ].join('\n\n'),
+  );
+  const article = page.locator('article');
+  await expect(article.locator('li strong')).toHaveText('twice');
+  await expect(article.locator('li em')).toHaveText('not');
+  await expect(article).not.toContainText('**');
+  await expect(article.getByRole('link', { name: 'docs' })).toHaveAttribute(
+    'href',
+    'https://example.org',
+  );
+  await expect(article.getByRole('link', { name: 'evil' })).not.toHaveAttribute(
+    'href',
+    /javascript/,
+  );
+});
