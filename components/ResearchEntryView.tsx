@@ -16,6 +16,7 @@ import { citationFromEntry } from '@/lib/domain/citation';
 import { researchTagFilter } from '@/lib/domain/directoryFacets';
 import { explorerLink } from '@/lib/domain/explorerUrl';
 import { CiteButton } from './CiteButton';
+import { ShareButton } from './ShareButton';
 import { SiteHeader } from './SiteHeader';
 import { Unavailable } from './Unavailable';
 import styles from './ResearchEntryView.module.css';
@@ -111,7 +112,10 @@ export function ResearchEntryView({ id, embedded = false }: { id: string; embedd
               {/* shown only to this entry's own members; RLS is what actually
                   gates the edit, this is the affordance */}
               {p.published && (
-                <CiteButton data={citationFromEntry(p, researchPageUrl(p.publicId))} />
+                <>
+                  <CiteButton data={citationFromEntry(p, researchPageUrl(p.publicId))} />
+                  <ShareButton slug={p.publicId} />
+                </>
               )}
               {canEdit && (
                 <Link

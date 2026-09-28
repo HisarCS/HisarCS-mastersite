@@ -4,6 +4,10 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  # Nightly rebuild: member research published since the last deploy gets its
+  # share page (/r/<slug>/ — link-preview tags, ADR-0021) within a day.
+  schedule:
+    - cron: '17 3 * * *'
 
 # Permissions the Pages deploy needs
 permissions:
@@ -31,6 +35,9 @@ jobs:
           # The site's sub-path today. When the root moves, change THIS line only
           # (or clear it for a root deploy).
           NEXT_PUBLIC_BASE_PATH: /HisarCS-mastersite
+          # Build share pages for published member research too (read-only,
+          # public anon key). Local/test builds leave this unset and stay offline.
+          SHARE_PAGES_FROM_DB: '1'
       # GitHub Pages serves _next/… fine, but never runs Jekyll on our output.
       - run: touch out/.nojekyll
       - uses: actions/upload-pages-artifact@v3

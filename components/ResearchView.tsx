@@ -9,6 +9,7 @@ import { citationFromCurated } from '@/lib/domain/citation';
 import { researchTagFilter } from '@/lib/domain/directoryFacets';
 import { explorerLink } from '@/lib/domain/explorerUrl';
 import { CiteButton } from './CiteButton';
+import { ShareButton } from './ShareButton';
 import { SiteHeader } from './SiteHeader';
 import { ResearchArticle } from './ResearchArticle';
 import { ResearchEntryView } from './ResearchEntryView';
@@ -69,6 +70,7 @@ export function ResearchView({ id, embedded = false }: { id: string; embedded?: 
             <h1 className={styles.title}>
               {item.title}
               <CiteButton data={citationFromCurated(item, researchPageUrl(item.slug))} />
+              <ShareButton slug={item.slug} />
             </h1>
             {item.venue && <div className={styles.venue}>{item.venue}</div>}
             {item.tags.length > 0 && (
