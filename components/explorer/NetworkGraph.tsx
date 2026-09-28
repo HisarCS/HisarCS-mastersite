@@ -5,8 +5,9 @@ import { layoutNetwork, type NetNode, type Network } from '@/lib/graph/network';
 import { paletteColor } from '@/lib/util/palette';
 import styles from './Explorer.module.css';
 
-const W = 960;
-const H = 560;
+/** landscape frame on desktop; portrait below 640px so labels stay legible */
+const WIDE = { width: 960, height: 560, margin: { x: 80, y: 36 } };
+const NARROW = { width: 420, height: 620, margin: { x: 48, y: 30 } };
 const MIN_K = 0.5;
 const MAX_K = 4;
 /** below this many nodes every item is labelled; above, labels appear on
@@ -19,6 +20,13 @@ interface View {
   ty: number;
 }
 const HOME: View = { k: 1, tx: 0, ty: 0 };
+
+/** zoom by `factor` keeping the point `at` (viewBox units) fixed on screen */
+function zoomView(v: View, factor: number, at: { x: number; y: number }): View {
+  const k = Math.min(MAX_K, Math.max(MIN_K, v.k * factor));
+  const f = k / v.k;
+  return { k, tx: at.x - (at.x - v.tx) * f, ty: at.y - (at.y - v.ty) * f };
+}
 
 const radius = (n: NetNode<unknown>) =>
   n.kind === 'hub' ? 7 + 2.4 * Math.sqrt(n.weight) : 5 + Math.sqrt(n.weight);
@@ -43,7 +51,22 @@ export function NetworkGraph<T>({
   onHub: (facet: string, value: string) => void;
   label: string;
 }) {
-  const pos = useMemo(() => layoutNetwork(network, { width: W, height: H }), [network]);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [narrow, setNarrow] = useState(false);
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([e]) => setNarrow((e?.contentRect.width ?? 1000) < 640));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const frame = narrow ? NARROW : WIDE;
+  const W = frame.width;
+  const H = frame.height;
+  const pos = useMemo(
+    () => layoutNetwork(network, frame, { margin: frame.margin }),
+    [network, frame],
+  );
   const neighbours = useMemo(() => {
     const m = new Map<string, Set<string>>();
     for (const l of network.links) {
@@ -60,8 +83,8 @@ export function NetworkGraph<T>({
   const svgRef = useRef<SVGSVGElement>(null);
   const drag = useRef<{ x: number; y: number; view: View; moved: boolean } | null>(null);
 
-  // a new network (new filter / grouping) starts from the home view
-  useEffect(() => setView(HOME), [network]);
+  // a new network (new filter / grouping / frame) starts from the home view
+  useEffect(() => setView(HOME), [network, frame]);
 
   /** client px → viewBox units */
   const toBox = (clientX: number, clientY: number) => {
@@ -69,12 +92,7 @@ export function NetworkGraph<T>({
     return { x: ((clientX - r.left) / r.width) * W, y: ((clientY - r.top) / r.height) * H };
   };
 
-  const zoomAt = (factor: number, at = { x: W / 2, y: H / 2 }) =>
-    setView((v) => {
-      const k = Math.min(MAX_K, Math.max(MIN_K, v.k * factor));
-      const f = k / v.k;
-      return { k, tx: at.x - (at.x - v.tx) * f, ty: at.y - (at.y - v.ty) * f };
-    });
+  const zoomAt = (factor: number) => setView((v) => zoomView(v, factor, { x: W / 2, y: H / 2 }));
 
   // wheel zoom needs a non-passive listener to stop the page scrolling
   useEffect(() => {
@@ -83,14 +101,15 @@ export function NetworkGraph<T>({
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
       const r = el.getBoundingClientRect();
-      zoomAt(Math.exp(-e.deltaY * 0.0015), {
+      const at = {
         x: ((e.clientX - r.left) / r.width) * W,
         y: ((e.clientY - r.top) / r.height) * H,
-      });
+      };
+      setView((v) => zoomView(v, Math.exp(-e.deltaY * 0.0015), at));
     };
     el.addEventListener('wheel', onWheel, { passive: false });
     return () => el.removeEventListener('wheel', onWheel);
-  }, []);
+  }, [W, H]);
 
   const onPointerDown = (e: PointerEvent<SVGSVGElement>) => {
     const p = toBox(e.clientX, e.clientY);
@@ -124,7 +143,7 @@ export function NetworkGraph<T>({
     itemCount < LABEL_ALL_BELOW || view.k >= 1.6 || (lit?.has(id) ?? false);
 
   return (
-    <div className={styles.graphWrap}>
+    <div className={styles.graphWrap} ref={wrapRef}>
       <svg
         ref={svgRef}
         className={styles.graph}
@@ -180,6 +199,8 @@ export function NetworkGraph<T>({
                   }
                 }}
               >
+                {/* invisible, finger-sized hit area — the dot alone is too small to tap */}
+                <circle r={Math.max(r + 8, 14 / view.k)} className={styles.hit} />
                 {hub && selectedHubs.has(n.id) && (
                   <circle r={r + 4 / Math.sqrt(view.k)} className={styles.ring} />
                 )}
