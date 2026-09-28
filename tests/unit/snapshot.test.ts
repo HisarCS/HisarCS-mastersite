@@ -97,6 +97,26 @@ describe('storageVariants', () => {
   });
 });
 
+describe('buildSnapshot: interest areas', () => {
+  it("replaces the local areas with production's when it has the table", () => {
+    const s = buildSnapshot(
+      { ...rows(), interest_areas: [{ area: 'Making', tag: 'laser cutting', sort: 0 }] },
+      { prodUrl: PROD, localUrl: LOCAL },
+    );
+    expect(s.sql).toMatch(/delete from public\.interest_areas;/);
+    expect(s.sql).toContain("('Making', 'laser cutting', 0)");
+    expect(s.counts.interest_areas).toBe(1);
+  });
+
+  it('leaves the local (migration-seeded) areas alone when production has none yet', () => {
+    const s = buildSnapshot(
+      { ...rows(), interest_areas: null },
+      { prodUrl: PROD, localUrl: LOCAL },
+    );
+    expect(s.sql).not.toContain('interest_areas');
+  });
+});
+
 describe('buildSnapshot', () => {
   const snap = () => buildSnapshot(rows(), { prodUrl: PROD, localUrl: LOCAL });
 
