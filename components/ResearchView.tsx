@@ -11,7 +11,7 @@ import { explorerLink } from '@/lib/domain/explorerUrl';
 import { CiteButton } from './CiteButton';
 import { ShareButton } from './ShareButton';
 import { SiteHeader } from './SiteHeader';
-import { ResearchArticle } from './ResearchArticle';
+import { CuratedArticle } from './CuratedArticle';
 import { ResearchEntryView } from './ResearchEntryView';
 import styles from './ResearchView.module.css';
 
@@ -146,7 +146,7 @@ export function ResearchView({ id, embedded = false }: { id: string; embedded?: 
         </dl>
 
         <div className={styles.article}>
-          <ResearchArticle src={researchContentSrc(item)} />
+          <CuratedArticle src={researchContentSrc(item)} />
         </div>
       </main>
     </>
