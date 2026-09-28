@@ -119,8 +119,13 @@ async function convert(slug) {
       ]
         .filter((e) => !e.parentElement.closest('p'))
         .filter((e) => text(e) !== label && text(e) !== title)
-        // tag lines ("9 TUTORIALS · CUBE → ROCKET") read as a quiet caption
-        .map((e) => (e.matches('.tag, .species') ? `*${text(e)}*` : text(e)))
+        // separate lines in the original: end each as a sentence so they don't
+        // run together; tag/readout lines ("9 TUTORIALS · CUBE → ROCKET") read
+        // as a quiet italic caption
+        .map((e) => {
+          const t = text(e).replace(/([^.!?…:;"”’)])$/, '$1.');
+          return e.matches('.tag, .species, .readout') ? `*${t}*` : t;
+        })
         .filter((t, i, all) => t && all.indexOf(t) === i)
         .join(' ');
       const code = c.querySelector('.snippet, .code, pre');

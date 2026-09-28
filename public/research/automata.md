@@ -25,22 +25,22 @@ Each kit's AR overlay tells the story of a real endangered species — chosen so
 
 ```cards
 # Kit 1 — Cam-A | Rotation → linear oscillation
-A contoured cam converts continuous rotation into controlled back-and-forth motion — the same principle behind engines and packing machines. *AR: manta ray*
+A contoured cam converts continuous rotation into controlled back-and-forth motion — the same principle behind engines and packing machines. *AR: manta ray.*
 
 # Kit 2 — Cam-B (Geneva Stop) | Continuous → intermittent motion
-A pin engages slots on a driven wheel to convert steady rotation into precise, paused steps — used in clockwork, film projectors, and assembly lines. *AR: three jellyfish*
+A pin engages slots on a driven wheel to convert steady rotation into precise, paused steps — used in clockwork, film projectors, and assembly lines. *AR: three jellyfish.*
 
 # Kit 3 — Crank | Rotation → reciprocation
-A rotating arm and connecting rod turn circular motion into a controlled back-and-forth push and pull — core to engines, pumps, and presses. *AR: a shark*
+A rotating arm and connecting rod turn circular motion into a controlled back-and-forth push and pull — core to engines, pumps, and presses. *AR: a shark.*
 
 # Kit 4 — Gear-A | Bevel gears, 90° redirection
-Cone-shaped teeth mesh at an angle to redirect rotational motion between intersecting shafts — used in hand drills and automobiles. *AR: fish circling*
+Cone-shaped teeth mesh at an angle to redirect rotational motion between intersecting shafts — used in hand drills and automobiles. *AR: fish circling.*
 
 # Kit 5 — Gear-B | Shifting alignment, variable torque
-Deliberately offset gears cause output speed and torque to fluctuate as they turn — a "weird gear" useful for non-uniform drive systems. *AR: two dolphins*
+Deliberately offset gears cause output speed and torque to fluctuate as they turn — a "weird gear" useful for non-uniform drive systems. *AR: two dolphins.*
 
 # Kit 6 — Gear-C | Worm gear, self-locking
-A screw-like worm drives a toothed wheel at high reduction and can't be back-driven — the mechanism behind elevators and conveyor systems. *AR: a sea turtle*
+A screw-like worm drives a toothed wheel at high reduction and can't be back-driven — the mechanism behind elevators and conveyor systems. *AR: a sea turtle.*
 ```
 
 ![A red 3D-printed Cam-A kit showing a cam mechanism inside a rectangular frame.](/research/automata/02-a-red-3d-printed-cam-a-kit-showi-w2400.jpg)
