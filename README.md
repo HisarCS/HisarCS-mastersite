@@ -219,9 +219,21 @@ npm run dev        # http://localhost:3000
 **Full stack** (real DB, auth, storage):
 
 ```bash
-npm run stack      # Supabase on the localhost-only network + migrations + seed
+npm run stack      # Supabase on the localhost-only network + migrations,
+                   # then db:snapshot (below)
 npm run dev        # second terminal
 ```
+
+`npm run db:snapshot` replaces the local database's fake seed with
+production's **public** data — published members, tags, research, and the
+storage files they use — so localhost shows the real lab. It only reads
+production (the public anon key, what the live site shows anyone) and only
+writes to a localhost stack. Production sign-in links are dropped; signing in
+locally creates your own row. The generated SQL lands in
+`supabase/.snapshot/` (gitignored). `stack` runs it automatically; run it
+again any time to refresh. (`stack` skips Supabase's `vector` log shipper,
+which can't mount the Docker socket under Colima; it only feeds Studio's
+Logs page.)
 
 Studio (DB admin UI): http://127.0.0.1:54323.
 
@@ -231,7 +243,8 @@ Studio (DB admin UI): http://127.0.0.1:54323.
 | `npm run build`       | Static export to `out/` (set `NEXT_PUBLIC_BASE_PATH` first). |
 | `npm run stack`       | Start the local Supabase stack.                              |
 | `npm run stack:down`  | Stop it, discarding data.                                    |
-| `npm run stack:reset` | Clean DB rebuilt from migrations + seed.                     |
+| `npm run stack:reset` | Clean DB rebuilt from migrations, then the public snapshot.  |
+| `npm run db:snapshot` | Refresh the local DB with production's public data.          |
 | `npm run check`       | Format check + lint + typecheck + unit tests.                |
 | `npm test`            | vitest unit suite.                                           |
 | `npm run e2e`         | Playwright e2e suite against an existing `out/` build.       |

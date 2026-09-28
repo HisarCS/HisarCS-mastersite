@@ -26,3 +26,6 @@ secrets/
 github_oath_app_secrets.txt
 .env
 .env.*
+
+# real people's public profiles pulled by npm run db:snapshot — local only
+supabase/.snapshot/
