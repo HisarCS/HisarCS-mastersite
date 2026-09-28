@@ -519,3 +519,33 @@ its comments. **Comment-only corrections to applied migrations are allowed** —
 comments never execute, so the file still matches what production ran — and
 that comment has been corrected in place. The rule stays absolute for
 executable SQL: never edit statements in an applied migration; ship a new one.
+
+## ADR-0020 — Directory explorer: facet tables, and a graph without a graph library
+
+**Status:** Accepted 2026-09-28
+
+**Context:** Reviewing the site "as a busy professor who has never heard of
+us", the team wanted visitors to reach work by the axis they care about —
+interest (HCI, maker projects, digital fabrication…), conference, year — and
+proposed an Obsidian-style network view of how the lab's work connects. The
+same need exists for members (interest, class, cohort).
+
+**Decision:** Both directories render one generic `Explorer`
+(`components/explorer/`): search, filter chips, "Group by" sections, and a
+Grid/Graph toggle. Everything it offers is read from a **facet table** per
+directory (`lib/domain/directoryFacets.ts`) — each facet is a key, a label,
+and a function from an item to its values, optionally with a value order.
+Adding a way to slice the lab (author, lab room, …) is one entry; search,
+chips, sections, and the graph pick it up. Facet values compare
+case-insensitively, since curated tags and `fields` rows disagree on case.
+The graph is bipartite — items link to the hub of every value of the grouped
+facet — laid out by a small seeded force simulation in `lib/graph/network.ts`
+(pure, unit-tested) and drawn as plain SVG.
+
+**Consequences:** No new dependency (d3-force/cytoscape were the alternatives;
+~100 lines of layout code was cheaper than a library and keeps the bundle and
+stack unchanged). The layout is O(n²) per step — fine at lab scale (hundreds
+of nodes), revisit past ~1 000. Filters live in component state, so a
+filtered view isn't shareable by URL yet. The yearbook is now the members
+explorer grouped by class, so its section style lives in the explorer and
+research sections share it.

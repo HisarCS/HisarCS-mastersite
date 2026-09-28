@@ -28,17 +28,17 @@ Browser (GitHub Pages, static export)         Supabase (cloud or local Docker)
 
 ## 1. Repo layout
 
-| Path           | Role                                                                                                                                                                                                                                                                               |
-| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `app/`         | Routes: `/`, `/members`, `/research`, `/person?id=`, `/research?id=`, `/research/edit?id=`, `/member`. `/project?id=` is a deprecated redirect.                                                                                                                                    |
-| `components/`  | React components + CSS Modules. Views: `PersonView`, `ResearchView` (curated write-ups), `ResearchEntryView` (member-created), `MembersIndex`, `ResearchIndex`, `PixelMark`, `MemberArea` + `member/`, `ResearchEditor` + `markdown/` (page renderer/editor), shared `SiteHeader`. |
-| `lib/`         | Framework-agnostic layers: `env.ts`, `supabase.ts` (browser client), `data/` (all queries), `domain/` (types + pure logic), `util/`, `homepage/mark.ts`.                                                                                                                           |
-| `public/`      | Static assets served as-is, including the preserved curated write-ups (`research/<slug>.html`) and their thumbnails.                                                                                                                                                               |
-| `supabase/`    | Backend + local dev: `migrations/` (append-only — see below), `functions/` (Deno edge functions), `seed.sql` (local-only mock data, never pushed), `config.toml`.                                                                                                                  |
-| `tests/unit/`  | vitest suite over the pure logic in `lib/`. Run with `npm test`.                                                                                                                                                                                                                   |
-| `tests/e2e/`   | Playwright suite driving the built static export in Chromium, Supabase mocked at the network edge (`tests/e2e/support/supabase.ts`). Run with `npm run e2e:build`.                                                                                                                 |
-| `docs/`        | Architecture decisions (ADRs), local development + debugging guides, the research publishing framework.                                                                                                                                                                            |
-| `package.json` | npm scripts (`dev`, `build`, `check`, `stack`, `logs:edge`, `db:push`) + dependencies.                                                                                                                                                                                             |
+| Path           | Role                                                                                                                                                                                                                                                                                                                                                            |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `app/`         | Routes: `/`, `/members`, `/research`, `/person?id=`, `/research?id=`, `/research/edit?id=`, `/member`. `/project?id=` is a deprecated redirect.                                                                                                                                                                                                                 |
+| `components/`  | React components + CSS Modules. Views: `PersonView`, `ResearchView` (curated write-ups), `ResearchEntryView` (member-created), `MembersIndex`, `ResearchIndex`, `PixelMark`, `MemberArea` + `member/`, `ResearchEditor` + `markdown/` (page renderer/editor), `explorer/` (search, filters, grouping, network graph for both directories), shared `SiteHeader`. |
+| `lib/`         | Framework-agnostic layers: `env.ts`, `supabase.ts` (browser client), `data/` (all queries), `domain/` (types + pure logic, incl. directory facets), `graph/` (network + layout), `util/`, `homepage/mark.ts`.                                                                                                                                                   |
+| `public/`      | Static assets served as-is, including the preserved curated write-ups (`research/<slug>.html`) and their thumbnails.                                                                                                                                                                                                                                            |
+| `supabase/`    | Backend + local dev: `migrations/` (append-only — see below), `functions/` (Deno edge functions), `seed.sql` (local-only mock data, never pushed), `config.toml`.                                                                                                                                                                                               |
+| `tests/unit/`  | vitest suite over the pure logic in `lib/`. Run with `npm test`.                                                                                                                                                                                                                                                                                                |
+| `tests/e2e/`   | Playwright suite driving the built static export in Chromium, Supabase mocked at the network edge (`tests/e2e/support/supabase.ts`). Run with `npm run e2e:build`.                                                                                                                                                                                              |
+| `docs/`        | Architecture decisions (ADRs), local development + debugging guides, the research publishing framework.                                                                                                                                                                                                                                                         |
+| `package.json` | npm scripts (`dev`, `build`, `check`, `stack`, `logs:edge`, `db:push`) + dependencies.                                                                                                                                                                                                                                                                          |
 
 Mock data exists **only on localhost**; production never fakes content — an
 empty lab renders the mark in ink only, and missing pages show an honest
@@ -356,9 +356,9 @@ changes always go through a new migration file**, never Studio.
 
 ## 9. Roadmap
 
-1. **Search / sort / filter** on the `/members` and `/research` directories
-   (the `people_directory` view already backs this).
-2. A small **admin panel** (publish queue, allowlist management, edit anyone).
-3. Fill in **authors** for the curated write-ups in `lib/data/research.ts`.
-4. Schema-anticipated extensions: cohort override for mentors/staff, awards,
+1. A small **admin panel** (publish queue, allowlist management, edit anyone).
+2. Fill in **authors** for the curated write-ups in `lib/data/research.ts` —
+   then add an "Author" facet so the research graph links people to their
+   work (one entry in `lib/domain/directoryFacets.ts`, ADR-0020).
+3. Schema-anticipated extensions: cohort override for mentors/staff, awards,
    full-text bio search.
