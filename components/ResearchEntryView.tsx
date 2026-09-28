@@ -3,6 +3,7 @@
 import { useEffect, useState, type CSSProperties } from 'react';
 import Link from 'next/link';
 import { getResearchEntry, researchFileUrl } from '@/lib/data/researchEntries';
+import { researchPageUrl } from '@/lib/data/research';
 import { getAuthUser, getMyProfile } from '@/lib/data/auth';
 import { mockResearchEntry } from '@/lib/data/mock';
 import { mocksEnabled } from '@/lib/env';
@@ -11,6 +12,8 @@ import { avatarSrcSet, researchImgSrcSet, thumbUrl } from '@/lib/util/media';
 import { initials, PALETTE, paletteColor } from '@/lib/util/palette';
 import type { ResearchEntry } from '@/lib/domain/types';
 import { MarkdownPage } from './markdown/MarkdownPage';
+import { citationFromEntry } from '@/lib/domain/citation';
+import { CiteButton } from './CiteButton';
 import { SiteHeader } from './SiteHeader';
 import { Unavailable } from './Unavailable';
 import styles from './ResearchEntryView.module.css';
@@ -105,6 +108,9 @@ export function ResearchEntryView({ id, embedded = false }: { id: string; embedd
               </span>
               {/* shown only to this entry's own members; RLS is what actually
                   gates the edit, this is the affordance */}
+              {p.published && (
+                <CiteButton data={citationFromEntry(p, researchPageUrl(p.publicId))} />
+              )}
               {canEdit && (
                 <Link
                   className={styles.editBtn}
