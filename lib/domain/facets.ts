@@ -100,3 +100,32 @@ export function groupItems<T>(items: T[], facet: Facet<T>): { value: string | nu
   const rest = items.filter((it) => facet.values(it).length === 0);
   return rest.length ? [...sections, { value: null, items: rest }] : sections;
 }
+
+/**
+ * The same facet with values compared case-insensitively ("robotics" and
+ * "Robotics" are one tag — the `fields` table is case-insensitive too). Each
+ * value shows as its most common spelling across `items`; a tie goes to the
+ * capitalized one.
+ */
+export function mergeCase<T>(facet: Facet<T>, items: T[]): Facet<T> {
+  const spellings = new Map<string, Map<string, number>>();
+  for (const it of items)
+    for (const v of facet.values(it)) {
+      const key = v.toLowerCase();
+      const counts = spellings.get(key) ?? new Map<string, number>();
+      counts.set(v, (counts.get(v) ?? 0) + 1);
+      spellings.set(key, counts);
+    }
+  const display = new Map<string, string>();
+  const capitalized = (s: string) => (s[0] !== s[0]?.toLowerCase() ? 1 : 0);
+  for (const [key, counts] of spellings) {
+    const best = [...counts.entries()].sort(
+      ([a, na], [b, nb]) => nb - na || capitalized(b) - capitalized(a),
+    )[0]![0];
+    display.set(key, best);
+  }
+  return {
+    ...facet,
+    values: (it) => [...new Set(facet.values(it).map((v) => display.get(v.toLowerCase()) ?? v))],
+  };
+}
