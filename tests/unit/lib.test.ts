@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { esc, safeUrl } from '../../lib/util/html';
+import { esc, markdownToText, safeUrl } from '../../lib/util/html';
 import {
   avatarSrcSet,
   checkFile,
@@ -166,5 +166,34 @@ describe('resolveMediaSrc', () => {
       'https://sb/storage/research-files/javascript:alert(1)',
     );
     expect(resolveMediaSrc('//evil.org/a.png', '', storage)).toBe('');
+  });
+});
+
+describe('markdownToText', () => {
+  it('keeps the words, drops the markup, image paths, and link targets', () => {
+    const md = [
+      '## The idea — **One** model',
+      '![A hero shot](/research/otto/01-hero-w2400.jpg)',
+      'See [the repo](https://github.com/HisarCS/Otto).',
+      '```cards',
+      '# 01 — Text | Type the parameters',
+      '> param tabLength 30',
+      '```',
+      '| **Pipeline** | Lexer → parser |',
+    ].join('\n');
+    const t = markdownToText(md);
+    for (const w of [
+      'The idea',
+      'One model',
+      'A hero shot',
+      'the repo',
+      'Type the parameters',
+      'param tabLength 30',
+      'Pipeline',
+      'Lexer → parser',
+    ])
+      expect(t).toContain(w);
+    for (const junk of ['**', '/research/otto', 'https://', '```', '##', '|'])
+      expect(t).not.toContain(junk);
   });
 });

@@ -3,6 +3,7 @@ import {
   MEMBER_FACETS,
   RESEARCH_FACETS,
   researchTagFilter,
+  researchText,
   researchYear,
   type ResearchDirItem,
 } from '../../lib/domain/directoryFacets';
@@ -105,5 +106,14 @@ describe('researchTagFilter', () => {
 
   it("an unfiled tag filters by itself (it's its own area)", () => {
     expect(researchTagFilter('Ceramics')).toEqual({ facet: 'interest', value: 'Ceramics' });
+  });
+});
+
+describe('researchText', () => {
+  it('searches the title, summary, and write-up body', () => {
+    const t = researchText({ ...otto, body: 'Levenberg–Marquardt solver' });
+    expect(t).toContain('Otto');
+    expect(t).toContain('Parametric CAD');
+    expect(t).toContain('Levenberg–Marquardt');
   });
 });
