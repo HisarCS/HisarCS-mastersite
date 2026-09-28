@@ -6,6 +6,7 @@ import {
   researchImgSrcSet,
   thumbUrl,
   type UploadSpec,
+  resolveMediaSrc,
 } from '../../lib/util/media';
 import { academicYear, cohortFor } from '../../lib/util/date';
 import { isLocalHost } from '../../lib/env';
@@ -140,5 +141,30 @@ describe('academicYear / cohortFor', () => {
     const now = new Date(2026, 8, 1); // academic year 2027
     expect(cohortFor(2027, now)).toBe('student');
     expect(cohortFor(2026, now)).toBe('alumni');
+  });
+});
+
+describe('resolveMediaSrc', () => {
+  const storage = (p: string) => `https://sb/storage/research-files/${p}`;
+
+  it('site assets ("/…") get the base path', () => {
+    expect(resolveMediaSrc('/research/otto/hero-w2400.jpg', '/HisarCS-mastersite', storage)).toBe(
+      '/HisarCS-mastersite/research/otto/hero-w2400.jpg',
+    );
+    expect(resolveMediaSrc('/research/otto/a.jpg', '', storage)).toBe('/research/otto/a.jpg');
+  });
+
+  it('bare paths are uploaded files in storage', () => {
+    expect(resolveMediaSrc('abc/pic-w2400.jpg', '', storage)).toBe(
+      'https://sb/storage/research-files/abc/pic-w2400.jpg',
+    );
+  });
+
+  it('https URLs pass through; anything else is refused', () => {
+    expect(resolveMediaSrc('https://x.org/a.png', '', storage)).toBe('https://x.org/a.png');
+    expect(resolveMediaSrc('javascript:alert(1)', '', storage)).toBe(
+      'https://sb/storage/research-files/javascript:alert(1)',
+    );
+    expect(resolveMediaSrc('//evil.org/a.png', '', storage)).toBe('');
   });
 });
