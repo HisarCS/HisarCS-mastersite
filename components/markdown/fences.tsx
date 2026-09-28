@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { parseChartSpec, parseStatsSpec, type ParseResult } from '@/lib/util/chartSpec';
-import { parseFindingsSpec } from '@/lib/util/recordSpec';
+import { parseCardsSpec, parseFindingsSpec } from '@/lib/util/recordSpec';
 import { ChartSvg } from './ChartSvg';
 import styles from './Markdown.module.css';
 
@@ -131,6 +131,43 @@ Seeing a relationship update turned "trust the math" into something to watch.
 
 # issue | Canvas responsiveness was the rough edge
 Participants noticed lag during quick, successive edits.
+\`\`\``,
+  }),
+
+  cards: defineFence({
+    label: 'Cards',
+    parse: parseCardsSpec,
+    render: (spec) => (
+      <div className={styles.cards} role="list">
+        {spec.items.map((c, i) => (
+          <div key={i} className={styles.card} role="listitem">
+            {c.label && <div className={styles.cardLabel}>{c.label}</div>}
+            <h4>{c.title}</h4>
+            {c.body && <p>{c.body}</p>}
+            {c.code && <pre className={styles.cardCode}>{c.code}</pre>}
+          </div>
+        ))}
+      </div>
+    ),
+    snippet: `\`\`\`cards
+# 01 — Label | Card title
+What this card says.
+> optional snippet line
+
+# 02 — Label | Card title
+What this card says.
+\`\`\`
+`,
+    reference: `\`\`\`cards              (side by side; colors follow the order)
+# 01 — Text | Type the parameters
+Write shapes, params, and constraints directly.
+> param tabLength 30          ("> " lines: a snippet, indentation kept)
+> shape polygon hex {
+>   sides: 6
+> }
+
+# 02 — Blocks | Snap together logic
+The same language as draggable blocks.
 \`\`\``,
   }),
 };

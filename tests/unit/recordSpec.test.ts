@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseFindingsSpec, parseRecords } from '../../lib/util/recordSpec';
+import { parseCardsSpec, parseFindingsSpec, parseRecords } from '../../lib/util/recordSpec';
 
 describe('parseRecords', () => {
   it('splits on "# " headers and joins body lines into one paragraph', () => {
@@ -18,6 +18,19 @@ describe('parseRecords', () => {
 
   it('keeps a "|" inside the title after the first one', () => {
     expect(parseRecords('# a | b | c').ok![0]).toMatchObject({ label: 'a', title: 'b | c' });
+  });
+
+  it('keeps "> " lines as a verbatim snippet, indentation intact', () => {
+    const r = parseRecords('# Text\nbody\n> shape polygon hex {\n>   sides: 6\n> }');
+    expect(r.ok![0]).toEqual({
+      title: 'Text',
+      body: 'body',
+      code: 'shape polygon hex {\n  sides: 6\n}',
+    });
+  });
+
+  it('keeps a bare ">" as an empty snippet line', () => {
+    expect(parseRecords('# T\n> a\n>\n> b').ok![0]!.code).toBe('a\n\nb');
   });
 
   it('rejects text before the first header', () => {
@@ -47,5 +60,30 @@ describe('parseFindingsSpec', () => {
 
   it('rejects an unknown tone and names the allowed ones', () => {
     expect(parseFindingsSpec('# bad | x').error).toMatch(/good, note or issue/);
+  });
+
+  it('rejects snippet lines rather than dropping them silently', () => {
+    expect(parseFindingsSpec('# t\n> code').error).toMatch(/snippet/);
+  });
+});
+
+describe('parseCardsSpec', () => {
+  it('keeps label, title, body and snippet per card', () => {
+    const r = parseCardsSpec(
+      '# 01 — Text | Type the parameters\nWrite shapes directly.\n> param tabLength 30\n\n# Drag it',
+    );
+    expect(r.ok!.items).toEqual([
+      {
+        label: '01 — Text',
+        title: 'Type the parameters',
+        body: 'Write shapes directly.',
+        code: 'param tabLength 30',
+      },
+      { title: 'Drag it', body: '' },
+    ]);
+  });
+
+  it('passes grammar errors through', () => {
+    expect(parseCardsSpec('no header').error).toMatch(/start with/);
   });
 });
