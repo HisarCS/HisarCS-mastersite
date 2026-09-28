@@ -245,6 +245,33 @@ test.describe('tags lead to the filtered directory', () => {
   });
 });
 
+test.describe('admin-edited interest areas', () => {
+  const MAKING = ['laser cutting', 'parametric cad', 'parametric design'].map((tag) => ({
+    area: 'Making',
+    tag,
+    sort: 0,
+  }));
+
+  test('the explorer groups by the areas in the database', async ({ page }) => {
+    await mockSupabase(page, { researchEntries: [researchEntryRow()], interestAreas: MAKING });
+    await page.goto('/research/');
+    const chips = page.getByRole('group', { name: 'Filter by Interest' });
+    await chips.getByRole('button', { name: /^Making/ }).click();
+    await expect(status(page)).toContainText('2 of 9 research'); // Otto + Parametrix
+    // tags nobody filed in the DB table are their own areas
+    await expect(chips.getByRole('button', { name: /^Robotics/ })).toBeVisible();
+  });
+
+  test('tag links on a write-up follow the same table', async ({ page }) => {
+    await mockSupabase(page, { interestAreas: MAKING });
+    await page.goto('/research/?id=otto');
+    await expect(page.getByRole('link', { name: 'Parametric CAD' })).toHaveAttribute(
+      'href',
+      /\?interest=Making$/,
+    );
+  });
+});
+
 test.describe('members explorer', () => {
   const MEMBERS = [
     directoryRow(),

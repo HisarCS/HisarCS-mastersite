@@ -16,6 +16,7 @@ import { citationFromEntry } from '@/lib/domain/citation';
 import { researchTagFilter } from '@/lib/domain/directoryFacets';
 import { explorerLink } from '@/lib/domain/explorerUrl';
 import { CiteButton } from './CiteButton';
+import { useInterestTable } from './useInterestTable';
 import { ShareButton } from './ShareButton';
 import { SiteHeader } from './SiteHeader';
 import { Unavailable } from './Unavailable';
@@ -32,6 +33,7 @@ type State = { status: 'loading' } | { status: 'ok'; entry: ResearchEntry } | { 
 export function ResearchEntryView({ id, embedded = false }: { id: string; embedded?: boolean }) {
   const [state, setState] = useState<State>({ status: 'loading' });
   const [canEdit, setCanEdit] = useState(false);
+  const areas = useInterestTable();
 
   useEffect(() => {
     let alive = true;
@@ -150,7 +152,7 @@ export function ResearchEntryView({ id, embedded = false }: { id: string; embedd
         {p.fields.length > 0 && (
           <div className={styles.tagBar}>
             {p.fields.map((f) => {
-              const { facet, value } = researchTagFilter(f);
+              const { facet, value } = researchTagFilter(f, areas);
               return (
                 <Link
                   key={f}

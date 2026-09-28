@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   MEMBER_FACETS,
   RESEARCH_FACETS,
+  researchFacets,
   researchTagFilter,
   researchText,
   researchYear,
@@ -115,5 +116,20 @@ describe('researchText', () => {
     expect(t).toContain('Otto');
     expect(t).toContain('Parametric CAD');
     expect(t).toContain('Levenberg–Marquardt');
+  });
+});
+
+describe('researchFacets(table)', () => {
+  it('interest follows the given table; the rest is unchanged', () => {
+    const f = researchFacets({ Making: ['laser cutting', 'parametric cad'] });
+    expect(f.find((x) => x.key === 'interest')!.values(otto)).toEqual(['Making']);
+    expect(f.map((x) => x.key)).toEqual(RESEARCH_FACETS.map((x) => x.key));
+  });
+
+  it('researchTagFilter uses it too', () => {
+    expect(researchTagFilter('Laser Cutting', { Making: ['laser cutting'] })).toEqual({
+      facet: 'interest',
+      value: 'Making',
+    });
   });
 });
