@@ -98,12 +98,13 @@ export const RESEARCH_ITEMS: ResearchItem[] = [
   {
     slug: 'dancar',
     title: 'DancÆR',
-    venue: 'ideaLab manuscript',
+    venue: "AIED '26",
     summary:
       'An AR dance instructor built on real-time pose classification, trained to 95.8% accuracy.',
     thumb: thumb('dancar'),
     authors: [],
-    tags: ['AR', 'Pose Classification', 'Dance'],
+    tags: ['AR', 'Pose Classification', 'Dance', "AIED '26"],
+    startDate: '2026',
     resources: [],
   },
 ];

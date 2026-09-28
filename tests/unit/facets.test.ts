@@ -50,7 +50,7 @@ describe('conferenceOf', () => {
   });
 
   it('keeps venues without a year as-is', () => {
-    expect(conferenceOf('ideaLab manuscript')).toBe('ideaLab manuscript');
+    expect(conferenceOf('ideaLab preprint')).toBe('ideaLab preprint');
   });
 });
 

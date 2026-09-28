@@ -204,7 +204,7 @@ export function ResearchIndex() {
         <div className={styles.stats}>
           <span className={styles.stat}>{cards.length} RESEARCH</span>
           <span className={styles.stat}>2019–2026</span>
-          <span className={styles.stat}>IDC · SCF · HRI · HCII · CONSTRUCTIONISM</span>
+          <span className={styles.stat}>IDC · AIED · SCF · HRI · HCII · CONSTRUCTIONISM</span>
         </div>
 
         <Explorer
