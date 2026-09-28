@@ -3,10 +3,11 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { listResearch } from '@/lib/data/research';
+import { listResearch, researchContentSrc } from '@/lib/data/research';
 import { listResearchEntries } from '@/lib/data/researchEntries';
 import { mockResearchEntries } from '@/lib/data/mock';
 import { mocksEnabled } from '@/lib/env';
+import { markdownToText } from '@/lib/util/html';
 import { avatarSrcSet, researchImgSrcSet, thumbUrl } from '@/lib/util/media';
 import { initials, paletteColor as colorFor } from '@/lib/util/palette';
 import type { ResearchEntryCard } from '@/lib/domain/types';
@@ -150,6 +151,25 @@ export function ResearchIndex() {
   const router = useRouter();
   const curated = useMemo(() => listResearch(), []);
   const [entries, setEntries] = useState<ResearchEntryCard[]>([]);
+  // the curated write-ups' text, so search reaches inside them
+  const [bodies, setBodies] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    let alive = true;
+    void Promise.all(
+      curated.map(async (r) => {
+        try {
+          const res = await fetch(researchContentSrc(r));
+          return [r.slug, res.ok ? markdownToText(await res.text()) : ''] as const;
+        } catch {
+          return [r.slug, ''] as const; // search still covers title + summary
+        }
+      }),
+    ).then((pairs) => alive && setBodies(Object.fromEntries(pairs)));
+    return () => {
+      alive = false;
+    };
+  }, [curated]);
 
   useEffect(() => {
     document.title = 'Research — ideaLab';
@@ -172,6 +192,7 @@ export function ResearchIndex() {
       venue: r.venue ?? null,
       date: r.startDate ?? null,
       summary: r.summary,
+      body: bodies[r.slug],
       thumb: r.thumb ?? null,
       color: colorFor(r.slug),
       tags: r.tags,
@@ -192,7 +213,7 @@ export function ResearchIndex() {
         tags: e.tags,
       }));
     return [...curatedCards, ...entryCards];
-  }, [curated, entries]);
+  }, [curated, entries, bodies]);
 
   return (
     <>

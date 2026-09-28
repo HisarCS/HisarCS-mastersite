@@ -19,6 +19,8 @@ export interface ResearchDirItem {
   /** ISO date or bare year */
   date?: string | null;
   tags: string[];
+  /** the write-up's text, when loaded — searched along with title + summary */
+  body?: string;
 }
 
 /** "2026-06-15" / "2026" → "2026"; else the venue's '25 → "2025"; else null. */
@@ -55,7 +57,7 @@ export const RESEARCH_FACETS: Facet<ResearchDirItem>[] = [
   },
 ];
 
-export const researchText = (r: ResearchDirItem) => `${r.title} ${r.summary ?? ''}`;
+export const researchText = (r: ResearchDirItem) => `${r.title} ${r.summary ?? ''} ${r.body ?? ''}`;
 
 /** The research filter a single tag stands for: a venue tag ("IDC '26") → its
  *  conference; anything else → its interest area. For tag chips and links. */

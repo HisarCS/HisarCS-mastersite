@@ -26,6 +26,14 @@ test.describe('research explorer', () => {
     await expect(page.getByRole('link', { name: /Pomelo/ })).toHaveCount(0);
   });
 
+  test('search reaches inside the write-ups, not just titles', async ({ page }) => {
+    await openResearch(page);
+    // only in Otto's write-up body (its constraint solver)
+    await page.getByRole('searchbox', { name: 'Search research' }).fill('Levenberg');
+    await expect(status(page)).toContainText('1 of 9 research');
+    await expect(page.getByRole('link', { name: /Otto/ })).toBeVisible();
+  });
+
   test("a card's tag filters by it; Clear brings everything back", async ({ page }) => {
     await openResearch(page);
     // a card's own "Robotics" tag (TESTUDO's — Pomelo carries one too)
