@@ -9,13 +9,13 @@ import type { Element } from 'hast';
 import { researchFileUrl } from '@/lib/data/researchEntries';
 import { safeUrl } from '@/lib/util/html';
 import { researchImgSrcSet } from '@/lib/util/media';
-import { parseChartSpec, parsePlacement, parseStatsSpec } from '@/lib/util/chartSpec';
-import { ChartSvg } from './ChartSvg';
+import { parsePlacement } from '@/lib/util/chartSpec';
+import { fenceFor } from './fences';
 import styles from './Markdown.module.css';
 
 /**
  * The one renderer for research pages — used by the public page and the editor
- * preview. GFM + KaTeX math + two custom fences (```chart, ```stats) + figure
+ * preview. GFM + KaTeX math + the custom fences in ./fences (```chart, ```stats, …) + figure
  * placement via the image title ("left 40", "right", "inset", "wide").
  * Raw HTML in the markdown is never rendered (react-markdown default), and
  * every URL passes safeUrl.
@@ -107,35 +107,14 @@ export function MarkdownPage({ markdown }: { markdown: string }) {
         remarkPlugins={[remarkGfm, remarkMath]}
         rehypePlugins={[rehypeKatex]}
         components={{
-          // fenced code: chart + stats are drawn, everything else is code
+          // fenced code: registered fences are drawn, everything else is code
           pre({ node, children }) {
             const fence = fenceInfo(node as Element);
-            if (fence?.lang === 'chart') {
-              const r = parseChartSpec(fence.text);
-              if (r.error !== undefined) return <FenceError fence="chart" error={r.error} />;
-              return (
-                <figure className={`${styles.figure} ${styles.full}`}>
-                  <div className={styles.chartCard}>
-                    <ChartSvg spec={r.ok} />
-                  </div>
-                  <figcaption className={styles.caption}>
-                    <strong>{r.ok.question}</strong>
-                  </figcaption>
-                </figure>
-              );
-            }
-            if (fence?.lang === 'stats') {
-              const r = parseStatsSpec(fence.text);
-              if (r.error !== undefined) return <FenceError fence="stats" error={r.error} />;
-              return (
-                <div className={styles.chips}>
-                  {r.ok.items.map((it, i) => (
-                    <span key={i} className={styles.chip}>
-                      <b>{it.value}</b> {it.label}
-                    </span>
-                  ))}
-                </div>
-              );
+            const def = fence && fenceFor(fence.lang);
+            if (fence && def) {
+              const r = def.parse(fence.text);
+              if (r.error !== undefined) return <FenceError fence={fence.lang} error={r.error} />;
+              return <>{def.render(r.ok)}</>;
             }
             return <pre className={styles.pre}>{children}</pre>;
           },
