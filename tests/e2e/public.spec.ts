@@ -44,8 +44,8 @@ test('members index groups the yearbook by graduating class and links portraits'
   // one class row per graduation year, newest first
   await expect(page.getByRole('heading', { name: 'Class of 2027' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Class of 2020' })).toBeVisible();
-  await expect(page.getByText('Grace Hopper')).toBeVisible();
-  await expect(page.getByText('CS & AI')).toBeVisible();
+  // the portrait carries the member's first interest (the same name is also a filter chip)
+  await expect(page.getByRole('link', { name: /Grace Hopper/ })).toContainText('CS & AI');
 
   await page.getByRole('link', { name: /Ada Lovelace/ }).click();
   await expect(page).toHaveURL(/\/person\/?\?id=ada-lovelace/);
