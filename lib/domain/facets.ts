@@ -15,6 +15,8 @@ export interface Facet<T> {
   /** shown in the "Group by" control and above the filter chips */
   label: string;
   values: (item: T) => string[];
+  /** how values list (chips, grid sections); default: most common first */
+  order?: (a: string, b: string) => number;
 }
 
 /** Which values are ticked, per facet key. */
@@ -46,14 +48,19 @@ export function isVenueTag(tag: string): boolean {
   return /['’]\d{2}\b/.test(tag);
 }
 
-/** Each value with how many items carry it, most common first, then A–Z. */
+/** Each value with how many items carry it — in the facet's own order, or
+ *  most common first, then A–Z. */
 export function facetValues<T>(items: T[], facet: Facet<T>): { value: string; count: number }[] {
   const counts = new Map<string, number>();
   for (const it of items)
     for (const v of new Set(facet.values(it))) counts.set(v, (counts.get(v) ?? 0) + 1);
   return [...counts.entries()]
     .map(([value, count]) => ({ value, count }))
-    .sort((a, b) => b.count - a.count || a.value.localeCompare(b.value));
+    .sort((a, b) =>
+      facet.order
+        ? facet.order(a.value, b.value)
+        : b.count - a.count || a.value.localeCompare(b.value),
+    );
 }
 
 /**
@@ -78,4 +85,18 @@ export function filterItems<T>(
     const hay = [text(it), ...facets.flatMap((f) => f.values(it))].join(' ').toLowerCase();
     return words.every((w) => hay.includes(w));
   });
+}
+
+/**
+ * Sections for a grouped grid: one per value (in facetValues order), items
+ * under every value they carry, then a trailing `null` section for items
+ * with none.
+ */
+export function groupItems<T>(items: T[], facet: Facet<T>): { value: string | null; items: T[] }[] {
+  const sections = facetValues(items, facet).map(({ value }) => ({
+    value: value as string | null,
+    items: items.filter((it) => facet.values(it).includes(value)),
+  }));
+  const rest = items.filter((it) => facet.values(it).length === 0);
+  return rest.length ? [...sections, { value: null, items: rest }] : sections;
 }
