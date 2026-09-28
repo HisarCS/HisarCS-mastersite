@@ -2,7 +2,9 @@
 /**
  * One-off: convert the curated write-ups (public/research/<slug>.html — self-
  * contained pages with data-URI images) into markdown pages rendered by the
- * site's own renderer (components/markdown). Kept for reproducibility.
+ * site's own renderer (components/markdown). Kept for reproducibility; the
+ * source HTML was removed after conversion — restore it to re-run with
+ *   git checkout 3c4450f -- public/research/<slug>.html
  *
  *   node scripts/convert-writeups.mjs [slug …]
  *
