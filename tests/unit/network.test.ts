@@ -101,6 +101,24 @@ describe('layoutNetwork', () => {
         expect(Math.hypot(p[i]!.x - p[j]!.x, p[i]!.y - p[j]!.y)).toBeGreaterThan(5);
   });
 
+  it('spreads a sparse, many-cluster graph instead of piling it on the frame edges', () => {
+    // the real /research shape: ~15 items, ~20 tags, several disconnected clusters
+    const tags = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p'];
+    const docs: Doc[] = Array.from({ length: 15 }, (_, i) => ({
+      id: `d${i}`,
+      tags: i % 5 === 4 ? [] : [tags[i]!, tags[(i + 1) % tags.length]!],
+    }));
+    const n = buildNetwork(docs, TAGS, { id: (d) => d.id, label: (d) => d.id });
+    const pts = [...layoutNetwork(n, SIZE).values()];
+    const onEdge = pts.filter(
+      (p) => p.x < 40 || p.x > SIZE.width - 40 || p.y < 40 || p.y > SIZE.height - 40,
+    );
+    expect(onEdge.length).toBeLessThanOrEqual(pts.length * 0.15);
+    // and it still uses the frame rather than collapsing into the middle
+    const xs = pts.map((p) => p.x);
+    expect(Math.max(...xs) - Math.min(...xs)).toBeGreaterThan(SIZE.width * 0.5);
+  });
+
   it('handles the empty and single-node networks', () => {
     expect(layoutNetwork({ nodes: [], links: [] }, SIZE).size).toBe(0);
     const one: Network<Doc> = {

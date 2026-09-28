@@ -73,15 +73,18 @@ export interface Point {
 }
 
 /**
- * Force-directed layout (Fruchterman–Reingold with a light pull to the
- * centre, so unlinked nodes don't drift to the walls). Seeded from the node
- * ids, so the same network always lands the same way — no jitter on reload.
+ * Force-directed layout (Fruchterman–Reingold plus a pull toward the centre,
+ * so disconnected clusters sit side by side instead of flying apart). The
+ * simulation runs unbounded, then the result is scaled to fit the frame —
+ * never clamped, so nothing piles up on the walls. The pull is elliptical to
+ * match the frame's aspect. `margin` leaves room for labels at the sides.
+ * Seeded from the node ids, so the same network always lands the same way.
  * O(n²) per step, which is fine at lab scale (a few hundred nodes).
  */
 export function layoutNetwork<T>(
   net: Network<T>,
   size: { width: number; height: number },
-  { iterations = 320, margin = 28 } = {},
+  { iterations = 300, margin = { x: 80, y: 36 } } = {},
 ): Map<string, Point> {
   const n = net.nodes.length;
   const out = new Map<string, Point>();
@@ -94,16 +97,20 @@ export function layoutNetwork<T>(
   }
 
   const index = new Map(net.nodes.map((node, i) => [node.id, i]));
-  const rand = mulberry32(hashStr(net.nodes.map((node) => node.id).join('|')));
-  const xs = net.nodes.map(() => cx + (rand() - 0.5) * size.width * 0.6);
-  const ys = net.nodes.map(() => cy + (rand() - 0.5) * size.height * 0.6);
   const edges = net.links
     .map((l) => [index.get(l.source), index.get(l.target)] as const)
     .filter((e): e is readonly [number, number] => e[0] !== undefined && e[1] !== undefined);
 
-  const k = Math.sqrt((size.width * size.height) / n) * 0.75;
-  const gravity = 0.04;
-  let temp = size.width / 8;
+  // abstract units: ideal edge length K; the frame's aspect shapes the pull
+  const K = 40;
+  const aspect = size.width / size.height;
+  const gx = 0.06;
+  const gy = gx * aspect;
+  const rand = mulberry32(hashStr(net.nodes.map((node) => node.id).join('|')));
+  const spread = K * Math.sqrt(n);
+  const xs = net.nodes.map(() => (rand() - 0.5) * spread * aspect);
+  const ys = net.nodes.map(() => (rand() - 0.5) * spread);
+  let temp = spread / 2;
   const cool = temp / (iterations + 1);
 
   for (let step = 0; step < iterations; step++) {
@@ -122,7 +129,7 @@ export function layoutNetwork<T>(
           ddy = 0.01;
           d = Math.hypot(ddx, ddy);
         }
-        const f = (k * k) / d;
+        const f = (K * K) / d;
         dx[i]! += (ddx / d) * f;
         dy[i]! += (ddy / d) * f;
         dx[j]! -= (ddx / d) * f;
@@ -134,28 +141,43 @@ export function layoutNetwork<T>(
       const ddx = xs[a]! - xs[b]!;
       const ddy = ys[a]! - ys[b]!;
       const d = Math.max(Math.hypot(ddx, ddy), 0.01);
-      const f = (d * d) / k;
+      const f = (d * d) / K;
       dx[a]! -= (ddx / d) * f;
       dy[a]! -= (ddy / d) * f;
       dx[b]! += (ddx / d) * f;
       dy[b]! += (ddy / d) * f;
     }
-    // move, capped by the temperature, then pulled toward the centre
+    // pull toward the centre, then move — capped by the cooling temperature
     for (let i = 0; i < n; i++) {
-      dx[i]! += (cx - xs[i]!) * gravity * k * 0.05;
-      dy[i]! += (cy - ys[i]!) * gravity * k * 0.05;
+      dx[i]! -= xs[i]! * gx * K * 0.1;
+      dy[i]! -= ys[i]! * gy * K * 0.1;
       const d = Math.hypot(dx[i]!, dy[i]!);
       if (d > 0) {
         const m = Math.min(d, temp);
         xs[i] = xs[i]! + (dx[i]! / d) * m;
         ys[i] = ys[i]! + (dy[i]! / d) * m;
       }
-      xs[i] = Math.min(size.width - margin, Math.max(margin, xs[i]!));
-      ys[i] = Math.min(size.height - margin, Math.max(margin, ys[i]!));
     }
     temp -= cool;
   }
 
-  net.nodes.forEach((node, i) => out.set(node.id, { x: xs[i]!, y: ys[i]! }));
+  // fit to the frame: uniform scale (keeps the shape), centred, and never
+  // blown up so far that a tiny graph fills the screen
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+  const availW = size.width - 2 * margin.x;
+  const availH = size.height - 2 * margin.y;
+  const scale = Math.min(
+    maxX > minX ? availW / (maxX - minX) : Infinity,
+    maxY > minY ? availH / (maxY - minY) : Infinity,
+    3,
+  );
+  const midX = (minX + maxX) / 2;
+  const midY = (minY + maxY) / 2;
+  net.nodes.forEach((node, i) =>
+    out.set(node.id, { x: cx + (xs[i]! - midX) * scale, y: cy + (ys[i]! - midY) * scale }),
+  );
   return out;
 }
