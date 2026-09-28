@@ -1,0 +1,271 @@
+/* Directory explorer — search, group, filter, grid/graph. House tokens only. */
+
+.explorer {
+  margin-bottom: 10px;
+}
+
+.controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.search {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-size: 15px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--ink);
+}
+.search:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* segmented control (view, group by) */
+.segment {
+  display: inline-flex;
+  flex-wrap: wrap;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+  padding: 3px;
+  gap: 2px;
+}
+.segment button {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  background: none;
+  color: var(--muted);
+  padding: 6px 12px;
+  border-radius: 7px;
+  cursor: pointer;
+}
+.segment button:hover {
+  color: var(--ink);
+}
+.segment .segOn {
+  background: var(--ink);
+  color: var(--bg);
+}
+.segment .segOn:hover {
+  color: var(--bg);
+}
+
+.groupRow,
+.filterRow {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.rowLabel {
+  flex: 0 0 76px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.filters {
+  margin: 12px 0 6px;
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.chip {
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 99px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  background: var(--card);
+  cursor: pointer;
+}
+.chip:hover {
+  color: var(--chip-c, var(--accent));
+  border-color: var(--chip-c, var(--accent));
+}
+.chipOn,
+.chipOn:hover {
+  color: var(--card);
+  background: var(--chip-c, var(--accent));
+  border-color: var(--chip-c, var(--accent));
+}
+.count {
+  font-weight: 500;
+  opacity: 0.7;
+  margin-left: 3px;
+  font-size: 0.9em;
+}
+.more {
+  font: inherit;
+  font-size: 12px;
+  border: none;
+  background: none;
+  color: var(--accent);
+  cursor: pointer;
+  padding: 4px 6px;
+}
+
+.status {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  margin: 16px 0 18px;
+}
+.clear {
+  font: inherit;
+  border: none;
+  background: none;
+  color: var(--accent);
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+.empty {
+  padding: 48px 0;
+  text-align: center;
+  color: var(--muted);
+}
+
+.section {
+  margin-bottom: 34px;
+}
+.sectionHeading {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink);
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 8px;
+  margin-bottom: 16px;
+}
+
+/* -- network graph ----------------------------------------------------------- */
+.graphWrap {
+  position: relative;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--card);
+  overflow: hidden;
+}
+.graph {
+  display: block;
+  width: 100%;
+  height: auto;
+  touch-action: none; /* we handle drag/pinch-free panning ourselves */
+  cursor: grab;
+  user-select: none;
+}
+.graph:active {
+  cursor: grabbing;
+}
+.link {
+  stroke: var(--ink);
+  stroke-opacity: 0.14;
+  transition: stroke-opacity 0.15s;
+}
+.linkOn {
+  stroke: var(--accent);
+  stroke-opacity: 0.8;
+}
+.node {
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.node:focus-visible {
+  outline: none;
+}
+.node:focus-visible circle {
+  stroke: var(--accent);
+  stroke-width: 2.5;
+}
+.dim {
+  opacity: 0.15;
+}
+.item {
+  fill: var(--ink);
+  stroke: var(--card);
+  stroke-width: 1.5;
+}
+.hub {
+  stroke: var(--card);
+  stroke-width: 2;
+}
+.ring {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 2;
+}
+.hubLabel,
+.itemLabel {
+  pointer-events: none;
+  paint-order: stroke;
+  stroke: var(--card);
+  stroke-width: 3.5px;
+  stroke-linejoin: round;
+}
+.hubLabel {
+  font-weight: 700;
+  fill: var(--ink);
+}
+.itemLabel {
+  fill: var(--muted);
+}
+.zoom {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.zoom button {
+  width: 30px;
+  height: 30px;
+  font: inherit;
+  font-size: 16px;
+  line-height: 1;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--ink);
+  cursor: pointer;
+}
+.zoom button:hover {
+  border-color: var(--ink);
+}
+
+@media (max-width: 640px) {
+  .controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .groupRow,
+  .filterRow {
+    flex-direction: column;
+    gap: 6px;
+  }
+  .rowLabel {
+    flex-basis: auto;
+  }
+}
