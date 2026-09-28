@@ -21,8 +21,10 @@ test.describe('research explorer', () => {
     await openResearch(page);
     await page.getByRole('searchbox', { name: 'Search research' }).fill('laser');
 
-    await expect(status(page)).toContainText('1 of 9 research');
-    await expect(page.getByRole('link', { name: /Otto/ })).toBeVisible();
+    // Otto by its tag; Parametrix and Parse by their write-ups (laser-cut parts)
+    await expect(status(page)).toContainText('3 of 9 research');
+    for (const name of [/Otto/, /Parametrix/, /Parse/])
+      await expect(page.getByRole('link', { name })).toBeVisible();
     await expect(page.getByRole('link', { name: /Pomelo/ })).toHaveCount(0);
   });
 
