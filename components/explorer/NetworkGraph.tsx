@@ -2,7 +2,10 @@
 
 import { useEffect, useMemo, useRef, useState, type PointerEvent } from 'react';
 import { layoutNetwork, type NetNode, type Network } from '@/lib/graph/network';
-import { paletteColor } from '@/lib/util/palette';
+import type { View } from '@/lib/graph/gpuSpace';
+import { saveSvgAsPng } from './exportImage';
+import { GpuGraphLayer } from './GpuGraphLayer';
+import { themeVars, type GraphTheme } from './graphThemes';
 import styles from './Explorer.module.css';
 
 /** landscape frame on desktop; portrait below 640px so labels stay legible */
@@ -14,11 +17,6 @@ const MAX_K = 4;
  *  hover or once zoomed in (Obsidian's behaviour) */
 const LABEL_ALL_BELOW = 28;
 
-interface View {
-  k: number;
-  tx: number;
-  ty: number;
-}
 const HOME: View = { k: 1, tx: 0, ty: 0 };
 
 /** zoom by `factor` keeping the point `at` (viewBox units) fixed on screen */
@@ -32,10 +30,12 @@ const radius = (n: NetNode<unknown>) =>
   n.kind === 'hub' ? 7 + 2.4 * Math.sqrt(n.weight) : 5 + Math.sqrt(n.weight);
 
 /**
- * The directory drawn as a network: items (dark dots) linked to the hub of
- * every facet value they carry (colored, labelled). Hover a node to light up
- * its neighbours; click an item to open it, a hub to filter by it. Drag to
- * pan, wheel or the buttons to zoom.
+ * The directory drawn as a network: items linked to the hub of every facet
+ * value they carry. Hover a node to light up its neighbours; click an item to
+ * open it, a hub to filter by it. Drag to pan, wheel or the buttons to zoom;
+ * save the current view as a PNG. The SVG always carries labels, hit areas,
+ * and focus; for GPU themes (Obsidian) links and dots are drawn and animated
+ * by animoo underneath it when WebGPU is available.
  */
 export function NetworkGraph<T>({
   network,
@@ -43,6 +43,8 @@ export function NetworkGraph<T>({
   onItem,
   onHub,
   label,
+  theme,
+  imageName,
 }: {
   network: Network<T>;
   /** hub ids ("facet:value") currently used as filters — drawn with a ring */
@@ -50,6 +52,9 @@ export function NetworkGraph<T>({
   onItem: (item: T) => void;
   onHub: (facet: string, value: string) => void;
   label: string;
+  theme: GraphTheme;
+  /** file name for "Save PNG", without extension */
+  imageName: string;
 }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const [narrow, setNarrow] = useState(false);
@@ -137,13 +142,48 @@ export function NetworkGraph<T>({
     else if (n.facet && n.value !== undefined) onHub(n.facet, n.value);
   };
 
-  const lit = hover ? new Set([hover, ...(neighbours.get(hover) ?? [])]) : null;
+  // a new Set only when hover changes — the GPU layer tweens on identity
+  const lit = useMemo(
+    () => (hover ? new Set([hover, ...(neighbours.get(hover) ?? [])]) : null),
+    [hover, neighbours],
+  );
+  const [renderer, setRenderer] = useState<'webgpu' | 'svg'>('svg');
+  const gpuOn = theme.gpu && renderer === 'webgpu';
+
+  const saveImage = async () => {
+    const svg = svgRef.current;
+    const wrap = wrapRef.current;
+    if (!svg || !wrap) return;
+    // the SVG's own dots/links are hidden under the GPU canvas — show them
+    // while styles are read, so the image has everything
+    wrap.dataset.exporting = '';
+    try {
+      await saveSvgAsPng(svg, {
+        background: theme.colors.background,
+        filename: `${imageName}.png`,
+      });
+    } finally {
+      delete wrap.dataset.exporting;
+    }
+  };
   const itemCount = network.nodes.filter((n) => n.kind === 'item').length;
   const showItemLabel = (id: string) =>
     itemCount < LABEL_ALL_BELOW || view.k >= 1.6 || (lit?.has(id) ?? false);
 
   return (
-    <div className={styles.graphWrap} ref={wrapRef}>
+    <div
+      className={`${styles.graphWrap} ${gpuOn ? styles.gpuOn : ''}`}
+      ref={wrapRef}
+      style={themeVars(theme)}
+      data-theme={theme.label.toLowerCase()}
+      data-renderer={gpuOn ? 'webgpu' : 'svg'}
+    >
+      {theme.gpu && (
+        <GpuGraphLayer
+          scene={{ network, pos, frame, view, lit, theme, radius }}
+          onStatus={setRenderer}
+        />
+      )}
       <svg
         ref={svgRef}
         className={styles.graph}
@@ -207,11 +247,11 @@ export function NetworkGraph<T>({
                 <circle
                   r={r}
                   className={hub ? styles.hub : styles.item}
-                  style={hub ? { fill: paletteColor(n.label) } : undefined}
+                  style={hub && theme.hubFill ? { fill: theme.hubFill(n.label) } : undefined}
                 />
                 {showLabel && (
                   <text
-                    y={-r - 5 / view.k}
+                    y={theme.labelsBelow ? r + 13 / Math.sqrt(view.k) : -r - 5 / view.k}
                     textAnchor="middle"
                     className={hub ? styles.hubLabel : styles.itemLabel}
                     fontSize={(hub ? 13 : 11.5) / Math.sqrt(view.k)}
@@ -224,6 +264,9 @@ export function NetworkGraph<T>({
           })}
         </g>
       </svg>
+      <button type="button" className={styles.save} onClick={() => void saveImage()}>
+        Save PNG
+      </button>
       <div className={styles.zoom}>
         <button type="button" aria-label="Zoom in" onClick={() => zoomAt(1.3)}>
           +
