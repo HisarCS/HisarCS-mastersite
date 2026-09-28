@@ -159,6 +159,49 @@ test.describe('research explorer', () => {
   });
 });
 
+test.describe('shareable explorer links', () => {
+  test('a link reopens the same filtered, grouped graph', async ({ page }) => {
+    await mockSupabase(page, { researchEntries: [researchEntryRow()] });
+    await page.goto('/research/?interest=robotics&by=conference&view=graph&style=obsidian');
+
+    // "robotics" in the link matches the Robotics area, whatever its casing
+    await expect(status(page)).toContainText('4 of 9 research');
+    await expect(page.getByRole('group', { name: 'research by conference' })).toBeVisible();
+    await expect(page.locator('[data-theme="obsidian"]')).toBeVisible();
+    await expect(
+      page.getByRole('group', { name: 'Filter by Interest' }).getByRole('button', {
+        name: /^Robotics/,
+      }),
+    ).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  test('changing the view updates the address bar, and Clear cleans it', async ({ page }) => {
+    await openResearch(page);
+    await page.getByRole('searchbox', { name: 'Search research' }).fill('otto');
+    await page
+      .getByRole('group', { name: 'Group by' })
+      .getByRole('button', { name: 'Year' })
+      .click();
+    await expect(page).toHaveURL(/\/research\/?\?q=otto&by=year$/);
+
+    await page.getByRole('button', { name: 'Clear', exact: true }).click();
+    await page
+      .getByRole('group', { name: 'Group by' })
+      .getByRole('button', { name: 'None' })
+      .click();
+    await expect(page).toHaveURL(/\/research\/?$/);
+  });
+
+  test('members open ungrouped from a link, though the yearbook groups by class', async ({
+    page,
+  }) => {
+    await mockSupabase(page, { directory: [directoryRow()] });
+    await page.goto('/members/?by=none');
+    await expect(page.getByRole('heading', { name: 'Class of 2027' })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: /Ada Lovelace/ })).toBeVisible();
+  });
+});
+
 test.describe('members explorer', () => {
   const MEMBERS = [
     directoryRow(),
