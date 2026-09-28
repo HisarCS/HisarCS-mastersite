@@ -81,6 +81,30 @@ Foam: 0.42, 0.61, 0.72
 14 | days grow time
 \`\`\``,
   }),
+
+  tiles: defineFence({
+    label: 'Tiles',
+    parse: parseStatsSpec,
+    render: (spec) => (
+      <div className={styles.tiles} role="list">
+        {spec.items.map((it, i) => (
+          <div key={i} className={styles.tile} role="listitem">
+            <div className={styles.tileValue}>{it.value}</div>
+            <div className={styles.tileLabel}>{it.label}</div>
+          </div>
+        ))}
+      </div>
+    ),
+    snippet: `\`\`\`tiles
+10 | what this number is
+\`\`\`
+`,
+    reference: `\`\`\`tiles              (same lines as stats, drawn as big-number tiles)
+10 | students
+15–20m | intro before building
+10 / 10 | left with a fabrication-ready model
+\`\`\``,
+  }),
 };
 
 /** The fence for a code-block language, or undefined for ordinary code. */
