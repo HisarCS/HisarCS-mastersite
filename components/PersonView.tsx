@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { getMember } from '@/lib/data/members';
 import { mockPerson } from '@/lib/data/mock';
-import { currentEnv } from '@/lib/env';
+import { mocksEnabled } from '@/lib/env';
 import { safeUrl } from '@/lib/util/html';
 import { avatarSrcSet, thumbUrl } from '@/lib/util/media';
 import type { Member } from '@/lib/domain/types';
@@ -30,7 +30,7 @@ export function PersonView({ id, embedded = false }: { id: string; embedded?: bo
       const member = await getMember(id);
       if (!alive) return;
       if (member) setState({ status: 'ok', member });
-      else if (currentEnv() === 'local') setState({ status: 'ok', member: mockPerson(id) });
+      else if (mocksEnabled()) setState({ status: 'ok', member: mockPerson(id) });
       else setState({ status: 'missing', reachable: true });
     })();
     return () => {

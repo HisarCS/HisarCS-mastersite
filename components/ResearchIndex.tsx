@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { listResearch } from '@/lib/data/research';
 import { listResearchEntries } from '@/lib/data/researchEntries';
 import { mockResearchEntries } from '@/lib/data/mock';
-import { currentEnv } from '@/lib/env';
+import { mocksEnabled } from '@/lib/env';
 import { avatarSrcSet, researchImgSrcSet, thumbUrl } from '@/lib/util/media';
 import { initials, paletteColor as colorFor } from '@/lib/util/palette';
 import type { ResearchEntryCard } from '@/lib/domain/types';
@@ -156,7 +156,7 @@ export function ResearchIndex() {
     void (async () => {
       const e = await listResearchEntries();
       if (!alive) return;
-      setEntries(e.length ? e : currentEnv() === 'local' ? mockResearchEntries() : []);
+      setEntries(e.length ? e : mocksEnabled() ? mockResearchEntries() : []);
     })();
     return () => {
       alive = false;

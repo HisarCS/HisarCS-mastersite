@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { getResearchEntry, researchFileUrl } from '@/lib/data/researchEntries';
 import { getAuthUser, getMyProfile } from '@/lib/data/auth';
 import { mockResearchEntry } from '@/lib/data/mock';
-import { currentEnv } from '@/lib/env';
+import { mocksEnabled } from '@/lib/env';
 import { safeUrl } from '@/lib/util/html';
 import { avatarSrcSet, researchImgSrcSet, thumbUrl } from '@/lib/util/media';
 import { initials, PALETTE, paletteColor } from '@/lib/util/palette';
@@ -39,7 +39,7 @@ export function ResearchEntryView({ id, embedded = false }: { id: string; embedd
         const me = user ? await getMyProfile(user.userId) : null;
         if (!alive) return;
         setCanEdit(!!me && entry.members.some((m) => m.publicId === me.publicId));
-      } else if (currentEnv() === 'local') {
+      } else if (mocksEnabled()) {
         setState({ status: 'ok', entry: mockResearchEntry(id) });
       } else {
         setState({ status: 'missing' });
