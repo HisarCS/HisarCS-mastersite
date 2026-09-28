@@ -120,3 +120,11 @@ test('an empty backend shows no invented members or research (mocks are opt-in)'
   await expect(page.getByText('Otto', { exact: true })).toBeVisible(); // curated, static
   await expect(page.getByText('Solar Lemon Press')).toHaveCount(0); // a mock entry
 });
+
+test('a curated write-up credits its authors and links site members', async ({ page }) => {
+  await mockSupabase(page);
+  await page.goto('/research/?id=otto');
+  await expect(page.getByText('Sedat Yalcin')).toBeVisible();
+  await page.getByRole('link', { name: 'Emre Dayangac' }).click();
+  await expect(page).toHaveURL(/\/person\/?\?id=emre-dayangac/);
+});

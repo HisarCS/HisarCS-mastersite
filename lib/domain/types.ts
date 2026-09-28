@@ -145,11 +145,29 @@ export interface ResearchEntry {
 // layer on top.
 // ---------------------------------------------------------------------------
 
-/** An author of a research entry — a site member (linked) or plain text. */
+/** An author of a research entry — a site member (linked) or plain text.
+ *  `name` is given-first ("E. Dayangaç", "Sedat Yalcin"): the last word is the
+ *  family name when a citation is built. */
 export interface ResearchAuthor {
   name: string;
   /** public_id of a site member → links to /person?id=; omit for plain text. */
   memberId?: string;
+}
+
+/** Where a curated entry was published — what a citation needs beyond the
+ *  title and authors (lib/domain/citation.ts). */
+export interface ResearchCitation {
+  /** full paper title as published (the card title is often shorter) */
+  title: string;
+  /** proceedings / book / conference, spelled out */
+  booktitle: string;
+  year: number;
+  pages?: string;
+  doi?: string;
+  /** e.g. "November 20–21" */
+  dates?: string;
+  location?: string;
+  publisher?: string;
 }
 
 /** A resource/file attached to a research entry. */
@@ -172,6 +190,8 @@ export interface ResearchItem {
   endDate?: string;
   location?: string;
   resources: ResearchResource[];
+  /** publication details for "Cite this"; absent = not yet published */
+  citation?: ResearchCitation;
   /** Optional custom-layout key resolved by the view registry; default renders
    *  the preserved article body. */
   view?: string;
