@@ -223,3 +223,10 @@
   font-size: 13px;
   padding: 30px 0 50px;
 }
+/* a tag whose filter is on */
+.chipOn,
+.chipOn:hover {
+  color: var(--card);
+  background: var(--chip-c, var(--accent));
+  border-color: var(--chip-c, var(--accent));
+}
