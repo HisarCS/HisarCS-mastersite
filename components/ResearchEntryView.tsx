@@ -3,33 +3,27 @@
 import { useEffect, useState, type CSSProperties } from 'react';
 import Link from 'next/link';
 import { getResearchEntry, researchFileUrl } from '@/lib/data/researchEntries';
+import { researchPageUrl } from '@/lib/data/research';
 import { getAuthUser, getMyProfile } from '@/lib/data/auth';
 import { mockResearchEntry } from '@/lib/data/mock';
-import { currentEnv } from '@/lib/env';
+import { mocksEnabled } from '@/lib/env';
 import { safeUrl } from '@/lib/util/html';
 import { avatarSrcSet, researchImgSrcSet, thumbUrl } from '@/lib/util/media';
-import { hashStr } from '@/lib/util/hash';
+import { initials, PALETTE, paletteColor } from '@/lib/util/palette';
 import type { ResearchEntry } from '@/lib/domain/types';
 import { MarkdownPage } from './markdown/MarkdownPage';
+import { citationFromEntry } from '@/lib/domain/citation';
+import { researchTagFilter } from '@/lib/domain/directoryFacets';
+import { explorerLink } from '@/lib/domain/explorerUrl';
+import { CiteButton } from './CiteButton';
+import { useInterestTable } from './useInterestTable';
+import { ShareButton } from './ShareButton';
 import { SiteHeader } from './SiteHeader';
 import { Unavailable } from './Unavailable';
 import styles from './ResearchEntryView.module.css';
 
-const COLORS = ['#e8542f', '#2f6fe8', '#28a06d', '#c4a11f', '#9048c8', '#d2447e'];
-
-const initials = (s: string) =>
-  (s || '?')
-    .trim()
-    .split(/\s+/)
-    .map((w) => w[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase();
-
 const colorFor = (s: string) =>
-  COLORS[[...String(s)].reduce((a, c) => a + c.charCodeAt(0), 0) % COLORS.length]!;
-/** same hash as the index cards, so a tag keeps its color across pages */
-const tagColor = (t: string) => COLORS[hashStr(t) % COLORS.length]!;
+  PALETTE[[...String(s)].reduce((a, c) => a + c.charCodeAt(0), 0) % PALETTE.length]!;
 
 type State = { status: 'loading' } | { status: 'ok'; entry: ResearchEntry } | { status: 'missing' };
 
@@ -39,6 +33,7 @@ type State = { status: 'loading' } | { status: 'ok'; entry: ResearchEntry } | { 
 export function ResearchEntryView({ id, embedded = false }: { id: string; embedded?: boolean }) {
   const [state, setState] = useState<State>({ status: 'loading' });
   const [canEdit, setCanEdit] = useState(false);
+  const areas = useInterestTable();
 
   useEffect(() => {
     let alive = true;
@@ -52,7 +47,7 @@ export function ResearchEntryView({ id, embedded = false }: { id: string; embedd
         const me = user ? await getMyProfile(user.userId) : null;
         if (!alive) return;
         setCanEdit(!!me && entry.members.some((m) => m.publicId === me.publicId));
-      } else if (currentEnv() === 'local') {
+      } else if (mocksEnabled()) {
         setState({ status: 'ok', entry: mockResearchEntry(id) });
       } else {
         setState({ status: 'missing' });
@@ -118,6 +113,12 @@ export function ResearchEntryView({ id, embedded = false }: { id: string; embedd
               </span>
               {/* shown only to this entry's own members; RLS is what actually
                   gates the edit, this is the affordance */}
+              {p.published && (
+                <>
+                  <CiteButton data={citationFromEntry(p, researchPageUrl(p.publicId))} />
+                  <ShareButton slug={p.publicId} />
+                </>
+              )}
               {canEdit && (
                 <Link
                   className={styles.editBtn}
@@ -150,16 +151,20 @@ export function ResearchEntryView({ id, embedded = false }: { id: string; embedd
         {/* tags sit in their own borderless row, above the members list */}
         {p.fields.length > 0 && (
           <div className={styles.tagBar}>
-            {p.fields.map((f) => (
-              <button
-                key={f}
-                type="button"
-                className={styles.chip}
-                style={{ '--chip-c': tagColor(f) } as CSSProperties}
-              >
-                {f}
-              </button>
-            ))}
+            {p.fields.map((f) => {
+              const { facet, value } = researchTagFilter(f, areas);
+              return (
+                <Link
+                  key={f}
+                  href={explorerLink('/research', facet, value)}
+                  title={`All research in ${value}`}
+                  className={styles.chip}
+                  style={{ '--chip-c': paletteColor(f) } as CSSProperties}
+                >
+                  {f}
+                </Link>
+              );
+            })}
           </div>
         )}
 

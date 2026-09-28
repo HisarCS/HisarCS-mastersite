@@ -1,0 +1,196 @@
+import { describe, it, expect } from 'vitest';
+import {
+  conferenceOf,
+  facetValues,
+  filterItems,
+  groupItems,
+  isVenueTag,
+  mergeCase,
+  type Facet,
+} from '../../lib/domain/facets';
+
+interface Doc {
+  title: string;
+  tags: string[];
+  venue?: string;
+}
+
+const TAGS: Facet<Doc> = { key: 'tag', label: 'Interest', values: (d) => d.tags };
+const VENUE: Facet<Doc> = {
+  key: 'conf',
+  label: 'Conference',
+  values: (d) => (d.venue ? [d.venue] : []),
+};
+const FACETS = [TAGS, VENUE];
+const text = (d: Doc) => d.title;
+
+const DOCS: Doc[] = [
+  { title: 'Otto', tags: ['Parametric CAD', 'Laser Cutting'], venue: 'SCF' },
+  { title: 'Parametrix', tags: ['Parametric Design', 'LLM'], venue: 'Constructionism' },
+  { title: 'Automata', tags: ['AR', 'Mechanics'], venue: 'Constructionism' },
+  { title: 'Loose note', tags: [] },
+];
+
+describe('conferenceOf', () => {
+  it('drops the year and anything after it', () => {
+    expect(conferenceOf("IDC '26")).toBe('IDC');
+    expect(conferenceOf("HRI '19, Daegu")).toBe('HRI');
+    expect(conferenceOf('HCI International ’25')).toBe('HCI International');
+    expect(conferenceOf("Constructionism '25")).toBe('Constructionism');
+  });
+
+  it('folds adjunct / workshop tracks into their conference', () => {
+    expect(conferenceOf("SCF Adjunct '25")).toBe('SCF');
+  });
+
+  it('returns null for empty or year-only venues', () => {
+    expect(conferenceOf(null)).toBeNull();
+    expect(conferenceOf('  ')).toBeNull();
+    expect(conferenceOf("'25")).toBeNull();
+  });
+
+  it('keeps venues without a year as-is', () => {
+    expect(conferenceOf('ideaLab preprint')).toBe('ideaLab preprint');
+  });
+});
+
+describe('isVenueTag', () => {
+  it('spots tags that are really a venue + year', () => {
+    expect(isVenueTag("IDC '26")).toBe(true);
+    expect(isVenueTag('HCII ’25')).toBe(true);
+    expect(isVenueTag('Robotics')).toBe(false);
+    expect(isVenueTag('K-12')).toBe(false);
+  });
+});
+
+describe('facetValues', () => {
+  it('counts each value once per item, most common first, then A–Z', () => {
+    expect(facetValues(DOCS, VENUE)).toEqual([
+      { value: 'Constructionism', count: 2 },
+      { value: 'SCF', count: 1 },
+    ]);
+  });
+
+  it('dedupes a value repeated within one item', () => {
+    const dup: Doc[] = [{ title: 'x', tags: ['AI', 'AI'] }];
+    expect(facetValues(dup, TAGS)).toEqual([{ value: 'AI', count: 1 }]);
+  });
+
+  it('is empty for no items', () => {
+    expect(facetValues([], TAGS)).toEqual([]);
+  });
+
+  it("uses the facet's own order when it has one (e.g. newest year first)", () => {
+    const byVenueDesc: Facet<Doc> = { ...VENUE, order: (a, b) => b.localeCompare(a) };
+    expect(facetValues(DOCS, byVenueDesc).map((v) => v.value)).toEqual(['SCF', 'Constructionism']);
+  });
+});
+
+describe('filterItems', () => {
+  it('returns everything for an empty query and no selection', () => {
+    expect(filterItems(DOCS, { query: '  ', selected: {} }, FACETS, text)).toHaveLength(4);
+  });
+
+  it('matches the query against text and every facet value, case-insensitively', () => {
+    const titles = (q: string) =>
+      filterItems(DOCS, { query: q, selected: {} }, FACETS, text).map((d) => d.title);
+    expect(titles('otto')).toEqual(['Otto']);
+    expect(titles('laser')).toEqual(['Otto']); // tag
+    expect(titles('constructionISM')).toEqual(['Parametrix', 'Automata']); // venue
+  });
+
+  it('requires every query word to match somewhere', () => {
+    const r = filterItems(DOCS, { query: 'parametric llm', selected: {} }, FACETS, text);
+    expect(r.map((d) => d.title)).toEqual(['Parametrix']);
+  });
+
+  it('ORs values within a facet and ANDs across facets', () => {
+    const within = filterItems(DOCS, { query: '', selected: { tag: ['AR', 'LLM'] } }, FACETS, text);
+    expect(within.map((d) => d.title)).toEqual(['Parametrix', 'Automata']);
+
+    const across = filterItems(
+      DOCS,
+      { query: '', selected: { tag: ['AR', 'LLM'], conf: ['Constructionism'] } },
+      FACETS,
+      text,
+    );
+    expect(across.map((d) => d.title)).toEqual(['Parametrix', 'Automata']);
+
+    const none = filterItems(
+      DOCS,
+      { query: '', selected: { tag: ['AR'], conf: ['SCF'] } },
+      FACETS,
+      text,
+    );
+    expect(none).toEqual([]);
+  });
+
+  it('ignores selections for facets it does not know, and empty selections', () => {
+    const r = filterItems(DOCS, { query: '', selected: { nope: ['x'], tag: [] } }, FACETS, text);
+    expect(r).toHaveLength(4);
+  });
+});
+
+describe('groupItems', () => {
+  it('one section per value in facet order; an item appears under each of its values', () => {
+    const g = groupItems(DOCS.slice(0, 3), TAGS);
+    expect(g.map((s) => s.value)).toEqual([
+      'AR',
+      'Laser Cutting',
+      'LLM',
+      'Mechanics',
+      'Parametric CAD',
+      'Parametric Design',
+    ]);
+    expect(g.find((s) => s.value === 'AR')!.items.map((d) => d.title)).toEqual(['Automata']);
+  });
+
+  it('collects items with no value in a trailing null section', () => {
+    const g = groupItems(DOCS, VENUE);
+    expect(g.map((s) => s.value)).toEqual(['Constructionism', 'SCF', null]);
+    expect(g.at(-1)!.items.map((d) => d.title)).toEqual(['Loose note']);
+  });
+
+  it('keeps item order inside a section', () => {
+    const g = groupItems(DOCS, VENUE);
+    expect(g[0]!.items.map((d) => d.title)).toEqual(['Parametrix', 'Automata']);
+  });
+
+  it('is empty for no items', () => {
+    expect(groupItems([], TAGS)).toEqual([]);
+  });
+});
+
+describe('mergeCase', () => {
+  const docs: Doc[] = [
+    { title: '1', tags: ['robotics'] },
+    { title: '2', tags: ['Robotics', 'AI'] },
+    { title: '3', tags: ['robotics', 'ROBOTICS'] },
+  ];
+
+  it('folds spellings that differ only in case into one value', () => {
+    const f = mergeCase(TAGS, docs);
+    expect(facetValues(docs, f)).toEqual([
+      { value: 'robotics', count: 3 },
+      { value: 'AI', count: 1 },
+    ]);
+  });
+
+  it('shows the most common spelling; a tie goes to the capitalized one', () => {
+    const tie: Doc[] = [
+      { title: '1', tags: ['robotics'] },
+      { title: '2', tags: ['Robotics'] },
+    ];
+    expect(mergeCase(TAGS, tie).values(tie[0]!)).toEqual(['Robotics']);
+  });
+
+  it('keeps the facet key, label, and order', () => {
+    const order = (a: string, b: string) => b.localeCompare(a);
+    const f = mergeCase({ ...TAGS, order }, docs);
+    expect(f).toMatchObject({ key: 'tag', label: 'Interest', order });
+  });
+
+  it('passes unseen items through their own values', () => {
+    expect(mergeCase(TAGS, docs).values({ title: 'x', tags: ['New'] })).toEqual(['New']);
+  });
+});

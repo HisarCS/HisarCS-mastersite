@@ -2,11 +2,17 @@
 
 import { useEffect, type FC } from 'react';
 import Link from 'next/link';
-import { getResearchItem, researchContentSrc } from '@/lib/data/research';
+import { getResearchItem, researchContentSrc, researchPageUrl } from '@/lib/data/research';
 import { safeUrl } from '@/lib/util/html';
 import type { ResearchItem } from '@/lib/domain/types';
+import { citationFromCurated } from '@/lib/domain/citation';
+import { researchTagFilter } from '@/lib/domain/directoryFacets';
+import { explorerLink } from '@/lib/domain/explorerUrl';
+import { CiteButton } from './CiteButton';
+import { useInterestTable } from './useInterestTable';
+import { ShareButton } from './ShareButton';
 import { SiteHeader } from './SiteHeader';
-import { ResearchArticle } from './ResearchArticle';
+import { CuratedArticle } from './CuratedArticle';
 import { ResearchEntryView } from './ResearchEntryView';
 import styles from './ResearchView.module.css';
 
@@ -27,6 +33,7 @@ const fmtDates = (item: ResearchItem): string | null => {
  *  When `embedded` (homepage detail modal) the shared header is omitted. */
 export function ResearchView({ id, embedded = false }: { id: string; embedded?: boolean }) {
   const item = getResearchItem(id);
+  const areas = useInterestTable();
 
   useEffect(() => {
     if (item) document.title = `${item.title} — ideaLab`;
@@ -62,15 +69,27 @@ export function ResearchView({ id, embedded = false }: { id: string; embedded?: 
             </div>
           )}
           <div>
-            <h1 className={styles.title}>{item.title}</h1>
+            <h1 className={styles.title}>
+              {item.title}
+              <CiteButton data={citationFromCurated(item, researchPageUrl(item.slug))} />
+              <ShareButton slug={item.slug} />
+            </h1>
             {item.venue && <div className={styles.venue}>{item.venue}</div>}
             {item.tags.length > 0 && (
               <div className={styles.chips}>
-                {item.tags.map((t) => (
-                  <span key={t} className={styles.chip}>
-                    {t}
-                  </span>
-                ))}
+                {item.tags.map((t) => {
+                  const { facet, value } = researchTagFilter(t, areas);
+                  return (
+                    <Link
+                      key={t}
+                      href={explorerLink('/research', facet, value)}
+                      title={`All research in ${value}`}
+                      className={styles.chip}
+                    >
+                      {t}
+                    </Link>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -129,7 +148,7 @@ export function ResearchView({ id, embedded = false }: { id: string; embedded?: 
         </dl>
 
         <div className={styles.article}>
-          <ResearchArticle src={researchContentSrc(item)} />
+          <CuratedArticle src={researchContentSrc(item)} />
         </div>
       </main>
     </>

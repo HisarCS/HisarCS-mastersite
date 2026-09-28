@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { getMember } from '@/lib/data/members';
+import { explorerLink } from '@/lib/domain/explorerUrl';
 import { mockPerson } from '@/lib/data/mock';
-import { currentEnv } from '@/lib/env';
+import { mocksEnabled } from '@/lib/env';
 import { safeUrl } from '@/lib/util/html';
 import { avatarSrcSet, thumbUrl } from '@/lib/util/media';
 import type { Member } from '@/lib/domain/types';
@@ -30,7 +31,7 @@ export function PersonView({ id, embedded = false }: { id: string; embedded?: bo
       const member = await getMember(id);
       if (!alive) return;
       if (member) setState({ status: 'ok', member });
-      else if (currentEnv() === 'local') setState({ status: 'ok', member: mockPerson(id) });
+      else if (mocksEnabled()) setState({ status: 'ok', member: mockPerson(id) });
       else setState({ status: 'missing', reachable: true });
     })();
     return () => {
@@ -104,9 +105,14 @@ export function PersonView({ id, embedded = false }: { id: string; embedded?: bo
 
         <div className={styles.chips}>
           {p.fields.map((f) => (
-            <span key={f} className={styles.chip}>
+            <Link
+              key={f}
+              href={explorerLink('/members', 'interest', f)}
+              title={`Everyone into ${f}`}
+              className={styles.chip}
+            >
               {f}
-            </span>
+            </Link>
           ))}
         </div>
 

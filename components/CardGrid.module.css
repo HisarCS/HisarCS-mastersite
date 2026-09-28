@@ -28,24 +28,6 @@
   font-size: 15px;
 }
 
-/* yearbook: one ruled row per graduating class, portraits inside; the rule
-   picks up the wordmark's accent orange */
-.classSection {
-  border-top: 1px solid var(--accent);
-  padding: 20px 0 26px;
-}
-.classSection:first-of-type {
-  border-top: none;
-  padding-top: 0;
-}
-.classHeading {
-  font-size: 12.5px;
-  text-transform: uppercase;
-  letter-spacing: 0.11em;
-  color: var(--muted);
-  font-weight: 600;
-  margin-bottom: 16px;
-}
 .portraitRow {
   display: flex;
   flex-wrap: wrap;

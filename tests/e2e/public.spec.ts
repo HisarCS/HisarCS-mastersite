@@ -44,8 +44,8 @@ test('members index groups the yearbook by graduating class and links portraits'
   // one class row per graduation year, newest first
   await expect(page.getByRole('heading', { name: 'Class of 2027' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Class of 2020' })).toBeVisible();
-  await expect(page.getByText('Grace Hopper')).toBeVisible();
-  await expect(page.getByText('CS & AI')).toBeVisible();
+  // the portrait carries the member's first interest (the same name is also a filter chip)
+  await expect(page.getByRole('link', { name: /Grace Hopper/ })).toContainText('CS & AI');
 
   await page.getByRole('link', { name: /Ada Lovelace/ }).click();
   await expect(page).toHaveURL(/\/person\/?\?id=ada-lovelace/);
@@ -106,4 +106,25 @@ test('header navigation reaches every section from the homepage', async ({ page 
 
   await page.getByRole('link', { name: 'One of Us' }).click();
   await expect(page.getByRole('heading', { name: 'Member sign in' })).toBeVisible();
+});
+
+test('an empty backend shows no invented members or research (mocks are opt-in)', async ({
+  page,
+}) => {
+  await mockSupabase(page); // every list comes back empty
+  await page.goto('/members/');
+  await expect(page.getByText('No members to show yet.')).toBeVisible();
+  await expect(page.getByText('Baran Öztürk')).toHaveCount(0); // a lib/data/mock.ts name
+
+  await page.goto('/research/');
+  await expect(page.getByText('Otto', { exact: true })).toBeVisible(); // curated, static
+  await expect(page.getByText('Solar Lemon Press')).toHaveCount(0); // a mock entry
+});
+
+test('a curated write-up credits its authors and links site members', async ({ page }) => {
+  await mockSupabase(page);
+  await page.goto('/research/?id=otto');
+  await expect(page.getByText('Sedat Yalcin')).toBeVisible();
+  await page.getByRole('link', { name: 'Emre Dayangac' }).click();
+  await expect(page).toHaveURL(/\/person\/?\?id=emre-dayangac/);
 });

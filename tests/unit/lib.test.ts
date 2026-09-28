@@ -1,11 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { esc, safeUrl } from '../../lib/util/html';
+import { esc, markdownToText, safeUrl } from '../../lib/util/html';
 import {
   avatarSrcSet,
   checkFile,
   researchImgSrcSet,
   thumbUrl,
   type UploadSpec,
+  resolveMediaSrc,
 } from '../../lib/util/media';
 import { academicYear, cohortFor } from '../../lib/util/date';
 import { isLocalHost } from '../../lib/env';
@@ -140,5 +141,59 @@ describe('academicYear / cohortFor', () => {
     const now = new Date(2026, 8, 1); // academic year 2027
     expect(cohortFor(2027, now)).toBe('student');
     expect(cohortFor(2026, now)).toBe('alumni');
+  });
+});
+
+describe('resolveMediaSrc', () => {
+  const storage = (p: string) => `https://sb/storage/research-files/${p}`;
+
+  it('site assets ("/…") get the base path', () => {
+    expect(resolveMediaSrc('/research/otto/hero-w2400.jpg', '/HisarCS-mastersite', storage)).toBe(
+      '/HisarCS-mastersite/research/otto/hero-w2400.jpg',
+    );
+    expect(resolveMediaSrc('/research/otto/a.jpg', '', storage)).toBe('/research/otto/a.jpg');
+  });
+
+  it('bare paths are uploaded files in storage', () => {
+    expect(resolveMediaSrc('abc/pic-w2400.jpg', '', storage)).toBe(
+      'https://sb/storage/research-files/abc/pic-w2400.jpg',
+    );
+  });
+
+  it('https URLs pass through; anything else is refused', () => {
+    expect(resolveMediaSrc('https://x.org/a.png', '', storage)).toBe('https://x.org/a.png');
+    expect(resolveMediaSrc('javascript:alert(1)', '', storage)).toBe(
+      'https://sb/storage/research-files/javascript:alert(1)',
+    );
+    expect(resolveMediaSrc('//evil.org/a.png', '', storage)).toBe('');
+  });
+});
+
+describe('markdownToText', () => {
+  it('keeps the words, drops the markup, image paths, and link targets', () => {
+    const md = [
+      '## The idea — **One** model',
+      '![A hero shot](/research/otto/01-hero-w2400.jpg)',
+      'See [the repo](https://github.com/HisarCS/Otto).',
+      '```cards',
+      '# 01 — Text | Type the parameters',
+      '> param tabLength 30',
+      '```',
+      '| **Pipeline** | Lexer → parser |',
+    ].join('\n');
+    const t = markdownToText(md);
+    for (const w of [
+      'The idea',
+      'One model',
+      'A hero shot',
+      'the repo',
+      'Type the parameters',
+      'param tabLength 30',
+      'Pipeline',
+      'Lexer → parser',
+    ])
+      expect(t).toContain(w);
+    for (const junk of ['**', '/research/otto', 'https://', '```', '##', '|'])
+      expect(t).not.toContain(junk);
   });
 });
