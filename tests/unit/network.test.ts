@@ -119,6 +119,22 @@ describe('layoutNetwork', () => {
     expect(Math.max(...xs) - Math.min(...xs)).toBeGreaterThan(SIZE.width * 0.5);
   });
 
+  it("untagged items don't squeeze the connected graph into the middle", () => {
+    const docs: Doc[] = [
+      ...Array.from({ length: 10 }, (_, i) => ({
+        id: `d${i}`,
+        tags: [`t${i % 3}`, `t${(i + 1) % 3}`],
+      })),
+      { id: 'lonely1', tags: [] },
+      { id: 'lonely2', tags: [] },
+    ];
+    const n = buildNetwork(docs, TAGS, { id: (d) => d.id, label: (d) => d.id });
+    const p = layoutNetwork(n, SIZE);
+    const linked = n.nodes.filter((x) => x.weight > 0).map((x) => p.get(x.id)!);
+    const xs = linked.map((q) => q.x);
+    expect(Math.max(...xs) - Math.min(...xs)).toBeGreaterThan(SIZE.width * 0.4);
+  });
+
   it('handles the empty and single-node networks', () => {
     expect(layoutNetwork({ nodes: [], links: [] }, SIZE).size).toBe(0);
     const one: Network<Doc> = {

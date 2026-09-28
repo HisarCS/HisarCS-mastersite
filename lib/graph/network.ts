@@ -161,6 +161,28 @@ export function layoutNetwork<T>(
     temp -= cool;
   }
 
+  // unlinked nodes (untagged items) drift far out and would squeeze the real
+  // graph when fitting — pull them radially onto a ring just outside it
+  const linked = new Set(edges.flat());
+  if (linked.size > 1 && linked.size < n) {
+    const lx = [...linked].map((i) => xs[i]!);
+    const ly = [...linked].map((i) => ys[i]!);
+    const mx = (Math.min(...lx) + Math.max(...lx)) / 2;
+    const my = (Math.min(...ly) + Math.max(...ly)) / 2;
+    const rx = Math.max((Math.max(...lx) - Math.min(...lx)) / 2, K) * 1.15;
+    const ry = Math.max((Math.max(...ly) - Math.min(...ly)) / 2, K) * 1.15;
+    for (let i = 0; i < n; i++) {
+      if (linked.has(i)) continue;
+      const ex = (xs[i]! - mx) / rx;
+      const ey = (ys[i]! - my) / ry;
+      const e = Math.hypot(ex, ey);
+      if (e > 1) {
+        xs[i] = mx + (xs[i]! - mx) / e;
+        ys[i] = my + (ys[i]! - my) / e;
+      }
+    }
+  }
+
   // fit to the frame: uniform scale (keeps the shape), centred, and never
   // blown up so far that a tiny graph fills the screen
   const minX = Math.min(...xs);
