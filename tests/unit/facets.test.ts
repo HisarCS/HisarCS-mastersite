@@ -5,6 +5,7 @@ import {
   filterItems,
   groupItems,
   isVenueTag,
+  mergeCase,
   type Facet,
 } from '../../lib/domain/facets';
 
@@ -157,5 +158,39 @@ describe('groupItems', () => {
 
   it('is empty for no items', () => {
     expect(groupItems([], TAGS)).toEqual([]);
+  });
+});
+
+describe('mergeCase', () => {
+  const docs: Doc[] = [
+    { title: '1', tags: ['robotics'] },
+    { title: '2', tags: ['Robotics', 'AI'] },
+    { title: '3', tags: ['robotics', 'ROBOTICS'] },
+  ];
+
+  it('folds spellings that differ only in case into one value', () => {
+    const f = mergeCase(TAGS, docs);
+    expect(facetValues(docs, f)).toEqual([
+      { value: 'robotics', count: 3 },
+      { value: 'AI', count: 1 },
+    ]);
+  });
+
+  it('shows the most common spelling; a tie goes to the capitalized one', () => {
+    const tie: Doc[] = [
+      { title: '1', tags: ['robotics'] },
+      { title: '2', tags: ['Robotics'] },
+    ];
+    expect(mergeCase(TAGS, tie).values(tie[0]!)).toEqual(['Robotics']);
+  });
+
+  it('keeps the facet key, label, and order', () => {
+    const order = (a: string, b: string) => b.localeCompare(a);
+    const f = mergeCase({ ...TAGS, order }, docs);
+    expect(f).toMatchObject({ key: 'tag', label: 'Interest', order });
+  });
+
+  it('passes unseen items through their own values', () => {
+    expect(mergeCase(TAGS, docs).values({ title: 'x', tags: ['New'] })).toEqual(['New']);
   });
 });
