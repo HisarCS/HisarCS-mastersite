@@ -2,8 +2,8 @@ import type { ResearchItem } from '../domain/types';
 
 /**
  * Curated research entries (static, editorial). Migrated out of the old
- * public/research.html hardcoded array; the long-form write-ups still live at
- * public/research/<slug>.html and are rendered losslessly by ResearchArticle.
+ * public/research.html hardcoded array; the long-form write-ups are markdown at
+ * public/research/<slug>.md, rendered by the same renderer as member pages.
  *
  * This is the one place to edit curated research: authors, tags, dates,
  * location, resources, and citation details are all first-class here. Authors
