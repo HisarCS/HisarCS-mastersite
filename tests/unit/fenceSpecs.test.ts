@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseTimelineSpec, parseVideoSpec } from '../../lib/util/fenceSpecs';
+import { parseCompareSpec, parseTimelineSpec, parseVideoSpec } from '../../lib/util/fenceSpecs';
 
 describe('parseVideoSpec', () => {
   const embed = (url: string) => parseVideoSpec(url).ok?.embed;
@@ -52,5 +52,21 @@ describe('parseTimelineSpec', () => {
     expect(parseTimelineSpec('just words').error).toMatch(/date \| milestone/);
     expect(parseTimelineSpec('2025 |').error).toMatch(/date \| milestone/);
     expect(parseTimelineSpec('').error).toMatch(/at least one/);
+  });
+});
+
+describe('parseCompareSpec', () => {
+  it('takes exactly two images: before, then after', () => {
+    const r = parseCompareSpec('![First drum](a/one-w2400.jpg)\n![Two wheels](a/two-w2400.jpg)');
+    expect(r.ok).toEqual({
+      before: { src: 'a/one-w2400.jpg', caption: 'First drum' },
+      after: { src: 'a/two-w2400.jpg', caption: 'Two wheels' },
+    });
+  });
+
+  it('rejects anything but two image lines', () => {
+    expect(parseCompareSpec('![only](a.jpg)').error).toMatch(/two images/);
+    expect(parseCompareSpec('![a](a.jpg)\n![b](b.jpg)\n![c](c.jpg)').error).toMatch(/two images/);
+    expect(parseCompareSpec('![a](a.jpg)\nnot an image').error).toMatch(/!\[caption\]\(image\)/);
   });
 });

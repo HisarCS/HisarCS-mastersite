@@ -2,9 +2,10 @@
 
 import type { ReactNode } from 'react';
 import { parseChartSpec, parseStatsSpec, type ParseResult } from '@/lib/util/chartSpec';
-import { parseTimelineSpec, parseVideoSpec } from '@/lib/util/fenceSpecs';
+import { parseCompareSpec, parseTimelineSpec, parseVideoSpec } from '@/lib/util/fenceSpecs';
 import { parseCardsSpec, parseFindingsSpec } from '@/lib/util/recordSpec';
 import { ChartSvg } from './ChartSvg';
+import { CompareSlider } from './CompareSlider';
 import { Inline } from './Inline';
 import styles from './Markdown.module.css';
 
@@ -234,6 +235,21 @@ The growth time-lapse, 14 days in 40 seconds
 Sep 2024 | First prototype: a single rotating drum
 Mar 2025 | Redesigned after five classroom cohorts
 Jun 2026 | Presented at IDC '26
+\`\`\``,
+  }),
+
+  compare: defineFence({
+    label: 'Compare',
+    parse: parseCompareSpec,
+    render: (spec) => <CompareSlider spec={spec} />,
+    snippet: `\`\`\`compare
+![Before: what it looked like](image)
+![After: what it looks like now](image)
+\`\`\`
+`,
+    reference: `\`\`\`compare            (two images, before then after: a drag slider)
+![Before: a single rotating drum](uploaded/one.jpg)
+![After: two independent wheels](uploaded/two.jpg)
 \`\`\``,
   }),
 };

@@ -86,3 +86,32 @@ export function parseTimelineSpec(text: string): ParseResult<TimelineSpec> {
   if (!items.length) return { error: 'add at least one "date | milestone" line' };
   return { ok: { items } };
 }
+
+export interface CompareSpec {
+  before: { src: string; caption: string };
+  after: { src: string; caption: string };
+}
+
+const IMAGE_LINE = /^!\[([^\]]*)\]\(([^)\s]+)\)$/;
+
+/**
+ * ```compare
+ * ![Before: a single rotating drum](path/one-w2400.jpg)
+ * ![After: two independent wheels](path/two-w2400.jpg)
+ * ```
+ */
+export function parseCompareSpec(text: string): ParseResult<CompareSpec> {
+  const lines = text
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean);
+  const imgs = [];
+  for (const line of lines) {
+    const m = line.match(IMAGE_LINE);
+    if (!m) return { error: `every line must be an image, ![caption](image) — got "${line}"` };
+    imgs.push({ src: m[2]!, caption: m[1]! });
+  }
+  if (imgs.length !== 2)
+    return { error: `add exactly two images (before, after) — got ${imgs.length}` };
+  return { ok: { before: imgs[0]!, after: imgs[1]! } };
+}

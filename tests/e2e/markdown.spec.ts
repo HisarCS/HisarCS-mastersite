@@ -137,3 +137,26 @@ test('timeline fence lists dated milestones in order', async ({ page }) => {
   await expect(items.nth(0)).toContainText('Sep 2024');
   await expect(items.nth(1).locator('strong')).toHaveText('IDC');
 });
+
+test('compare fence: a before/after slider driven by a range input', async ({ page }) => {
+  await openPage(
+    page,
+    fence(
+      'compare',
+      '![First drum](/research/parse/05-a.jpg)\n![Two wheels](/research/parse/06-b.jpg)',
+    ),
+  );
+  const slider = page.getByRole('slider', { name: /Before and after/ });
+  await expect(slider).toHaveValue('50');
+  const before = page.locator('article img[alt="First drum"]');
+  await expect(before).toHaveAttribute('style', /inset\(0(px)? 50% 0(px)? 0(px)?\)/);
+  await slider.focus();
+  await page.keyboard.press('End');
+  await expect(before).toHaveAttribute('style', /inset\(0(px)? 0% 0(px)? 0(px)?\)/);
+  await expect(page.locator('article figcaption')).toContainText('Before: First drum');
+});
+
+test('compare fence needs exactly two images', async ({ page }) => {
+  await openPage(page, fence('compare', '![only one](/a.jpg)'));
+  await expect(page.getByText(/```compare: add exactly two images/)).toBeVisible();
+});
