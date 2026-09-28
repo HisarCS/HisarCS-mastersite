@@ -143,20 +143,25 @@
   color: var(--muted);
 }
 
+/* grouped grid: the yearbook's look — a ruled row per value, the rule in the
+   wordmark's accent orange (matches /members' class rows) */
 .section {
-  margin-bottom: 34px;
+  border-top: 1px solid var(--accent);
+  padding: 20px 0 26px;
+}
+.section:first-of-type {
+  border-top: none;
+  padding-top: 0;
 }
 .sectionHeading {
   display: flex;
   align-items: baseline;
   gap: 8px;
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
+  font-size: 12.5px;
   text-transform: uppercase;
-  color: var(--ink);
-  border-bottom: 1px solid var(--line);
-  padding-bottom: 8px;
+  letter-spacing: 0.11em;
+  color: var(--muted);
+  font-weight: 600;
   margin-bottom: 16px;
 }
 
@@ -201,6 +206,9 @@
 }
 .dim {
   opacity: 0.15;
+}
+.hit {
+  fill: transparent;
 }
 .item {
   fill: var(--ink);

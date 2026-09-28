@@ -5,6 +5,7 @@ import {
   facetValues,
   filterItems,
   groupItems,
+  mergeCase,
   type Facet,
   type Selection,
 } from '@/lib/domain/facets';
@@ -30,13 +31,14 @@ export interface ExplorerApi {
  */
 export function Explorer<T>({
   items,
-  facets,
+  facets: rawFacets,
   text,
   itemId,
   itemLabel,
   onOpen,
   renderGrid,
   noun,
+  searchHint,
   defaultGroup = null,
   sectionTitle = (_facet, value) => value,
 }: {
@@ -49,6 +51,8 @@ export function Explorer<T>({
   renderGrid: (items: T[], api: ExplorerApi) => ReactNode;
   /** "research", "members" — used in counts and labels */
   noun: string;
+  /** search box hint, e.g. "title, interest, conference…" */
+  searchHint: string;
   /** facet key to group the grid by at first (null = one flat grid) */
   defaultGroup?: string | null;
   sectionTitle?: (facet: Facet<T>, value: string) => string;
@@ -58,6 +62,17 @@ export function Explorer<T>({
   const [groupKey, setGroupKey] = useState<string | null>(defaultGroup);
   const [view, setView] = useState<'grid' | 'graph'>('grid');
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+
+  // "robotics" and "Robotics" are one value everywhere below
+  const facets = useMemo(() => rawFacets.map((f) => mergeCase(f, items)), [rawFacets, items]);
+  const valueLists = useMemo(
+    () => new Map(facets.map((f) => [f.key, facetValues(items, f)])),
+    [facets, items],
+  );
+  /** a value as the facet displays it (card tags arrive in their own casing) */
+  const canon = (facet: string, value: string) =>
+    valueLists.get(facet)?.find((v) => v.value.toLowerCase() === value.toLowerCase())?.value ??
+    value;
 
   const shown = useMemo(
     () => filterItems(items, { query, selected }, facets, text),
@@ -71,13 +86,16 @@ export function Explorer<T>({
     [shown, graphFacet, itemId, itemLabel],
   );
 
-  const isOn = (facet: string, value: string) => selected[facet]?.includes(value) ?? false;
-  const toggle = (facet: string, value: string) =>
+  const isOn = (facet: string, value: string) =>
+    selected[facet]?.includes(canon(facet, value)) ?? false;
+  const toggle = (facet: string, raw: string) => {
+    const value = canon(facet, raw);
     setSelected((s) => {
       const cur = s[facet] ?? [];
       const next = cur.includes(value) ? cur.filter((v) => v !== value) : [...cur, value];
       return { ...s, [facet]: next };
     });
+  };
   const api: ExplorerApi = { toggle, isOn };
   const filtering = query.trim() !== '' || Object.values(selected).some((v) => v.length > 0);
   const clear = () => {
@@ -94,7 +112,7 @@ export function Explorer<T>({
         <input
           type="search"
           className={styles.search}
-          placeholder={`Search ${noun} — title, interest, conference…`}
+          placeholder={`Search ${noun} — ${searchHint}`}
           aria-label={`Search ${noun}`}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -146,7 +164,7 @@ export function Explorer<T>({
 
       <div className={styles.filters}>
         {facets.map((f) => {
-          const values = facetValues(items, f);
+          const values = valueLists.get(f.key) ?? [];
           if (values.length === 0) return null;
           const open = expanded[f.key] ?? false;
           // ticked values stay visible even when the row is collapsed
