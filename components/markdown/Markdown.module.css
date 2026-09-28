@@ -377,6 +377,76 @@
   border: 0;
 }
 
+/* -- timeline fence: dated milestones on a thin rail ---------------------- */
+.article .timeline {
+  list-style: none;
+  padding: 0;
+  margin: 6px 0 18px;
+  clear: both;
+}
+.article .timeline li {
+  position: relative;
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 18px;
+  padding: 0 0 16px;
+  margin: 0;
+}
+/* the rail and its dot sit between the date and the text */
+.article .timeline li::before {
+  content: '';
+  position: absolute;
+  left: 119px;
+  top: 7px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.article .timeline li::after {
+  content: '';
+  position: absolute;
+  left: 123px;
+  top: 18px;
+  bottom: -4px;
+  width: 1px;
+  background: var(--line);
+}
+.article .timeline li:last-child::after {
+  display: none;
+}
+.tlDate {
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-align: right;
+  padding-top: 2px;
+}
+.tlText {
+  padding-left: 14px;
+}
+@media (max-width: 640px) {
+  .article .timeline li {
+    grid-template-columns: 1fr;
+    gap: 2px;
+    padding-left: 22px;
+  }
+  .article .timeline li::before {
+    left: 0;
+  }
+  .article .timeline li::after {
+    left: 4px;
+  }
+  .tlDate {
+    text-align: left;
+  }
+  .tlText {
+    padding-left: 0;
+  }
+}
+
 /* -- fence errors (author feedback, honest not silent) ---------------------- */
 .fenceError {
   border: 1.5px dashed var(--danger);

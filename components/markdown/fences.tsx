@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { parseChartSpec, parseStatsSpec, type ParseResult } from '@/lib/util/chartSpec';
-import { parseVideoSpec } from '@/lib/util/fenceSpecs';
+import { parseTimelineSpec, parseVideoSpec } from '@/lib/util/fenceSpecs';
 import { parseCardsSpec, parseFindingsSpec } from '@/lib/util/recordSpec';
 import { ChartSvg } from './ChartSvg';
 import { Inline } from './Inline';
@@ -208,6 +208,32 @@ What the video shows
     reference: `\`\`\`video              (YouTube or Vimeo; embedded in privacy mode)
 https://www.youtube.com/watch?v=…
 The growth time-lapse, 14 days in 40 seconds
+\`\`\``,
+  }),
+
+  timeline: defineFence({
+    label: 'Timeline',
+    parse: parseTimelineSpec,
+    render: (spec) => (
+      <ol className={styles.timeline}>
+        {spec.items.map((it, i) => (
+          <li key={i}>
+            <span className={styles.tlDate}>{it.date}</span>
+            <span className={styles.tlText}>
+              <Inline>{it.text}</Inline>
+            </span>
+          </li>
+        ))}
+      </ol>
+    ),
+    snippet: `\`\`\`timeline
+2025 | What happened
+\`\`\`
+`,
+    reference: `\`\`\`timeline           (date | milestone, in order)
+Sep 2024 | First prototype: a single rotating drum
+Mar 2025 | Redesigned after five classroom cohorts
+Jun 2026 | Presented at IDC '26
 \`\`\``,
   }),
 };

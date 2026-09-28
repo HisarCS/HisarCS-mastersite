@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseVideoSpec } from '../../lib/util/fenceSpecs';
+import { parseTimelineSpec, parseVideoSpec } from '../../lib/util/fenceSpecs';
 
 describe('parseVideoSpec', () => {
   const embed = (url: string) => parseVideoSpec(url).ok?.embed;
@@ -37,5 +37,20 @@ describe('parseVideoSpec', () => {
     expect(parseVideoSpec('http://youtu.be/dQw4w9WgXcQ').error).toMatch(/https/);
     expect(parseVideoSpec('https://youtu.be/<script>').error).toMatch(/video id/);
     expect(parseVideoSpec('').error).toMatch(/add a/);
+  });
+});
+
+describe('parseTimelineSpec', () => {
+  it('reads "date | milestone" lines in order', () => {
+    expect(parseTimelineSpec('Sep 2024 | First prototype\n2025 | IDC paper').ok!.items).toEqual([
+      { date: 'Sep 2024', text: 'First prototype' },
+      { date: '2025', text: 'IDC paper' },
+    ]);
+  });
+
+  it('needs both a date and a milestone on every line', () => {
+    expect(parseTimelineSpec('just words').error).toMatch(/date \| milestone/);
+    expect(parseTimelineSpec('2025 |').error).toMatch(/date \| milestone/);
+    expect(parseTimelineSpec('').error).toMatch(/at least one/);
   });
 });

@@ -61,3 +61,28 @@ export function parseVideoSpec(text: string): ParseResult<VideoSpec> {
   }
   return { error: `only YouTube or Vimeo links can be embedded — got ${url.hostname}` };
 }
+
+export interface TimelineSpec {
+  items: { date: string; text: string }[];
+}
+
+/**
+ * ```timeline
+ * Sep 2024 | First prototype, a single rotating drum
+ * 2025 | Redesigned after five classroom cohorts
+ * ```
+ */
+export function parseTimelineSpec(text: string): ParseResult<TimelineSpec> {
+  const items: TimelineSpec['items'] = [];
+  for (const raw of text.split('\n')) {
+    const line = raw.trim();
+    if (!line) continue;
+    const i = line.indexOf('|');
+    const date = i > 0 ? line.slice(0, i).trim() : '';
+    const rest = i > 0 ? line.slice(i + 1).trim() : '';
+    if (!date || !rest) return { error: `every line needs "date | milestone" — got "${line}"` };
+    items.push({ date, text: rest });
+  }
+  if (!items.length) return { error: 'add at least one "date | milestone" line' };
+  return { ok: { items } };
+}
