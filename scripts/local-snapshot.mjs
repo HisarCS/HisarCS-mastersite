@@ -52,7 +52,10 @@ const read = async (path) => {
 
 console.log(`Reading public data from ${prodUrl} …`);
 const rows = {
-  people: await read('people?select=*&is_published=eq.true'),
+  // named columns: anon may not read user_id (migration 20260928120000)
+  people: await read(
+    'people?select=id,public_id,full_name,graduation_year,bio,avatar_url,avatar_color,resume_url,github_username,is_published,created_at,updated_at&is_published=eq.true',
+  ),
   fields: await read('fields?select=id,name,created_by'),
   person_fields: await read('person_fields?select=*'),
   research: await read('research?select=*&is_published=eq.true'),
