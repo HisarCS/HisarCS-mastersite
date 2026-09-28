@@ -1,3 +1,5 @@
+import { safeUrl } from './html';
+
 /**
  * Sized avatar URL for a given display need. `px` is the largest physical size
  * the image renders at: CSS size × device pixel ratio (assume 2× retina), so a
@@ -191,4 +193,21 @@ export async function optimizeImage(
   return new Promise<Blob>((res, rej) =>
     out.toBlob((b) => (b ? res(b) : rej(new Error('image encode failed'))), 'image/jpeg', quality),
   );
+}
+
+/**
+ * An image `src` from a research page's markdown → the URL to load:
+ * "/research/otto/hero-w2400.jpg" is a site asset (curated write-ups, gets the
+ * base path), "https://…" is external (sanitized), and anything else is an
+ * uploaded file's storage path. Protocol-relative "//host" is refused.
+ */
+export function resolveMediaSrc(
+  src: string,
+  basePath: string,
+  storageUrl: (path: string) => string,
+): string {
+  if (src.startsWith('//')) return '';
+  if (src.startsWith('/')) return `${basePath}${src}`;
+  if (/^https?:\/\//.test(src)) return safeUrl(src);
+  return storageUrl(src);
 }

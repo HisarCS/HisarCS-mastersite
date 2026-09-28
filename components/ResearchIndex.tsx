@@ -2,13 +2,24 @@
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import Link from 'next/link';
-import { listResearch } from '@/lib/data/research';
+import { useRouter } from 'next/navigation';
+import { listResearch, researchContentSrc } from '@/lib/data/research';
 import { listResearchEntries } from '@/lib/data/researchEntries';
 import { mockResearchEntries } from '@/lib/data/mock';
-import { currentEnv } from '@/lib/env';
+import { mocksEnabled } from '@/lib/env';
+import { markdownToText } from '@/lib/util/html';
 import { avatarSrcSet, researchImgSrcSet, thumbUrl } from '@/lib/util/media';
-import { hashStr } from '@/lib/util/hash';
+import { initials, paletteColor as colorFor } from '@/lib/util/palette';
 import type { ResearchEntryCard } from '@/lib/domain/types';
+import {
+  researchFacets,
+  researchTagFilter,
+  researchText,
+  type ResearchDirItem,
+} from '@/lib/domain/directoryFacets';
+import { Explorer, type ExplorerApi } from './explorer/Explorer';
+import type { InterestTable } from '@/lib/domain/interests';
+import { useInterestTable } from './useInterestTable';
 import { SiteHeader } from './SiteHeader';
 import styles from './ResearchIndex.module.css';
 
@@ -18,25 +29,12 @@ const fmtDate = (iso: string | null): string =>
     ? new Date(`${iso}T00:00:00`).toLocaleDateString('en', { month: 'short', year: 'numeric' })
     : '';
 
-const COLORS = ['#e8542f', '#2f6fe8', '#28a06d', '#c4a11f', '#9048c8', '#d2447e'];
-const colorFor = (id: string) => COLORS[hashStr(id) % COLORS.length]!;
-const initials = (s: string) =>
-  (s || '?')
-    .trim()
-    .split(/\s+/)
-    .map((w) => w[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase();
-
-interface Card {
+interface Card extends ResearchDirItem {
   slug: string;
-  title: string;
   subtitle: string;
   /** "Jun 2026" — right-aligned on the venue line (curated venues carry
    *  their year in the venue string instead) */
-  date?: string;
-  summary?: string;
+  dateLabel?: string;
   thumb: string | null;
   color: string;
   tags: string[];
@@ -45,11 +43,12 @@ interface Card {
 /**
  * One card's tag row. Tags never wrap: overflow scrolls horizontally (trackpad,
  * touch, or plain mouse wheel — vertical wheel delta is translated while the
- * cursor is over the row). Each tag is a button (no action yet) that highlights
- * in its own category color on hover. Rendered even when empty so every card
- * keeps exactly the same height.
+ * cursor is over the row). Each tag is a filter button: an interest tag filters
+ * by its interest area ("Parametric CAD" → Parametric Design), a venue tag
+ * ("IDC '26") by its conference. Rendered even when
+ * empty so every card keeps exactly the same height.
  */
-function TagRow({ tags }: { tags: string[] }) {
+function TagRow({ tags, api, areas }: { tags: string[]; api: ExplorerApi; areas: InterestTable }) {
   const ref = useRef<HTMLDivElement>(null);
   // gradient fades hint at hidden tags: right fade while more waits ahead,
   // left fade once scrolled — neither on rows that fit
@@ -84,15 +83,65 @@ function TagRow({ tags }: { tags: string[] }) {
   );
   return (
     <div className={cls} ref={ref}>
-      {tags.map((t) => (
-        <button
-          key={t}
-          type="button"
-          className={styles.chip}
-          style={{ '--chip-c': colorFor(t) } as CSSProperties}
-        >
-          {t}
-        </button>
+      {tags.map((t) => {
+        const { facet, value } = researchTagFilter(t, areas);
+        const on = api.isOn(facet, value);
+        return (
+          <button
+            key={t}
+            type="button"
+            aria-pressed={on}
+            title={on ? `Remove the ${value} filter` : `Show only ${value}`}
+            className={`${styles.chip} ${on ? styles.chipOn : ''}`}
+            style={{ '--chip-c': colorFor(t) } as CSSProperties}
+            onClick={() => api.toggle(facet, value)}
+          >
+            {t}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/** stable per-card keys for the graph (module-level so memoised networks keep) */
+const cardId = (c: Card) => c.slug;
+const cardTitle = (c: Card) => c.title;
+
+function Grid({ cards, api, areas }: { cards: Card[]; api: ExplorerApi; areas: InterestTable }) {
+  return (
+    <div className={styles.grid}>
+      {cards.map((r) => (
+        // the card is a div, not a link: tag buttons can't nest inside <a>
+        <div key={r.slug} className={styles.card}>
+          <Link href={`/research?id=${encodeURIComponent(r.slug)}`} className={styles.cardLink}>
+            <div className={styles.thumb} style={{ background: r.color }}>
+              {r.thumb ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={thumbUrl(r.thumb, 512) ?? ''}
+                  srcSet={avatarSrcSet(r.thumb) ?? researchImgSrcSet(r.thumb)}
+                  sizes="(max-width: 640px) 94vw, 330px"
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                  className={styles.thumbImg}
+                />
+              ) : (
+                <span className={styles.thumbInitials}>{initials(r.title)}</span>
+              )}
+            </div>
+            <div className={styles.body}>
+              <div className={styles.venueRow}>
+                <div className={styles.venue}>{r.subtitle}</div>
+                {r.dateLabel && <div className={styles.date}>{r.dateLabel}</div>}
+              </div>
+              <div className={styles.cardTitle}>{r.title}</div>
+              <p className={styles.desc}>{r.summary}</p>
+            </div>
+          </Link>
+          <TagRow tags={r.tags} api={api} areas={areas} />
+        </div>
       ))}
     </div>
   );
@@ -101,8 +150,31 @@ function TagRow({ tags }: { tags: string[] }) {
 /** Research index — curated write-ups plus member-created (DB) research, each
  *  card linking to its own /research?id= page. Replaces public/research.html. */
 export function ResearchIndex() {
+  const router = useRouter();
   const curated = useMemo(() => listResearch(), []);
   const [entries, setEntries] = useState<ResearchEntryCard[]>([]);
+  // interest areas as admins filed them (built-in until the DB answers)
+  const areas = useInterestTable();
+  const facets = useMemo(() => researchFacets(areas), [areas]);
+  // the curated write-ups' text, so search reaches inside them
+  const [bodies, setBodies] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    let alive = true;
+    void Promise.all(
+      curated.map(async (r) => {
+        try {
+          const res = await fetch(researchContentSrc(r));
+          return [r.slug, res.ok ? markdownToText(await res.text()) : ''] as const;
+        } catch {
+          return [r.slug, ''] as const; // search still covers title + summary
+        }
+      }),
+    ).then((pairs) => alive && setBodies(Object.fromEntries(pairs)));
+    return () => {
+      alive = false;
+    };
+  }, [curated]);
 
   useEffect(() => {
     document.title = 'Research — ideaLab';
@@ -110,7 +182,7 @@ export function ResearchIndex() {
     void (async () => {
       const e = await listResearchEntries();
       if (!alive) return;
-      setEntries(e.length ? e : currentEnv() === 'local' ? mockResearchEntries() : []);
+      setEntries(e.length ? e : mocksEnabled() ? mockResearchEntries() : []);
     })();
     return () => {
       alive = false;
@@ -122,7 +194,10 @@ export function ResearchIndex() {
       slug: r.slug,
       title: r.title,
       subtitle: r.venue ?? 'Research',
+      venue: r.venue ?? null,
+      date: r.startDate ?? null,
       summary: r.summary,
+      body: bodies[r.slug],
       thumb: r.thumb ?? null,
       color: colorFor(r.slug),
       tags: r.tags,
@@ -134,14 +209,16 @@ export function ResearchIndex() {
         slug: e.publicId,
         title: e.title,
         subtitle: e.venue || 'ideaLab research',
-        date: fmtDate(e.presentedOn) || undefined,
+        venue: e.venue,
+        date: e.presentedOn,
+        dateLabel: fmtDate(e.presentedOn) || undefined,
         summary: e.description || undefined,
         thumb: e.avatarUrl,
         color: colorFor(e.id),
         tags: e.tags,
       }));
     return [...curatedCards, ...entryCards];
-  }, [curated, entries]);
+  }, [curated, entries, bodies]);
 
   return (
     <>
@@ -156,43 +233,20 @@ export function ResearchIndex() {
         <div className={styles.stats}>
           <span className={styles.stat}>{cards.length} RESEARCH</span>
           <span className={styles.stat}>2019–2026</span>
-          <span className={styles.stat}>IDC · SCF · HRI · HCII · CONSTRUCTIONISM</span>
+          <span className={styles.stat}>IDC · AIED · SCF · HRI · HCII · CONSTRUCTIONISM</span>
         </div>
 
-        <div className={styles.grid}>
-          {cards.map((r) => (
-            // the card is a div, not a link: tag buttons can't nest inside <a>
-            <div key={r.slug} className={styles.card}>
-              <Link href={`/research?id=${encodeURIComponent(r.slug)}`} className={styles.cardLink}>
-                <div className={styles.thumb} style={{ background: r.color }}>
-                  {r.thumb ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={thumbUrl(r.thumb, 512) ?? ''}
-                      srcSet={avatarSrcSet(r.thumb) ?? researchImgSrcSet(r.thumb)}
-                      sizes="(max-width: 640px) 94vw, 330px"
-                      alt=""
-                      loading="lazy"
-                      decoding="async"
-                      className={styles.thumbImg}
-                    />
-                  ) : (
-                    <span className={styles.thumbInitials}>{initials(r.title)}</span>
-                  )}
-                </div>
-                <div className={styles.body}>
-                  <div className={styles.venueRow}>
-                    <div className={styles.venue}>{r.subtitle}</div>
-                    {r.date && <div className={styles.date}>{r.date}</div>}
-                  </div>
-                  <div className={styles.cardTitle}>{r.title}</div>
-                  <p className={styles.desc}>{r.summary}</p>
-                </div>
-              </Link>
-              <TagRow tags={r.tags} />
-            </div>
-          ))}
-        </div>
+        <Explorer
+          items={cards}
+          facets={facets}
+          text={researchText}
+          itemId={cardId}
+          itemLabel={cardTitle}
+          onOpen={(r) => router.push(`/research?id=${encodeURIComponent(r.slug)}`)}
+          noun="research"
+          searchHint="title, interest, conference…"
+          renderGrid={(list, api) => <Grid cards={list} api={api} areas={areas} />}
+        />
       </main>
       <footer className={styles.footer}>Hisar School · ideaLab</footer>
     </>

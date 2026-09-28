@@ -1,0 +1,309 @@
+/* Directory explorer — search, group, filter, grid/graph. House tokens only. */
+
+.explorer {
+  margin-bottom: 10px;
+}
+
+.controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.search {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-size: 15px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--ink);
+}
+.search:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* segmented control (view, group by) */
+.segment {
+  display: inline-flex;
+  flex-wrap: wrap;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+  padding: 3px;
+  gap: 2px;
+}
+.segment button {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  background: none;
+  color: var(--muted);
+  padding: 6px 12px;
+  border-radius: 7px;
+  cursor: pointer;
+}
+.segment button:hover {
+  color: var(--ink);
+}
+.segment .segOn {
+  background: var(--ink);
+  color: var(--bg);
+}
+.segment .segOn:hover {
+  color: var(--bg);
+}
+
+.groupRow,
+.filterRow {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.rowLabel {
+  flex: 0 0 76px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.filters {
+  margin: 12px 0 6px;
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.chip {
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 99px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  background: var(--card);
+  cursor: pointer;
+}
+.chip:hover {
+  color: var(--chip-c, var(--accent));
+  border-color: var(--chip-c, var(--accent));
+}
+.chipOn,
+.chipOn:hover {
+  color: var(--card);
+  background: var(--chip-c, var(--accent));
+  border-color: var(--chip-c, var(--accent));
+}
+.count {
+  font-weight: 500;
+  opacity: 0.7;
+  margin-left: 3px;
+  font-size: 0.9em;
+}
+.more {
+  font: inherit;
+  font-size: 12px;
+  border: none;
+  background: none;
+  color: var(--accent);
+  cursor: pointer;
+  padding: 4px 6px;
+}
+
+.status {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  margin: 16px 0 18px;
+}
+.clear {
+  font: inherit;
+  border: none;
+  background: none;
+  color: var(--accent);
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+.empty {
+  padding: 48px 0;
+  text-align: center;
+  color: var(--muted);
+}
+
+/* grouped grid: the yearbook's look — a ruled row per value, the rule in the
+   wordmark's accent orange (matches /members' class rows) */
+.section {
+  border-top: 1px solid var(--accent);
+  padding: 20px 0 26px;
+}
+.section:first-of-type {
+  border-top: none;
+  padding-top: 0;
+}
+.sectionHeading {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 12.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.11em;
+  color: var(--muted);
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+/* -- network graph ----------------------------------------------------------- */
+/* colors come from the theme table (graphThemes.ts) as --g-* properties, so
+   the SVG and the GPU layer always agree */
+.graphWrap {
+  position: relative;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--g-bg);
+  overflow: hidden;
+  transition: background-color 0.3s ease;
+}
+.graph {
+  position: relative; /* above the GPU canvas */
+  display: block;
+  width: 100%;
+  height: auto;
+  touch-action: none; /* we handle drag/pinch-free panning ourselves */
+  cursor: grab;
+  user-select: none;
+}
+.graph:active {
+  cursor: grabbing;
+}
+.gpuCanvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+/* animoo draws links + dots underneath; the SVG keeps labels, hit areas,
+   rings, and focus. (Shown again while a PNG is being made.) */
+.gpuOn:not([data-exporting]) .link,
+.gpuOn:not([data-exporting]) .item,
+.gpuOn:not([data-exporting]) .hub {
+  opacity: 0;
+}
+.link {
+  stroke: var(--g-link);
+  transition: stroke 0.15s;
+}
+.linkOn {
+  stroke: var(--g-link-on);
+}
+.node {
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.node:focus-visible {
+  outline: none;
+}
+.node:focus-visible .hit {
+  stroke: var(--g-link-on);
+  stroke-width: 2;
+}
+.dim {
+  opacity: 0.15;
+}
+.hit {
+  fill: transparent;
+}
+.item {
+  fill: var(--g-item);
+  stroke: var(--g-bg);
+  stroke-width: 1.5;
+}
+.hub {
+  fill: var(--g-hub);
+  stroke: var(--g-bg);
+  stroke-width: 2;
+}
+.ring {
+  fill: none;
+  stroke: var(--g-hub-label);
+  stroke-width: 2;
+}
+.hubLabel,
+.itemLabel {
+  pointer-events: none;
+  paint-order: stroke;
+  stroke: var(--g-bg);
+  stroke-width: 3.5px;
+  stroke-linejoin: round;
+  transition: fill 0.3s ease;
+}
+.hubLabel {
+  font-weight: 700;
+  fill: var(--g-hub-label);
+}
+.itemLabel {
+  fill: var(--g-label);
+}
+.zoom {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.zoom button,
+.save {
+  font: inherit;
+  border: 1px solid var(--g-link);
+  border-radius: 8px;
+  background: var(--g-bg);
+  color: var(--g-hub-label);
+  cursor: pointer;
+}
+.zoom button {
+  width: 30px;
+  height: 30px;
+  font-size: 16px;
+  line-height: 1;
+}
+.save {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 10px;
+}
+.zoom button:hover,
+.save:hover {
+  border-color: var(--g-link-on);
+}
+
+@media (max-width: 640px) {
+  .controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .groupRow,
+  .filterRow {
+    flex-direction: column;
+    gap: 6px;
+  }
+  .rowLabel {
+    flex-basis: auto;
+  }
+}

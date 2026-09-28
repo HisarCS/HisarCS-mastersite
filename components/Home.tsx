@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { listMembers } from '@/lib/data/members';
 import { mockMembers } from '@/lib/data/mock';
-import { currentEnv } from '@/lib/env';
+import { mocksEnabled } from '@/lib/env';
 import type { MemberCard } from '@/lib/domain/types';
 import { PixelMark } from './PixelMark';
 import { SiteHeader } from './SiteHeader';
@@ -20,7 +20,7 @@ export function Home() {
     void (async () => {
       const m = await listMembers();
       if (!alive) return;
-      setMembers(m.length ? m : currentEnv() === 'local' ? mockMembers() : []);
+      setMembers(m.length ? m : mocksEnabled() ? mockMembers() : []);
     })();
     return () => {
       alive = false;

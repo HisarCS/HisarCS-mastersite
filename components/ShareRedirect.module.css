@@ -1,0 +1,33 @@
+/* The share page is only seen without JavaScript (or for a blink before the
+   redirect): a plain, centered summary in house type. */
+.main {
+  max-width: 620px;
+  margin: 18vh auto 0;
+  padding: 0 24px;
+}
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 10px;
+}
+.title {
+  font-size: 36px;
+  letter-spacing: -0.02em;
+}
+.venue {
+  color: var(--muted);
+  font-weight: 600;
+  margin-top: 6px;
+}
+.desc {
+  margin: 16px 0 22px;
+  font-size: 17px;
+  line-height: 1.55;
+}
+.open {
+  color: var(--accent);
+  font-weight: 600;
+}

@@ -26,3 +26,17 @@ export function safeUrl(u: unknown): string {
   if (/^[a-z][a-z0-9+.-]*:/i.test(s) && !/^(?:https?|mailto):/i.test(s)) return '#';
   return s;
 }
+
+/** Markdown → plain words for search: keeps text, image alt, link labels, and
+ *  fence contents; drops markup, image paths, and URLs. */
+export function markdownToText(md: string): string {
+  return md
+    .replace(/^```.*$/gm, ' ') // fence markers
+    .replace(/^\s*\|?[\s:|-]+\|[\s:|-]*$/gm, ' ') // table separator rows
+    .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1') // images → alt
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1') // links → label
+    .replace(/https?:\/\/\S+/g, ' ')
+    .replace(/[#>*_`|]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}

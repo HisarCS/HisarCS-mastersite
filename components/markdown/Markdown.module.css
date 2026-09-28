@@ -236,6 +236,279 @@
   margin-right: 5px;
 }
 
+/* -- tiles fence: big-number grid, hairline gutters ------------------------ */
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  margin: 6px 0 18px;
+  clear: both;
+}
+.tile {
+  background: var(--card);
+  padding: 20px 18px;
+}
+.tileValue {
+  font-size: 25px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+.tileLabel {
+  margin-top: 6px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+/* -- findings fence: titled results, a tone dot each ---------------------- */
+.article .findings {
+  list-style: none;
+  padding: 0;
+  margin: 6px 0 18px;
+  clear: both;
+}
+.article .finding {
+  position: relative;
+  padding: 16px 0 16px 30px;
+  margin: 0;
+  border-top: 1px solid var(--line);
+}
+.article .finding:first-child {
+  border-top: none;
+}
+.finding::before {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 23px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.finding.note::before {
+  background: var(--blue);
+}
+.finding.issue::before {
+  background: var(--muted);
+}
+.article .finding h4 {
+  font-size: 15.5px;
+  margin: 0 0 4px;
+}
+.article .finding p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 15px;
+}
+
+/* -- cards fence: side-by-side cards, tone follows position -------------- */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 16px;
+  margin: 6px 0 18px;
+  clear: both;
+}
+.card {
+  --tone: var(--gold);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 20px 18px;
+}
+.card:nth-child(3n + 2) {
+  --tone: var(--blue);
+}
+.card:nth-child(3n) {
+  --tone: var(--accent);
+}
+.cardLabel {
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--tone) 80%, black);
+}
+.article .card h4 {
+  font-size: 17px;
+  margin: 0;
+}
+.article .card p {
+  margin: 0;
+  font-size: 14.5px;
+  color: var(--muted);
+}
+.cardCode {
+  margin-top: auto;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--tone) 18%, white);
+  color: color-mix(in srgb, var(--tone) 75%, black);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* -- video fence: 16:9 privacy-mode embed ---------------------------------- */
+.video {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #111;
+}
+.video iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+/* -- timeline fence: dated milestones on a thin rail ---------------------- */
+.article .timeline {
+  list-style: none;
+  padding: 0;
+  margin: 6px 0 18px;
+  clear: both;
+}
+.article .timeline li {
+  position: relative;
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 18px;
+  padding: 0 0 16px;
+  margin: 0;
+}
+/* the rail and its dot sit between the date and the text */
+.article .timeline li::before {
+  content: '';
+  position: absolute;
+  left: 119px;
+  top: 7px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.article .timeline li::after {
+  content: '';
+  position: absolute;
+  left: 123px;
+  top: 18px;
+  bottom: -4px;
+  width: 1px;
+  background: var(--line);
+}
+.article .timeline li:last-child::after {
+  display: none;
+}
+.tlDate {
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-align: right;
+  padding-top: 2px;
+}
+.tlText {
+  padding-left: 14px;
+}
+@media (max-width: 640px) {
+  .article .timeline li {
+    grid-template-columns: 1fr;
+    gap: 2px;
+    padding-left: 22px;
+  }
+  .article .timeline li::before {
+    left: 0;
+  }
+  .article .timeline li::after {
+    left: 4px;
+  }
+  .tlDate {
+    text-align: left;
+  }
+  .tlText {
+    padding-left: 0;
+  }
+}
+
+/* -- compare fence: before/after slider ------------------------------------ */
+.compare {
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--line);
+  user-select: none;
+}
+.compareImg {
+  display: block;
+  width: 100%;
+}
+.compareTop {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  object-fit: cover;
+}
+.compareLine {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  margin-left: -1px;
+  background: #fff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+}
+.compareTag {
+  position: absolute;
+  top: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #fff;
+  background: rgba(20, 20, 20, 0.55);
+  padding: 3px 8px;
+  border-radius: 99px;
+  pointer-events: none;
+}
+.compareBefore {
+  left: 10px;
+}
+.compareAfter {
+  right: 10px;
+}
+/* the whole image is the slider's hit area; the thumb is the white line */
+.compareRange {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: ew-resize;
+}
+.compareRange:focus-visible + .compareLine,
+.compare:has(.compareRange:focus-visible) .compareLine {
+  background: var(--accent);
+}
+
 /* -- fence errors (author feedback, honest not silent) ---------------------- */
 .fenceError {
   border: 1.5px dashed var(--danger);

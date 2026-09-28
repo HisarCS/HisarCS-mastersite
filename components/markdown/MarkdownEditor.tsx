@@ -2,21 +2,12 @@
 
 import { useRef, useState } from 'react';
 import type { ResearchFile } from '@/lib/domain/types';
+import { FENCES } from './fences';
 import { MarkdownPage } from './MarkdownPage';
 import styles from './Editor.module.css';
 
+/** Plain-markdown helpers; fence snippets come from the FENCES registry. */
 const SNIPPETS: Record<string, string> = {
-  chart: `\`\`\`chart
-type: bar
-question: What does this chart answer?
-x: A, B, C
-Series 1: 1, 2, 3
-\`\`\`
-`,
-  stats: `\`\`\`stats
-42 | what this number is
-\`\`\`
-`,
   equation: `$$
 E = mc^2
 $$
@@ -26,6 +17,11 @@ $$
 | cell   | cell   |
 `,
 };
+
+/** Every fence's annotated example, in registry order. */
+const FENCE_REFERENCE = Object.values(FENCES)
+  .map((def) => def.reference)
+  .join('\n\n');
 
 /**
  * Markdown editor for research pages: Write/Preview tabs, insert helpers, and
@@ -101,22 +97,17 @@ export function MarkdownEditor({
           >
             Image ▾
           </button>
-          <button
-            type="button"
-            className={styles.ins}
-            disabled={disabled}
-            onClick={() => insert(SNIPPETS.chart!)}
-          >
-            Chart
-          </button>
-          <button
-            type="button"
-            className={styles.ins}
-            disabled={disabled}
-            onClick={() => insert(SNIPPETS.stats!)}
-          >
-            Stats
-          </button>
+          {Object.entries(FENCES).map(([lang, def]) => (
+            <button
+              key={lang}
+              type="button"
+              className={styles.ins}
+              disabled={disabled}
+              onClick={() => insert(def.snippet)}
+            >
+              {def.label}
+            </button>
+          ))}
           <button
             type="button"
             className={styles.ins}
@@ -187,18 +178,7 @@ An image on its own line gets its caption; two on one line render side by side.
 
 Math: $\\alpha = 0.68$ inline, or a $$ block on its own lines.
 
-\`\`\`chart
-type: bar            (or: line)
-question: The one question this chart answers
-x: 250 Hz, 1 kHz, 2 kHz
-Panel: 0.31, 0.55, 0.68
-Foam: 0.42, 0.61, 0.72
-\`\`\`
-
-\`\`\`stats
-€4.10 | per panel
-14 | days grow time
-\`\`\`
+${FENCE_REFERENCE}
 
 Video: host it on YouTube/Drive (unlisted is fine) and link it:
 [Watch the growth time-lapse](https://…)`}</pre>

@@ -499,6 +499,33 @@ shape is read as null (its entries fall back to `description`; none existed in
 production). `page.version` bumps only on breaking shape changes, paired with a
 read-time migration in `lib/domain/page.ts`.
 
+**Amendment (2026-09-28) — fence registry + three layout fences.** Comparing
+the curated Otto write-up with its Markdown replica showed the text survived
+but three layouts flattened: the side-by-side mode cards, the big-number
+pilot tiles, and the toned findings list. They are now fences — ` ```cards `,
+` ```tiles `, ` ```findings ` — and every fence lives in one registry
+(`components/markdown/fences.tsx`: parser + renderer + editor snippet +
+syntax-reference text per entry). The renderer, the editor's insert buttons,
+and its syntax reference all read that table, so a new fence is one entry plus
+a pure, unit-tested parser. `tiles` reuses the stats grammar; `cards` and
+`findings` share `lib/util/recordSpec.ts` (`# label | Title`, body lines,
+`> ` snippet lines). Colors stay out of authors' hands: card tones follow
+position, finding tones are a closed set (good · note · issue).
+
+**Amendment (2026-09-28) — curated write-ups use it too; three more fences.**
+The eight curated write-ups were preserved HTML (data-URI images, their own
+CSS) injected into a Shadow DOM — a second renderer, unsearchable, one large
+blob per page. They are now `public/research/<slug>.md` rendered by the same
+`MarkdownPage`, with images as `…-w{800,1600,2400}.jpg` ladders under
+`public/research/<slug>/` (a leading `/` in an image path means a site asset).
+`scripts/convert-writeups.mjs` did the conversion; each page was compared
+against its original side by side (desktop and mobile) and line by line, then
+the HTML was deleted. New fences: ` ```timeline ` (date | milestone),
+` ```video ` (YouTube/Vimeo only, embedded from youtube-nocookie / Vimeo dnt;
+any other host is a fence error, never an iframe), and ` ```compare `
+(before/after slider on a range input). ` ```stats ` lines without `|` are
+plain chips; card and finding bodies render inline markdown.
+
 One clarification to the append-only migration rule (ADR-0003) came out of this
 pivot: the applied migration that added the column
 (`20260728090000_research_page_blocks.sql`) described the v1 block format in
@@ -506,3 +533,97 @@ its comments. **Comment-only corrections to applied migrations are allowed** —
 comments never execute, so the file still matches what production ran — and
 that comment has been corrected in place. The rule stays absolute for
 executable SQL: never edit statements in an applied migration; ship a new one.
+
+## ADR-0020 — Directory explorer: facet tables, and a graph without a graph library
+
+**Status:** Accepted 2026-09-28
+
+**Context:** Reviewing the site "as a busy professor who has never heard of
+us", the team wanted visitors to reach work by the axis they care about —
+interest (HCI, maker projects, digital fabrication…), conference, year — and
+proposed an Obsidian-style network view of how the lab's work connects. The
+same need exists for members (interest, class, cohort).
+
+**Decision:** Both directories render one generic `Explorer`
+(`components/explorer/`): search, filter chips, "Group by" sections, and a
+Grid/Graph toggle. Everything it offers is read from a **facet table** per
+directory (`lib/domain/directoryFacets.ts`) — each facet is a key, a label,
+and a function from an item to its values, optionally with a value order.
+Adding a way to slice the lab (author, lab room, …) is one entry; search,
+chips, sections, and the graph pick it up. Facet values compare
+case-insensitively, since curated tags and `fields` rows disagree on case.
+The graph is bipartite — items link to the hub of every value of the grouped
+facet — laid out by a small seeded force simulation in `lib/graph/network.ts`
+(pure, unit-tested) and drawn as plain SVG.
+
+**Consequences:** No new dependency (d3-force/cytoscape were the alternatives;
+~100 lines of layout code was cheaper than a library and keeps the bundle and
+stack unchanged). The layout is O(n²) per step — fine at lab scale (hundreds
+of nodes), revisit past ~1 000. Filters live in component state, so a
+filtered view isn't shareable by URL yet. The yearbook is now the members
+explorer grouped by class, so its section style lives in the explorer and
+research sections share it.
+
+**Amendment (2026-09-28) — interest areas, graph themes, animoo.**
+Raw tags split the research graph into ~20 near-duplicate hubs ("Parametric
+CAD" vs "Parametric Design"). The research Interest facet now groups by six
+umbrella areas from one editable table (`lib/domain/interests.ts`); cards and
+search keep the original tags. The graph gained a theme table
+(`components/explorer/graphThemes.ts`: Paper, Obsidian) whose colors feed both
+the SVG and the GPU layer, and a Save-PNG export. For the Obsidian theme,
+**animoo** (JSR `@outercloud/animoo`, WebGPU) now draws and animates links and
+dots under the SVG — build-in and hover tweens; the SVG keeps labels, hit
+areas, focus, and keyboard, and draws everything itself when WebGPU is absent
+or fails. This supersedes "no new dependency" above: animoo is the one
+addition, loaded on demand only (~68 KB gz), wrapped so its render loop stops
+on unmount and survives rebuilds (`GpuGraphLayer.tsx` documents the three
+upstream quirks worked around). The mapping between the SVG frame and
+animoo's fixed 1920×1200 world is pure and tested against a replica of its
+shader (`lib/graph/gpuSpace.ts`).
+
+## ADR-0021 — Share pages for link previews
+
+**Status:** Accepted 2026-09-28
+
+**Context:** Research pages are one client-rendered file addressed by query
+string (`/research?id=…`, a static export). Link-preview bots (Slack,
+WhatsApp, iMessage, LinkedIn) don't run JavaScript, so every research link
+previewed as a bare "ideaLab".
+
+**Decision:** Every research entry gets a static share page, `/r/<slug>/`,
+generated at build (`app/r/[slug]`): its title, summary, and thumbnail as
+OpenGraph/Twitter tags, `og:url` pointing at the share page itself (crawlers
+that follow `og:url` must land on the tags), a visible summary, and a
+JavaScript redirect to the real page for people. Curated entries always get
+one; published member entries do when the build sets `SHARE_PAGES_FROM_DB=1`
+(the deploy does; it reads with the public anon key, so local and test builds
+stay offline). A nightly scheduled deploy picks up entries published since
+the last push. The Share button copies the share link, falling back to the
+page link while none exists. `sitemap.xml` lists pages and share pages.
+
+**Consequences:** Rich previews without a server. A new entry previews
+generically for up to a day. Profiles get no share pages (live data would go
+stale in static HTML). `robots.txt` is emitted but only honored once the site
+is at a domain root.
+
+## ADR-0022 — Admin panel; interest areas in the database
+
+**Status:** Accepted 2026-09-28
+
+**Context:** Publishing someone else's profile, managing admins, and re-filing
+tags into interest areas (ADR-0020) all needed Studio or a code change.
+
+**Decision:** `/admin`, shown to allowlisted admins (the header's Admin link
+asks `is_admin()`), with three tabs: publish queue, admin allowlist, interest
+areas. Interest areas move to a table, `interest_areas` (area, tag, sort;
+everyone reads, `is_admin()` writes), seeded from the code's table — a unit
+test keeps the two identical at migration time, and the code table remains
+the fallback when the database can't be read. The explorer and every tag link
+read the same table (`useInterestTable`), so a link always names an area the
+explorer knows. The panel guards against removing yourself or the last admin.
+
+**Consequences:** The database stays the only real gate — all of this was
+verified on the local stack by impersonating anon, a member, and an admin.
+Migration `20260928130000_interest_areas.sql` (and
+`20260928120000_people_anon_columns.sql`, which stops anon reading
+`people.user_id`) must be pushed with the deploy that ships this code.
