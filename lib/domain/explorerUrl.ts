@@ -55,3 +55,8 @@ export function decodeExplorerState(
     style: style && opts.styles.includes(style) ? style : opts.defaults.style,
   };
 }
+
+/** A directory page filtered to one facet value: /research?interest=Robotics. */
+export function explorerLink(path: string, facet: string, value: string): string {
+  return `${path}?${new URLSearchParams({ [facet]: value })}`;
+}
