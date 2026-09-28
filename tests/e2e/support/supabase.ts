@@ -122,6 +122,18 @@ export interface MockOptions {
   researchEntry?: Record<string, unknown> | null;
   /** Rows for the fields table (onboarding/dashboard chips). Default []. */
   fields?: { id: number; name: string; created_by: string | null }[];
+  /** is_admin() for the signed-in session. Default false. */
+  isAdmin?: boolean;
+  /** admin_github_logins (stateful: add/remove update later reads). */
+  admins?: string[];
+  /** Unpublished people / draft research for the admin publish queue (stateful). */
+  unpublishedPeople?: {
+    id: string;
+    public_id: string;
+    full_name: string;
+    graduation_year: number | null;
+  }[];
+  draftResearch?: { id: string; public_id: string; title: string }[];
   /** interest_areas rows (admin-edited areas). Default [] → built-in table. */
   interestAreas?: { area: string; tag: string; sort: number }[];
   /** verify-org-member response: a verdict, or an error status. */
@@ -207,7 +219,20 @@ export async function seedSession(
  * flows (create profile → onboarding → dashboard, publish → unpublish) work.
  */
 export async function mockSupabase(page: Page, opts: MockOptions = {}): Promise<SupabaseMock> {
-  const state = { myProfile: opts.myProfile ?? null };
+  const state = {
+    myProfile: opts.myProfile ?? null,
+    admins: [...(opts.admins ?? [])],
+    people: [...(opts.unpublishedPeople ?? [])],
+    drafts: [...(opts.draftResearch ?? [])],
+    areas: [...(opts.interestAreas ?? [])],
+  };
+  /** PostgREST `col=eq.value` filters of a request */
+  const eqs = (u: URL) =>
+    Object.fromEntries(
+      [...u.searchParams.entries()]
+        .filter(([, v]) => v.startsWith('eq.'))
+        .map(([k, v]) => [k, v.slice(3)]),
+    );
   const requests: { method: string; path: string }[] = [];
 
   await page.route(`${SUPA}/**`, async (route) => {
@@ -243,11 +268,47 @@ export async function mockSupabase(page: Page, opts: MockOptions = {}): Promise<
     if (path === '/rest/v1/rpc/delete_my_account')
       return route.fulfill({ status: 204, headers: CORS });
     if (path === '/rest/v1/rpc/is_public_id_available') return fulfillJson(route, true);
+    if (path === '/rest/v1/rpc/is_admin') return fulfillJson(route, opts.isAdmin ?? false);
+
+    // ---- admin tables ----
+    if (path === '/rest/v1/admin_github_logins') {
+      if (method === 'GET')
+        return fulfillJson(
+          route,
+          state.admins.map((github_login) => ({ github_login })),
+        );
+      if (method === 'POST') {
+        const { github_login } = req.postDataJSON() as { github_login: string };
+        state.admins.push(github_login);
+        return route.fulfill({ status: 201, headers: CORS });
+      }
+      if (method === 'DELETE') {
+        state.admins = state.admins.filter((a) => a !== eqs(url).github_login);
+        return route.fulfill({ status: 204, headers: CORS });
+      }
+    }
 
     // ---- tables ----
     if (path === '/rest/v1/people_directory') return fulfillJson(route, opts.directory ?? []);
-    if (path === '/rest/v1/interest_areas' && method === 'GET')
-      return fulfillJson(route, opts.interestAreas ?? []);
+    if (path === '/rest/v1/interest_areas') {
+      const f = eqs(url);
+      const hit = (r: { area: string; tag: string }) =>
+        (!f.area || r.area === f.area) && (!f.tag || r.tag === f.tag);
+      if (method === 'GET') return fulfillJson(route, state.areas);
+      if (method === 'POST') {
+        state.areas.push(req.postDataJSON() as { area: string; tag: string; sort: number });
+        return route.fulfill({ status: 201, headers: CORS });
+      }
+      if (method === 'PATCH') {
+        const body = req.postDataJSON() as Record<string, unknown>;
+        state.areas = state.areas.map((r) => (hit(r) ? { ...r, ...body } : r));
+        return route.fulfill({ status: 204, headers: CORS });
+      }
+      if (method === 'DELETE') {
+        state.areas = state.areas.filter((r) => !hit(r));
+        return route.fulfill({ status: 204, headers: CORS });
+      }
+    }
 
     if (path === '/rest/v1/fields') {
       if (method === 'GET') return fulfillJson(route, opts.fields ?? []);
@@ -266,6 +327,14 @@ export async function mockSupabase(page: Page, opts: MockOptions = {}): Promise<
       }
       if (method === 'GET' && (q.get('public_id') ?? '').startsWith('eq.')) {
         return opts.person ? fulfillJson(route, opts.person) : fulfillNoRows(route);
+      }
+      if (method === 'GET' && q.get('is_published') === 'eq.false')
+        return fulfillJson(route, state.people);
+      const queued = state.people.find((p) => p.id === eqs(url).id);
+      if (method === 'PATCH' && queued) {
+        // an admin publishing someone else's profile
+        state.people = state.people.filter((p) => p !== queued);
+        return fulfillJson(route, profileRow({ ...queued, is_published: true }));
       }
       if (method === 'POST') {
         // createMinimalProfile — a fresh row with no graduation year yet
@@ -289,7 +358,13 @@ export async function mockSupabase(page: Page, opts: MockOptions = {}): Promise<
     if (path === '/rest/v1/person_fields')
       return fulfillJson(route, [], method === 'POST' ? 201 : 200);
 
+    if (path === '/rest/v1/research' && method === 'PATCH') {
+      state.drafts = state.drafts.filter((d) => d.id !== eqs(url).id);
+      return route.fulfill({ status: 204, headers: CORS });
+    }
     if (path === '/rest/v1/research' && method === 'GET') {
+      if (url.searchParams.get('is_published') === 'eq.false')
+        return fulfillJson(route, state.drafts);
       if ((url.searchParams.get('public_id') ?? '').startsWith('eq.')) {
         return opts.researchEntry ? fulfillJson(route, opts.researchEntry) : fulfillNoRows(route);
       }
