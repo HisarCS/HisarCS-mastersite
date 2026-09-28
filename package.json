@@ -23,6 +23,7 @@
     "db:push": "supabase db push"
   },
   "dependencies": {
+    "@outercloud/animoo": "npm:@jsr/outercloud__animoo@^1.0.3",
     "@supabase/supabase-js": "^2.47.10",
     "katex": "^0.18.1",
     "next": "^15.1.6",
