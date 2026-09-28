@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { parseChartSpec, parseStatsSpec, type ParseResult } from '@/lib/util/chartSpec';
 import { parseCardsSpec, parseFindingsSpec } from '@/lib/util/recordSpec';
 import { ChartSvg } from './ChartSvg';
+import { Inline } from './Inline';
 import styles from './Markdown.module.css';
 
 /**
@@ -115,7 +116,11 @@ Foam: 0.42, 0.61, 0.72
         {spec.items.map((f, i) => (
           <li key={i} className={`${styles.finding} ${styles[f.tone] ?? ''}`}>
             <h4>{f.title}</h4>
-            {f.body && <p>{f.body}</p>}
+            {f.body && (
+              <p>
+                <Inline>{f.body}</Inline>
+              </p>
+            )}
           </li>
         ))}
       </ul>
@@ -143,7 +148,11 @@ Participants noticed lag during quick, successive edits.
           <div key={i} className={styles.card} role="listitem">
             {c.label && <div className={styles.cardLabel}>{c.label}</div>}
             <h4>{c.title}</h4>
-            {c.body && <p>{c.body}</p>}
+            {c.body && (
+              <p>
+                <Inline>{c.body}</Inline>
+              </p>
+            )}
             {c.code && <pre className={styles.cardCode}>{c.code}</pre>}
           </div>
         ))}
