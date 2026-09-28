@@ -447,6 +447,68 @@
   }
 }
 
+/* -- compare fence: before/after slider ------------------------------------ */
+.compare {
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--line);
+  user-select: none;
+}
+.compareImg {
+  display: block;
+  width: 100%;
+}
+.compareTop {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  object-fit: cover;
+}
+.compareLine {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  margin-left: -1px;
+  background: #fff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+}
+.compareTag {
+  position: absolute;
+  top: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #fff;
+  background: rgba(20, 20, 20, 0.55);
+  padding: 3px 8px;
+  border-radius: 99px;
+  pointer-events: none;
+}
+.compareBefore {
+  left: 10px;
+}
+.compareAfter {
+  right: 10px;
+}
+/* the whole image is the slider's hit area; the thumb is the white line */
+.compareRange {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: ew-resize;
+}
+.compareRange:focus-visible + .compareLine,
+.compare:has(.compareRange:focus-visible) .compareLine {
+  background: var(--accent);
+}
+
 /* -- fence errors (author feedback, honest not silent) ---------------------- */
 .fenceError {
   border: 1.5px dashed var(--danger);
