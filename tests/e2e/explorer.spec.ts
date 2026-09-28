@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { mockSupabase, researchEntryRow } from './support/supabase';
+import { directoryRow, mockSupabase, personRow, researchEntryRow } from './support/supabase';
 
 /**
  * The directory explorer (components/explorer) on /research and /members:
@@ -113,5 +113,42 @@ test.describe('research explorer', () => {
     await expect(page.getByText('Nothing matches.')).toBeVisible();
     await page.getByRole('button', { name: 'Clear search and filters' }).click();
     await expect(status(page)).toHaveText('9 research');
+  });
+});
+
+test.describe('members explorer', () => {
+  const MEMBERS = [
+    directoryRow(),
+    directoryRow({
+      id: 'dir-2',
+      public_id: 'grace-hopper',
+      full_name: 'Grace Hopper',
+      cohort: 'alumni',
+      graduation_year: 2020,
+      fields: ['CS & AI'],
+    }),
+  ];
+
+  test('an interest chip filters the yearbook', async ({ page }) => {
+    await mockSupabase(page, { directory: MEMBERS });
+    await page.goto('/members/');
+    await page
+      .getByRole('group', { name: 'Filter by Interest' })
+      .getByRole('button', { name: /^CS & AI/ })
+      .click();
+
+    await expect(page.getByRole('link', { name: /Grace Hopper/ })).toBeVisible();
+    await expect(page.getByRole('link', { name: /Ada Lovelace/ })).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'Class of 2027' })).toHaveCount(0);
+  });
+
+  test('graph view opens a profile on click', async ({ page }) => {
+    await mockSupabase(page, { directory: MEMBERS, person: personRow() });
+    await page.goto('/members/');
+    await page.getByRole('group', { name: 'View' }).getByRole('button', { name: 'Graph' }).click();
+
+    const graph = page.getByRole('group', { name: 'members by class' });
+    await graph.getByRole('link', { name: 'Open Ada Lovelace' }).click();
+    await expect(page).toHaveURL(/\/person\/?\?id=ada-lovelace/);
   });
 });
