@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import { directoryRow, mockSupabase, personRow, researchEntryRow } from './support/supabase';
 
@@ -117,6 +118,36 @@ test.describe('research explorer', () => {
     await expect(chips.getByRole('button', { name: /^robotics/i })).toHaveCount(1);
     await chips.getByRole('button', { name: /^Robotics/ }).click();
     await expect(status(page)).toContainText('5 of 9 research'); // the Robotics area + Sensor Garden
+  });
+
+  test('Obsidian style: dark map, same interactions', async ({ page }) => {
+    await openResearch(page);
+    await page.getByRole('group', { name: 'View' }).getByRole('button', { name: 'Graph' }).click();
+    await page
+      .getByRole('group', { name: 'Graph style' })
+      .getByRole('button', { name: 'Obsidian' })
+      .click();
+
+    const wrap = page.locator('[data-theme="obsidian"]');
+    await expect(wrap).toHaveCSS('background-color', 'rgb(30, 30, 36)');
+    // WebGPU (animoo) or the SVG fallback — either way the graph works
+    await expect(wrap).toHaveAttribute('data-renderer', /^(webgpu|svg)$/);
+    const graph = page.getByRole('group', { name: 'research by interest' });
+    await graph.getByRole('button', { name: 'Filter by Parametric Design' }).click();
+    await expect(status(page)).toContainText('2 of 9 research');
+  });
+
+  test('Save PNG downloads the current graph as an image', async ({ page }) => {
+    await openResearch(page);
+    await page.getByRole('group', { name: 'View' }).getByRole('button', { name: 'Graph' }).click();
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      page.getByRole('button', { name: 'Save PNG' }).click(),
+    ]);
+    expect(download.suggestedFilename()).toBe('idealab-research-by-interest.png');
+    const bytes = readFileSync((await download.path())!);
+    expect([...bytes.subarray(0, 8)]).toEqual([137, 80, 78, 71, 13, 10, 26, 10]); // PNG signature
+    expect(bytes.length).toBeGreaterThan(10_000); // an actual picture, not an empty canvas
   });
 
   test('nothing matching shows an honest empty state', async ({ page }) => {

@@ -166,14 +166,18 @@
 }
 
 /* -- network graph ----------------------------------------------------------- */
+/* colors come from the theme table (graphThemes.ts) as --g-* properties, so
+   the SVG and the GPU layer always agree */
 .graphWrap {
   position: relative;
   border: 1px solid var(--line);
   border-radius: 16px;
-  background: var(--card);
+  background: var(--g-bg);
   overflow: hidden;
+  transition: background-color 0.3s ease;
 }
 .graph {
+  position: relative; /* above the GPU canvas */
   display: block;
   width: 100%;
   height: auto;
@@ -184,14 +188,26 @@
 .graph:active {
   cursor: grabbing;
 }
+.gpuCanvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+/* animoo draws links + dots underneath; the SVG keeps labels, hit areas,
+   rings, and focus. (Shown again while a PNG is being made.) */
+.gpuOn:not([data-exporting]) .link,
+.gpuOn:not([data-exporting]) .item,
+.gpuOn:not([data-exporting]) .hub {
+  opacity: 0;
+}
 .link {
-  stroke: var(--ink);
-  stroke-opacity: 0.14;
-  transition: stroke-opacity 0.15s;
+  stroke: var(--g-link);
+  transition: stroke 0.15s;
 }
 .linkOn {
-  stroke: var(--accent);
-  stroke-opacity: 0.8;
+  stroke: var(--g-link-on);
 }
 .node {
   cursor: pointer;
@@ -200,9 +216,9 @@
 .node:focus-visible {
   outline: none;
 }
-.node:focus-visible circle {
-  stroke: var(--accent);
-  stroke-width: 2.5;
+.node:focus-visible .hit {
+  stroke: var(--g-link-on);
+  stroke-width: 2;
 }
 .dim {
   opacity: 0.15;
@@ -211,33 +227,35 @@
   fill: transparent;
 }
 .item {
-  fill: var(--ink);
-  stroke: var(--card);
+  fill: var(--g-item);
+  stroke: var(--g-bg);
   stroke-width: 1.5;
 }
 .hub {
-  stroke: var(--card);
+  fill: var(--g-hub);
+  stroke: var(--g-bg);
   stroke-width: 2;
 }
 .ring {
   fill: none;
-  stroke: var(--ink);
+  stroke: var(--g-hub-label);
   stroke-width: 2;
 }
 .hubLabel,
 .itemLabel {
   pointer-events: none;
   paint-order: stroke;
-  stroke: var(--card);
+  stroke: var(--g-bg);
   stroke-width: 3.5px;
   stroke-linejoin: round;
+  transition: fill 0.3s ease;
 }
 .hubLabel {
   font-weight: 700;
-  fill: var(--ink);
+  fill: var(--g-hub-label);
 }
 .itemLabel {
-  fill: var(--muted);
+  fill: var(--g-label);
 }
 .zoom {
   position: absolute;
@@ -247,20 +265,32 @@
   flex-direction: column;
   gap: 4px;
 }
+.zoom button,
+.save {
+  font: inherit;
+  border: 1px solid var(--g-link);
+  border-radius: 8px;
+  background: var(--g-bg);
+  color: var(--g-hub-label);
+  cursor: pointer;
+}
 .zoom button {
   width: 30px;
   height: 30px;
-  font: inherit;
   font-size: 16px;
   line-height: 1;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--card);
-  color: var(--ink);
-  cursor: pointer;
 }
-.zoom button:hover {
-  border-color: var(--ink);
+.save {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 10px;
+}
+.zoom button:hover,
+.save:hover {
+  border-color: var(--g-link-on);
 }
 
 @media (max-width: 640px) {

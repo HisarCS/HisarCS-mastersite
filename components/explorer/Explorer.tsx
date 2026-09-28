@@ -11,6 +11,7 @@ import {
 } from '@/lib/domain/facets';
 import { buildNetwork } from '@/lib/graph/network';
 import { paletteColor } from '@/lib/util/palette';
+import { GRAPH_THEMES, type GraphThemeKey } from './graphThemes';
 import { NetworkGraph } from './NetworkGraph';
 import styles from './Explorer.module.css';
 
@@ -61,6 +62,7 @@ export function Explorer<T>({
   const [selected, setSelected] = useState<Selection>({});
   const [groupKey, setGroupKey] = useState<string | null>(defaultGroup);
   const [view, setView] = useState<'grid' | 'graph'>('grid');
+  const [themeKey, setThemeKey] = useState<GraphThemeKey>('paper');
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   // "robotics" and "Robotics" are one value everywhere below
@@ -130,6 +132,21 @@ export function Explorer<T>({
             </button>
           ))}
         </div>
+        {view === 'graph' && (
+          <div className={styles.segment} role="group" aria-label="Graph style">
+            {(Object.keys(GRAPH_THEMES) as GraphThemeKey[]).map((k) => (
+              <button
+                key={k}
+                type="button"
+                aria-pressed={themeKey === k}
+                className={themeKey === k ? styles.segOn : ''}
+                onClick={() => setThemeKey(k)}
+              >
+                {GRAPH_THEMES[k].label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className={styles.groupRow}>
@@ -234,6 +251,8 @@ export function Explorer<T>({
           onItem={onOpen}
           onHub={toggle}
           label={`${noun} by ${graphFacet.label.toLowerCase()}`}
+          theme={GRAPH_THEMES[themeKey]}
+          imageName={`idealab-${noun}-by-${graphFacet.key}`}
         />
       ) : group ? (
         groupItems(shown, group).map(({ value, items: list }) => (
