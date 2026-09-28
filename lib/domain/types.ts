@@ -195,6 +195,6 @@ export interface ResearchItem {
   /** Optional custom-layout key resolved by the view registry; default renders
    *  the preserved article body. */
   view?: string;
-  /** Path to the preserved write-up HTML; defaults to research/<slug>.html. */
+  /** Path to the write-up markdown; defaults to research/<slug>.md. */
   contentSrc?: string;
 }

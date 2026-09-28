@@ -233,9 +233,9 @@ export function getResearchItem(slug: string): ResearchItem | null {
   return RESEARCH_ITEMS.find((r) => r.slug === slug) ?? null;
 }
 
-/** Path to the preserved write-up HTML for an item. */
+/** Path to an item's write-up (markdown, rendered by components/markdown). */
 export function researchContentSrc(item: ResearchItem): string {
-  return item.contentSrc ?? `${BASE}/research/${item.slug}.html`;
+  return item.contentSrc ?? `${BASE}/research/${item.slug}.md`;
 }
 
 /** Absolute URL of a research page (curated or member-made) — for citations
