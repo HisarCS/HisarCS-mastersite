@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { listMembers } from '@/lib/data/members';
 import { mockMembers } from '@/lib/data/mock';
-import { currentEnv } from '@/lib/env';
+import { mocksEnabled } from '@/lib/env';
 import { avatarSrcSet, thumbUrl } from '@/lib/util/media';
 import { initials, paletteColor as colorFor } from '@/lib/util/palette';
 import type { MemberCard } from '@/lib/domain/types';
@@ -68,7 +68,7 @@ export function MembersIndex() {
     void (async () => {
       const m = await listMembers();
       if (!alive) return;
-      setMembers(m.length ? m : currentEnv() === 'local' ? mockMembers() : []);
+      setMembers(m.length ? m : mocksEnabled() ? mockMembers() : []);
     })();
     return () => {
       alive = false;

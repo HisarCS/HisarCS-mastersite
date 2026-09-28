@@ -50,6 +50,17 @@ export function currentEnv(): Env {
   return isLocalHost(window.location.hostname) ? 'local' : 'production';
 }
 
+/**
+ * Fake directory data (lib/data/mock.ts) — only when explicitly asked for
+ * with NEXT_PUBLIC_USE_MOCKS=1, and only on a local host. Off by default so a
+ * missing or broken backend shows up as exactly that, never as invented
+ * members. Run the local Supabase stack for real data (README §6).
+ */
+export function mocksEnabled(host?: string): boolean {
+  const h = host ?? (typeof window === 'undefined' ? null : window.location.hostname);
+  return process.env.NEXT_PUBLIC_USE_MOCKS === '1' && h !== null && isLocalHost(h);
+}
+
 export function supabaseConfig(): SupabaseConfig {
   return ENVIRONMENTS[currentEnv()];
 }

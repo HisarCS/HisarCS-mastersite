@@ -107,3 +107,16 @@ test('header navigation reaches every section from the homepage', async ({ page 
   await page.getByRole('link', { name: 'One of Us' }).click();
   await expect(page.getByRole('heading', { name: 'Member sign in' })).toBeVisible();
 });
+
+test('an empty backend shows no invented members or research (mocks are opt-in)', async ({
+  page,
+}) => {
+  await mockSupabase(page); // every list comes back empty
+  await page.goto('/members/');
+  await expect(page.getByText('No members to show yet.')).toBeVisible();
+  await expect(page.getByText('Baran Öztürk')).toHaveCount(0); // a lib/data/mock.ts name
+
+  await page.goto('/research/');
+  await expect(page.getByText('Otto', { exact: true })).toBeVisible(); // curated, static
+  await expect(page.getByText('Solar Lemon Press')).toHaveCount(0); // a mock entry
+});

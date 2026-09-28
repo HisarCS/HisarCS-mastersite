@@ -40,9 +40,11 @@ Browser (GitHub Pages, static export)         Supabase (cloud or local Docker)
 | `docs/`        | Architecture decisions (ADRs), local development + debugging guides, the research publishing framework.                                                                                                                                                                                                                                                                                                                      |
 | `package.json` | npm scripts (`dev`, `build`, `check`, `stack`, `logs:edge`, `db:push`) + dependencies.                                                                                                                                                                                                                                                                                                                                       |
 
-Mock data exists **only on localhost**; production never fakes content — an
-empty lab renders the mark in ink only, and missing pages show an honest
-"unavailable" card.
+The site never fakes content by default — not in production, not on
+localhost: an empty or unreachable backend renders the mark in ink only and
+empty directories, and missing pages show an honest "unavailable" card. Fake
+directory data (`lib/data/mock.ts`) is opt-in for UI work on localhost only:
+`NEXT_PUBLIC_USE_MOCKS=1 npm run dev`.
 
 **Migrations are append-only** (ADR-0003): `20260711000001_schema.sql` is the
 baseline; every later change is its own timestamped file. Editing an
@@ -207,7 +209,8 @@ npm install
 docker network create -o 'com.docker.network.bridge.host_binding_ipv4=127.0.0.1' local-network
 ```
 
-**Frontend only** (mock data, no database):
+**Frontend only** (no database — directories stay empty; add
+`NEXT_PUBLIC_USE_MOCKS=1` for fake members/research while styling):
 
 ```bash
 npm run dev        # http://localhost:3000
