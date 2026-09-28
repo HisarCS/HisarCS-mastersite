@@ -1,6 +1,9 @@
 import { conferenceOf, isVenueTag, type Facet } from './facets';
 import type { MemberCard } from './types';
 
+/** "2026" before "2025"; "Class of 2027" before "Class of 2019". */
+const newestFirst = (a: string, b: string) => b.localeCompare(a, 'en', { numeric: true });
+
 /**
  * The facet tables for the two directories. To add a way of slicing the lab
  * (by author, by lab room, …) append an entry here — search, filter chips,
@@ -42,6 +45,7 @@ export const RESEARCH_FACETS: Facet<ResearchDirItem>[] = [
   {
     key: 'year',
     label: 'Year',
+    order: newestFirst,
     values: (r) => {
       const y = researchYear(r);
       return y ? [y] : [];
@@ -56,6 +60,7 @@ export const MEMBER_FACETS: Facet<MemberCard>[] = [
   {
     key: 'class',
     label: 'Class',
+    order: newestFirst,
     values: (m) => (m.gradYear ? [`Class of ${m.gradYear}`] : []),
   },
   {

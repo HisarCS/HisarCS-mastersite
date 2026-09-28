@@ -51,6 +51,16 @@ describe('RESEARCH_FACETS', () => {
     expect(facet(RESEARCH_FACETS, 'year').values(otto)).toEqual(['2025']);
   });
 
+  it('years and classes list newest first', () => {
+    const years = facet(RESEARCH_FACETS, 'year') as { order?: (a: string, b: string) => number };
+    expect(['2019', '2026', '2025'].sort(years.order)).toEqual(['2026', '2025', '2019']);
+    const classes = facet(MEMBER_FACETS, 'class') as { order?: (a: string, b: string) => number };
+    expect(['Class of 2019', 'Class of 2027'].sort(classes.order)).toEqual([
+      'Class of 2027',
+      'Class of 2019',
+    ]);
+  });
+
   it('keys are unique', () => {
     const keys = RESEARCH_FACETS.map((f) => f.key);
     expect(new Set(keys).size).toBe(keys.length);

@@ -3,6 +3,7 @@ import {
   conferenceOf,
   facetValues,
   filterItems,
+  groupItems,
   isVenueTag,
   type Facet,
 } from '../../lib/domain/facets';
@@ -77,6 +78,11 @@ describe('facetValues', () => {
   it('is empty for no items', () => {
     expect(facetValues([], TAGS)).toEqual([]);
   });
+
+  it("uses the facet's own order when it has one (e.g. newest year first)", () => {
+    const byVenueDesc: Facet<Doc> = { ...VENUE, order: (a, b) => b.localeCompare(a) };
+    expect(facetValues(DOCS, byVenueDesc).map((v) => v.value)).toEqual(['SCF', 'Constructionism']);
+  });
 });
 
 describe('filterItems', () => {
@@ -121,5 +127,35 @@ describe('filterItems', () => {
   it('ignores selections for facets it does not know, and empty selections', () => {
     const r = filterItems(DOCS, { query: '', selected: { nope: ['x'], tag: [] } }, FACETS, text);
     expect(r).toHaveLength(4);
+  });
+});
+
+describe('groupItems', () => {
+  it('one section per value in facet order; an item appears under each of its values', () => {
+    const g = groupItems(DOCS.slice(0, 3), TAGS);
+    expect(g.map((s) => s.value)).toEqual([
+      'AR',
+      'Laser Cutting',
+      'LLM',
+      'Mechanics',
+      'Parametric CAD',
+      'Parametric Design',
+    ]);
+    expect(g.find((s) => s.value === 'AR')!.items.map((d) => d.title)).toEqual(['Automata']);
+  });
+
+  it('collects items with no value in a trailing null section', () => {
+    const g = groupItems(DOCS, VENUE);
+    expect(g.map((s) => s.value)).toEqual(['Constructionism', 'SCF', null]);
+    expect(g.at(-1)!.items.map((d) => d.title)).toEqual(['Loose note']);
+  });
+
+  it('keeps item order inside a section', () => {
+    const g = groupItems(DOCS, VENUE);
+    expect(g[0]!.items.map((d) => d.title)).toEqual(['Parametrix', 'Automata']);
+  });
+
+  it('is empty for no items', () => {
+    expect(groupItems([], TAGS)).toEqual([]);
   });
 });
