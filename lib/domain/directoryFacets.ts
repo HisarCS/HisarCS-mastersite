@@ -1,5 +1,5 @@
 import { conferenceOf, isVenueTag, type Facet } from './facets';
-import { interestAreasOf } from './interests';
+import { INTEREST_AREAS, interestAreasOf, type InterestTable } from './interests';
 import type { MemberCard } from './types';
 
 /** "2026" before "2025"; "Class of 2027" before "Class of 2019". */
@@ -31,40 +31,54 @@ export function researchYear(item: ResearchDirItem): string | null {
   return yy ? `20${yy}` : null;
 }
 
-export const RESEARCH_FACETS: Facet<ResearchDirItem>[] = [
-  {
-    key: 'interest',
-    label: 'Interest',
-    // umbrella areas, not raw tags — near-duplicates meet in one cluster
-    values: (r) => interestAreasOf(r.tags.filter((t) => !isVenueTag(t))),
-  },
-  {
-    key: 'conference',
-    label: 'Conference',
-    values: (r) => {
-      const c = conferenceOf(r.venue);
-      return c ? [c] : [];
+/** The research facets for an interest-area table (the admin-edited one from
+ *  the database when loaded). */
+export function researchFacets(table: InterestTable): Facet<ResearchDirItem>[] {
+  return [
+    {
+      key: 'interest',
+      label: 'Interest',
+      // umbrella areas, not raw tags — near-duplicates meet in one cluster
+      values: (r) =>
+        interestAreasOf(
+          r.tags.filter((t) => !isVenueTag(t)),
+          table,
+        ),
     },
-  },
-  {
-    key: 'year',
-    label: 'Year',
-    order: newestFirst,
-    values: (r) => {
-      const y = researchYear(r);
-      return y ? [y] : [];
+    {
+      key: 'conference',
+      label: 'Conference',
+      values: (r) => {
+        const c = conferenceOf(r.venue);
+        return c ? [c] : [];
+      },
     },
-  },
-];
+    {
+      key: 'year',
+      label: 'Year',
+      order: newestFirst,
+      values: (r) => {
+        const y = researchYear(r);
+        return y ? [y] : [];
+      },
+    },
+  ];
+}
+
+/** With the built-in interest areas (before the database's have loaded). */
+export const RESEARCH_FACETS = researchFacets(INTEREST_AREAS);
 
 export const researchText = (r: ResearchDirItem) => `${r.title} ${r.summary ?? ''} ${r.body ?? ''}`;
 
 /** The research filter a single tag stands for: a venue tag ("IDC '26") → its
  *  conference; anything else → its interest area. For tag chips and links. */
-export function researchTagFilter(tag: string): { facet: string; value: string } {
+export function researchTagFilter(
+  tag: string,
+  table: InterestTable = INTEREST_AREAS,
+): { facet: string; value: string } {
   return isVenueTag(tag)
     ? { facet: 'conference', value: conferenceOf(tag) ?? tag }
-    : { facet: 'interest', value: interestAreasOf([tag])[0] ?? tag };
+    : { facet: 'interest', value: interestAreasOf([tag], table)[0] ?? tag };
 }
 
 export const MEMBER_FACETS: Facet<MemberCard>[] = [

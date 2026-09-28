@@ -9,6 +9,7 @@ import { citationFromCurated } from '@/lib/domain/citation';
 import { researchTagFilter } from '@/lib/domain/directoryFacets';
 import { explorerLink } from '@/lib/domain/explorerUrl';
 import { CiteButton } from './CiteButton';
+import { useInterestTable } from './useInterestTable';
 import { ShareButton } from './ShareButton';
 import { SiteHeader } from './SiteHeader';
 import { CuratedArticle } from './CuratedArticle';
@@ -32,6 +33,7 @@ const fmtDates = (item: ResearchItem): string | null => {
  *  When `embedded` (homepage detail modal) the shared header is omitted. */
 export function ResearchView({ id, embedded = false }: { id: string; embedded?: boolean }) {
   const item = getResearchItem(id);
+  const areas = useInterestTable();
 
   useEffect(() => {
     if (item) document.title = `${item.title} — ideaLab`;
@@ -76,7 +78,7 @@ export function ResearchView({ id, embedded = false }: { id: string; embedded?: 
             {item.tags.length > 0 && (
               <div className={styles.chips}>
                 {item.tags.map((t) => {
-                  const { facet, value } = researchTagFilter(t);
+                  const { facet, value } = researchTagFilter(t, areas);
                   return (
                     <Link
                       key={t}

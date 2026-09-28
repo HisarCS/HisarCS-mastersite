@@ -12,12 +12,14 @@ import { avatarSrcSet, researchImgSrcSet, thumbUrl } from '@/lib/util/media';
 import { initials, paletteColor as colorFor } from '@/lib/util/palette';
 import type { ResearchEntryCard } from '@/lib/domain/types';
 import {
-  RESEARCH_FACETS,
+  researchFacets,
   researchTagFilter,
   researchText,
   type ResearchDirItem,
 } from '@/lib/domain/directoryFacets';
 import { Explorer, type ExplorerApi } from './explorer/Explorer';
+import type { InterestTable } from '@/lib/domain/interests';
+import { useInterestTable } from './useInterestTable';
 import { SiteHeader } from './SiteHeader';
 import styles from './ResearchIndex.module.css';
 
@@ -46,7 +48,7 @@ interface Card extends ResearchDirItem {
  * ("IDC '26") by its conference. Rendered even when
  * empty so every card keeps exactly the same height.
  */
-function TagRow({ tags, api }: { tags: string[]; api: ExplorerApi }) {
+function TagRow({ tags, api, areas }: { tags: string[]; api: ExplorerApi; areas: InterestTable }) {
   const ref = useRef<HTMLDivElement>(null);
   // gradient fades hint at hidden tags: right fade while more waits ahead,
   // left fade once scrolled — neither on rows that fit
@@ -82,7 +84,7 @@ function TagRow({ tags, api }: { tags: string[]; api: ExplorerApi }) {
   return (
     <div className={cls} ref={ref}>
       {tags.map((t) => {
-        const { facet, value } = researchTagFilter(t);
+        const { facet, value } = researchTagFilter(t, areas);
         const on = api.isOn(facet, value);
         return (
           <button
@@ -106,7 +108,7 @@ function TagRow({ tags, api }: { tags: string[]; api: ExplorerApi }) {
 const cardId = (c: Card) => c.slug;
 const cardTitle = (c: Card) => c.title;
 
-function Grid({ cards, api }: { cards: Card[]; api: ExplorerApi }) {
+function Grid({ cards, api, areas }: { cards: Card[]; api: ExplorerApi; areas: InterestTable }) {
   return (
     <div className={styles.grid}>
       {cards.map((r) => (
@@ -138,7 +140,7 @@ function Grid({ cards, api }: { cards: Card[]; api: ExplorerApi }) {
               <p className={styles.desc}>{r.summary}</p>
             </div>
           </Link>
-          <TagRow tags={r.tags} api={api} />
+          <TagRow tags={r.tags} api={api} areas={areas} />
         </div>
       ))}
     </div>
@@ -151,6 +153,9 @@ export function ResearchIndex() {
   const router = useRouter();
   const curated = useMemo(() => listResearch(), []);
   const [entries, setEntries] = useState<ResearchEntryCard[]>([]);
+  // interest areas as admins filed them (built-in until the DB answers)
+  const areas = useInterestTable();
+  const facets = useMemo(() => researchFacets(areas), [areas]);
   // the curated write-ups' text, so search reaches inside them
   const [bodies, setBodies] = useState<Record<string, string>>({});
 
@@ -233,14 +238,14 @@ export function ResearchIndex() {
 
         <Explorer
           items={cards}
-          facets={RESEARCH_FACETS}
+          facets={facets}
           text={researchText}
           itemId={cardId}
           itemLabel={cardTitle}
           onOpen={(r) => router.push(`/research?id=${encodeURIComponent(r.slug)}`)}
           noun="research"
           searchHint="title, interest, conference…"
-          renderGrid={(list, api) => <Grid cards={list} api={api} />}
+          renderGrid={(list, api) => <Grid cards={list} api={api} areas={areas} />}
         />
       </main>
       <footer className={styles.footer}>Hisar School · ideaLab</footer>

@@ -122,6 +122,8 @@ export interface MockOptions {
   researchEntry?: Record<string, unknown> | null;
   /** Rows for the fields table (onboarding/dashboard chips). Default []. */
   fields?: { id: number; name: string; created_by: string | null }[];
+  /** interest_areas rows (admin-edited areas). Default [] → built-in table. */
+  interestAreas?: { area: string; tag: string; sort: number }[];
   /** verify-org-member response: a verdict, or an error status. */
   verify?: { member: boolean; state: string } | { status: number; error: string };
 }
@@ -244,6 +246,8 @@ export async function mockSupabase(page: Page, opts: MockOptions = {}): Promise<
 
     // ---- tables ----
     if (path === '/rest/v1/people_directory') return fulfillJson(route, opts.directory ?? []);
+    if (path === '/rest/v1/interest_areas' && method === 'GET')
+      return fulfillJson(route, opts.interestAreas ?? []);
 
     if (path === '/rest/v1/fields') {
       if (method === 'GET') return fulfillJson(route, opts.fields ?? []);
