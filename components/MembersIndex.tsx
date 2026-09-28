@@ -6,21 +6,10 @@ import { listMembers } from '@/lib/data/members';
 import { mockMembers } from '@/lib/data/mock';
 import { currentEnv } from '@/lib/env';
 import { avatarSrcSet, thumbUrl } from '@/lib/util/media';
-import { hashStr } from '@/lib/util/hash';
+import { initials, paletteColor as colorFor } from '@/lib/util/palette';
 import type { MemberCard } from '@/lib/domain/types';
 import { SiteHeader } from './SiteHeader';
 import styles from './CardGrid.module.css';
-
-const COLORS = ['#e8542f', '#2f6fe8', '#28a06d', '#c4a11f', '#9048c8', '#d2447e'];
-const colorFor = (id: string) => COLORS[hashStr(id) % COLORS.length]!;
-const initials = (s: string) =>
-  (s || '?')
-    .trim()
-    .split(/\s+/)
-    .map((w) => w[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase();
 
 /** Classes newest first, unlabelled members last; alphabetical inside a class. */
 function groupByClass(members: MemberCard[]): { year: number | null; list: MemberCard[] }[] {

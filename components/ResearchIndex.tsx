@@ -7,7 +7,7 @@ import { listResearchEntries } from '@/lib/data/researchEntries';
 import { mockResearchEntries } from '@/lib/data/mock';
 import { currentEnv } from '@/lib/env';
 import { avatarSrcSet, researchImgSrcSet, thumbUrl } from '@/lib/util/media';
-import { hashStr } from '@/lib/util/hash';
+import { initials, paletteColor as colorFor } from '@/lib/util/palette';
 import type { ResearchEntryCard } from '@/lib/domain/types';
 import { SiteHeader } from './SiteHeader';
 import styles from './ResearchIndex.module.css';
@@ -17,17 +17,6 @@ const fmtDate = (iso: string | null): string =>
   iso
     ? new Date(`${iso}T00:00:00`).toLocaleDateString('en', { month: 'short', year: 'numeric' })
     : '';
-
-const COLORS = ['#e8542f', '#2f6fe8', '#28a06d', '#c4a11f', '#9048c8', '#d2447e'];
-const colorFor = (id: string) => COLORS[hashStr(id) % COLORS.length]!;
-const initials = (s: string) =>
-  (s || '?')
-    .trim()
-    .split(/\s+/)
-    .map((w) => w[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase();
 
 interface Card {
   slug: string;

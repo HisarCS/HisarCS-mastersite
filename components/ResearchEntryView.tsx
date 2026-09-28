@@ -8,28 +8,15 @@ import { mockResearchEntry } from '@/lib/data/mock';
 import { currentEnv } from '@/lib/env';
 import { safeUrl } from '@/lib/util/html';
 import { avatarSrcSet, researchImgSrcSet, thumbUrl } from '@/lib/util/media';
-import { hashStr } from '@/lib/util/hash';
+import { initials, PALETTE, paletteColor } from '@/lib/util/palette';
 import type { ResearchEntry } from '@/lib/domain/types';
 import { MarkdownPage } from './markdown/MarkdownPage';
 import { SiteHeader } from './SiteHeader';
 import { Unavailable } from './Unavailable';
 import styles from './ResearchEntryView.module.css';
 
-const COLORS = ['#e8542f', '#2f6fe8', '#28a06d', '#c4a11f', '#9048c8', '#d2447e'];
-
-const initials = (s: string) =>
-  (s || '?')
-    .trim()
-    .split(/\s+/)
-    .map((w) => w[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase();
-
 const colorFor = (s: string) =>
-  COLORS[[...String(s)].reduce((a, c) => a + c.charCodeAt(0), 0) % COLORS.length]!;
-/** same hash as the index cards, so a tag keeps its color across pages */
-const tagColor = (t: string) => COLORS[hashStr(t) % COLORS.length]!;
+  PALETTE[[...String(s)].reduce((a, c) => a + c.charCodeAt(0), 0) % PALETTE.length]!;
 
 type State = { status: 'loading' } | { status: 'ok'; entry: ResearchEntry } | { status: 'missing' };
 
@@ -155,7 +142,7 @@ export function ResearchEntryView({ id, embedded = false }: { id: string; embedd
                 key={f}
                 type="button"
                 className={styles.chip}
-                style={{ '--chip-c': tagColor(f) } as CSSProperties}
+                style={{ '--chip-c': paletteColor(f) } as CSSProperties}
               >
                 {f}
               </button>
