@@ -30,7 +30,7 @@ describe('researchYear', () => {
   });
 
   it('is null when neither says', () => {
-    expect(researchYear({ ...otto, date: null, venue: 'ideaLab manuscript' })).toBeNull();
+    expect(researchYear({ ...otto, date: null, venue: 'ideaLab preprint' })).toBeNull();
   });
 });
 
