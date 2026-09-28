@@ -308,6 +308,59 @@
   font-size: 15px;
 }
 
+/* -- cards fence: side-by-side cards, tone follows position -------------- */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 16px;
+  margin: 6px 0 18px;
+  clear: both;
+}
+.card {
+  --tone: var(--gold);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 20px 18px;
+}
+.card:nth-child(3n + 2) {
+  --tone: var(--blue);
+}
+.card:nth-child(3n) {
+  --tone: var(--accent);
+}
+.cardLabel {
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--tone) 80%, black);
+}
+.article .card h4 {
+  font-size: 17px;
+  margin: 0;
+}
+.article .card p {
+  margin: 0;
+  font-size: 14.5px;
+  color: var(--muted);
+}
+.cardCode {
+  margin-top: auto;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--tone) 18%, white);
+  color: color-mix(in srgb, var(--tone) 75%, black);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 /* -- fence errors (author feedback, honest not silent) ---------------------- */
 .fenceError {
   border: 1.5px dashed var(--danger);

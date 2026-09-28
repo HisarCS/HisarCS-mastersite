@@ -69,3 +69,22 @@ test('findings fence lists each titled result with its body', async ({ page }) =
   // the tone label is markup, not content
   await expect(items.nth(1)).not.toContainText('issue');
 });
+
+test('cards fence draws side-by-side cards with label, title, body and snippet', async ({
+  page,
+}) => {
+  await openPage(
+    page,
+    fence(
+      'cards',
+      '# 01 — Text | Type the parameters\nWrite shapes directly.\n> shape polygon hex {\n>   sides: 6\n> }\n\n# 02 — Blocks | Snap together logic\nDrag blocks.',
+    ),
+  );
+
+  const cards = page.locator('article').getByRole('listitem');
+  await expect(cards).toHaveCount(2);
+  await expect(cards.first()).toContainText('01 — Text');
+  await expect(page.getByRole('heading', { name: 'Snap together logic' })).toBeVisible();
+  // the snippet keeps its line breaks and indentation
+  await expect(cards.first().locator('pre')).toHaveText('shape polygon hex {\n  sides: 6\n}');
+});
