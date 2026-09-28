@@ -126,3 +126,14 @@ test('video fence embeds YouTube in privacy mode; other hosts are refused', asyn
   await expect(frame).toHaveAttribute('title', 'The growth time-lapse');
   await expect(page.getByText(/```video: only YouTube or Vimeo links/)).toBeVisible();
 });
+
+test('timeline fence lists dated milestones in order', async ({ page }) => {
+  await openPage(
+    page,
+    fence('timeline', 'Sep 2024 | First prototype\n2026 | Presented at **IDC**'),
+  );
+  const items = page.locator('article ol li');
+  await expect(items).toHaveCount(2);
+  await expect(items.nth(0)).toContainText('Sep 2024');
+  await expect(items.nth(1).locator('strong')).toHaveText('IDC');
+});
