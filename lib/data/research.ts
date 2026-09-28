@@ -237,3 +237,10 @@ export function getResearchItem(slug: string): ResearchItem | null {
 export function researchContentSrc(item: ResearchItem): string {
   return item.contentSrc ?? `${BASE}/research/${item.slug}.html`;
 }
+
+/** Absolute URL of a research page (curated or member-made) — for citations
+ *  and sharing. Uses the current origin, so local and production both work. */
+export function researchPageUrl(slug: string): string {
+  const origin = typeof window === 'undefined' ? '' : window.location.origin;
+  return `${origin}${BASE}/research?id=${encodeURIComponent(slug)}`;
+}

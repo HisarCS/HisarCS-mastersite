@@ -2,9 +2,11 @@
 
 import { useEffect, type FC } from 'react';
 import Link from 'next/link';
-import { getResearchItem, researchContentSrc } from '@/lib/data/research';
+import { getResearchItem, researchContentSrc, researchPageUrl } from '@/lib/data/research';
 import { safeUrl } from '@/lib/util/html';
 import type { ResearchItem } from '@/lib/domain/types';
+import { citationFromCurated } from '@/lib/domain/citation';
+import { CiteButton } from './CiteButton';
 import { SiteHeader } from './SiteHeader';
 import { ResearchArticle } from './ResearchArticle';
 import { ResearchEntryView } from './ResearchEntryView';
@@ -62,7 +64,10 @@ export function ResearchView({ id, embedded = false }: { id: string; embedded?: 
             </div>
           )}
           <div>
-            <h1 className={styles.title}>{item.title}</h1>
+            <h1 className={styles.title}>
+              {item.title}
+              <CiteButton data={citationFromCurated(item, researchPageUrl(item.slug))} />
+            </h1>
             {item.venue && <div className={styles.venue}>{item.venue}</div>}
             {item.tags.length > 0 && (
               <div className={styles.chips}>

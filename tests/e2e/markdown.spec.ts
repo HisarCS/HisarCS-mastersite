@@ -27,7 +27,7 @@ test('chart and stats fences are drawn, not shown as code', async ({ page }) => 
   await expect(page.getByText('€4.10')).toBeVisible();
   await expect(page.getByText('days grow time')).toBeVisible();
   await expect(page.getByRole('img', { name: 'Does it match foam?' })).toBeVisible();
-  await expect(page.locator('pre')).toHaveCount(0);
+  await expect(page.locator('article pre')).toHaveCount(0);
 });
 
 test('a malformed fence shows its error inline, naming the fence', async ({ page }) => {
@@ -37,7 +37,7 @@ test('a malformed fence shows its error inline, naming the fence', async ({ page
 
 test('an unregistered fence language renders as ordinary code', async ({ page }) => {
   await openPage(page, fence('python', 'print("hi")'));
-  await expect(page.locator('pre')).toContainText('print("hi")');
+  await expect(page.locator('article pre')).toContainText('print("hi")');
 });
 
 test('tiles fence draws each value above its label', async ({ page }) => {
@@ -50,7 +50,7 @@ test('tiles fence draws each value above its label', async ({ page }) => {
   await expect(tiles).toHaveCount(2);
   await expect(tiles.nth(1)).toContainText('10 / 10');
   await expect(tiles.nth(1)).toContainText('left with a fabrication-ready model');
-  await expect(page.locator('pre')).toHaveCount(0);
+  await expect(page.locator('article pre')).toHaveCount(0);
 });
 
 test('findings fence lists each titled result with its body', async ({ page }) => {
