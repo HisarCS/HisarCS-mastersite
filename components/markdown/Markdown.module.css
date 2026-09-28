@@ -266,6 +266,48 @@
   color: var(--muted);
 }
 
+/* -- findings fence: titled results, a tone dot each ---------------------- */
+.article .findings {
+  list-style: none;
+  padding: 0;
+  margin: 6px 0 18px;
+  clear: both;
+}
+.article .finding {
+  position: relative;
+  padding: 16px 0 16px 30px;
+  margin: 0;
+  border-top: 1px solid var(--line);
+}
+.article .finding:first-child {
+  border-top: none;
+}
+.finding::before {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 23px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.finding.note::before {
+  background: var(--blue);
+}
+.finding.issue::before {
+  background: var(--muted);
+}
+.article .finding h4 {
+  font-size: 15.5px;
+  margin: 0 0 4px;
+}
+.article .finding p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 15px;
+}
+
 /* -- fence errors (author feedback, honest not silent) ---------------------- */
 .fenceError {
   border: 1.5px dashed var(--danger);

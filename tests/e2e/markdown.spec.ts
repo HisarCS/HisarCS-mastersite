@@ -52,3 +52,20 @@ test('tiles fence draws each value above its label', async ({ page }) => {
   await expect(tiles.nth(1)).toContainText('left with a fabrication-ready model');
   await expect(page.locator('pre')).toHaveCount(0);
 });
+
+test('findings fence lists each titled result with its body', async ({ page }) => {
+  await openPage(
+    page,
+    fence(
+      'findings',
+      '# Live feedback made the abstract legible\nWatching it update helped.\n\n# issue | Canvas lag\nQuick edits stuttered.',
+    ),
+  );
+
+  const items = page.locator('article').getByRole('listitem');
+  await expect(items).toHaveCount(2);
+  await expect(page.getByRole('heading', { name: 'Canvas lag' })).toBeVisible();
+  await expect(items.nth(1)).toContainText('Quick edits stuttered.');
+  // the tone label is markup, not content
+  await expect(items.nth(1)).not.toContainText('issue');
+});

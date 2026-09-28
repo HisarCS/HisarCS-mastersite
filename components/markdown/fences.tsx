@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { parseChartSpec, parseStatsSpec, type ParseResult } from '@/lib/util/chartSpec';
+import { parseFindingsSpec } from '@/lib/util/recordSpec';
 import { ChartSvg } from './ChartSvg';
 import styles from './Markdown.module.css';
 
@@ -103,6 +104,33 @@ Foam: 0.42, 0.61, 0.72
 10 | students
 15–20m | intro before building
 10 / 10 | left with a fabrication-ready model
+\`\`\``,
+  }),
+
+  findings: defineFence({
+    label: 'Findings',
+    parse: parseFindingsSpec,
+    render: (spec) => (
+      <ul className={styles.findings}>
+        {spec.items.map((f, i) => (
+          <li key={i} className={`${styles.finding} ${styles[f.tone] ?? ''}`}>
+            <h4>{f.title}</h4>
+            {f.body && <p>{f.body}</p>}
+          </li>
+        ))}
+      </ul>
+    ),
+    snippet: `\`\`\`findings
+# What you found
+One or two sentences on why it matters.
+\`\`\`
+`,
+    reference: `\`\`\`findings           (tone before "|": good · note · issue; default good)
+# Live feedback made the abstract legible
+Seeing a relationship update turned "trust the math" into something to watch.
+
+# issue | Canvas responsiveness was the rough edge
+Participants noticed lag during quick, successive edits.
 \`\`\``,
   }),
 };
