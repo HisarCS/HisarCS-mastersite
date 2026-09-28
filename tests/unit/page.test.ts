@@ -61,8 +61,16 @@ describe('parseStatsSpec', () => {
     ]);
   });
 
-  it('rejects lines without the separator', () => {
-    expect(parseStatsSpec('just some text').error).toMatch(/value \| label/);
+  it('a line without the separator is a plain chip', () => {
+    expect(parseStatsSpec('Raspberry Pi 4\n3 | modes').ok!.items).toEqual([
+      { value: '', label: 'Raspberry Pi 4' },
+      { value: '3', label: 'modes' },
+    ]);
+  });
+
+  it('rejects a separator with nothing on one side', () => {
+    expect(parseStatsSpec('| label').error).toMatch(/value \| label/);
+    expect(parseStatsSpec('value |').error).toMatch(/value \| label/);
   });
 });
 

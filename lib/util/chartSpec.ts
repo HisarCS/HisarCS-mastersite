@@ -82,6 +82,11 @@ export function parseStatsSpec(text: string): ParseResult<StatsSpec> {
     const line = raw.trim();
     if (!line) continue;
     const i = line.indexOf('|');
+    // no separator: a plain text chip ("Raspberry Pi 4")
+    if (i === -1) {
+      items.push({ value: '', label: line });
+      continue;
+    }
     if (i < 1 || i === line.length - 1)
       return { error: `every line needs "value | label" — got "${line}"` };
     items.push({ value: line.slice(0, i).trim(), label: line.slice(i + 1).trim() });

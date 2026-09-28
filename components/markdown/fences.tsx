@@ -68,7 +68,7 @@ Foam: 0.42, 0.61, 0.72
       <div className={styles.chips}>
         {spec.items.map((it, i) => (
           <span key={i} className={styles.chip}>
-            <b>{it.value}</b> {it.label}
+            {it.value && <b>{it.value}</b>} {it.label}
           </span>
         ))}
       </div>
@@ -77,7 +77,7 @@ Foam: 0.42, 0.61, 0.72
 42 | what this number is
 \`\`\`
 `,
-    reference: `\`\`\`stats
+    reference: `\`\`\`stats              (a line without | is a plain chip)
 €4.10 | per panel
 14 | days grow time
 \`\`\``,
@@ -90,7 +90,7 @@ Foam: 0.42, 0.61, 0.72
       <div className={styles.tiles} role="list">
         {spec.items.map((it, i) => (
           <div key={i} className={styles.tile} role="listitem">
-            <div className={styles.tileValue}>{it.value}</div>
+            {it.value && <div className={styles.tileValue}>{it.value}</div>}
             <div className={styles.tileLabel}>{it.label}</div>
           </div>
         ))}
