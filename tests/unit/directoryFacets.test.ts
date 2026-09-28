@@ -35,10 +35,10 @@ describe('researchYear', () => {
 });
 
 describe('RESEARCH_FACETS', () => {
-  it('interest is the tags minus venue-year tags', () => {
+  it('interest is the interest areas of the tags, venue-year tags left out', () => {
     expect(facet(RESEARCH_FACETS, 'interest').values(otto)).toEqual([
-      'Parametric CAD',
-      'Laser Cutting',
+      'Parametric Design',
+      'Digital Fabrication',
     ]);
   });
 

@@ -11,6 +11,7 @@ import { avatarSrcSet, researchImgSrcSet, thumbUrl } from '@/lib/util/media';
 import { initials, paletteColor as colorFor } from '@/lib/util/palette';
 import type { ResearchEntryCard } from '@/lib/domain/types';
 import { conferenceOf, isVenueTag } from '@/lib/domain/facets';
+import { interestAreasOf } from '@/lib/domain/interests';
 import { RESEARCH_FACETS, researchText, type ResearchDirItem } from '@/lib/domain/directoryFacets';
 import { Explorer, type ExplorerApi } from './explorer/Explorer';
 import { SiteHeader } from './SiteHeader';
@@ -37,7 +38,8 @@ interface Card extends ResearchDirItem {
  * One card's tag row. Tags never wrap: overflow scrolls horizontally (trackpad,
  * touch, or plain mouse wheel — vertical wheel delta is translated while the
  * cursor is over the row). Each tag is a filter button: an interest tag filters
- * by interest, a venue tag ("IDC '26") by its conference. Rendered even when
+ * by its interest area ("Parametric CAD" → Parametric Design), a venue tag
+ * ("IDC '26") by its conference. Rendered even when
  * empty so every card keeps exactly the same height.
  */
 function TagRow({ tags, api }: { tags: string[]; api: ExplorerApi }) {
@@ -78,7 +80,7 @@ function TagRow({ tags, api }: { tags: string[]; api: ExplorerApi }) {
       {tags.map((t) => {
         const [facet, value] = isVenueTag(t)
           ? ['conference', conferenceOf(t) ?? t]
-          : ['interest', t];
+          : ['interest', interestAreasOf([t])[0] ?? t];
         const on = api.isOn(facet, value);
         return (
           <button
