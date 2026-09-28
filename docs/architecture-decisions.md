@@ -549,3 +549,20 @@ of nodes), revisit past ~1 000. Filters live in component state, so a
 filtered view isn't shareable by URL yet. The yearbook is now the members
 explorer grouped by class, so its section style lives in the explorer and
 research sections share it.
+
+**Amendment (2026-09-28) — interest areas, graph themes, animoo.**
+Raw tags split the research graph into ~20 near-duplicate hubs ("Parametric
+CAD" vs "Parametric Design"). The research Interest facet now groups by six
+umbrella areas from one editable table (`lib/domain/interests.ts`); cards and
+search keep the original tags. The graph gained a theme table
+(`components/explorer/graphThemes.ts`: Paper, Obsidian) whose colors feed both
+the SVG and the GPU layer, and a Save-PNG export. For the Obsidian theme,
+**animoo** (JSR `@outercloud/animoo`, WebGPU) now draws and animates links and
+dots under the SVG — build-in and hover tweens; the SVG keeps labels, hit
+areas, focus, and keyboard, and draws everything itself when WebGPU is absent
+or fails. This supersedes "no new dependency" above: animoo is the one
+addition, loaded on demand only (~68 KB gz), wrapped so its render loop stops
+on unmount and survives rebuilds (`GpuGraphLayer.tsx` documents the three
+upstream quirks worked around). The mapping between the SVG frame and
+animoo's fixed 1920×1200 world is pure and tested against a replica of its
+shader (`lib/graph/gpuSpace.ts`).
