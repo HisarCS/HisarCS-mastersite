@@ -92,13 +92,18 @@ erDiagram
   - `page` (jsonb, nullable) is the composed body as a Markdown document
     (`{version: 2, markdown}`); null falls back to `description`. Dialect +
     rationale: ADR-0019 (the full syntax reference lives inside the editor;
-    custom fences — chart, stats, tiles, findings, cards — are registered in
-    `components/markdown/fences.tsx`).
+    custom fences — chart, stats, tiles, findings, cards, timeline, video,
+    compare — are registered in `components/markdown/fences.tsx`).
   - `external_authors` (jsonb) credits collaborators who have no account —
     display-only, no permissions.
   - The eight **curated** write-ups are _not_ in the database — they're static
-    content (`lib/data/research.ts` + `public/research/`); `/research` lists
-    both kinds together.
+    content: metadata, authors, and citation details in `lib/data/research.ts`,
+    the body as `public/research/<slug>.md` (same renderer as member pages).
+    `/research` lists both kinds together.
+- **`interest_areas`** — which tags fall under which umbrella area on
+  `/research` (one row per area + tag). Everyone reads; admins edit it at
+  `/admin`. `lib/domain/interests.ts` holds the seed and the offline fallback
+  (ADR-0022).
 - **`fields`** — one canonical tag list shared by people and research
   (case-insensitive unique). Members add tags; only admins rename/delete.
 - **Junction tables** (`person_fields`, `research_fields`, `research_members`)
@@ -300,7 +305,16 @@ graduations:
    [`deploy.yml`](.github/workflows/deploy.yml): `npm run build` → publish
    `out/`. Site: `https://hisarcs.github.io/HisarCS-mastersite/`.
 3. The base path is the single `NEXT_PUBLIC_BASE_PATH` env var in that
-   workflow — clear it for a future root-domain move.
+   workflow — clear it for a future root-domain move (and update
+   `SITE_ORIGIN` in `lib/site.ts`).
+4. The workflow also rebuilds **nightly**, and sets `SHARE_PAGES_FROM_DB=1`:
+   the build reads published member research (anon key, read-only) and gives
+   each a share page, `/r/<slug>/`, with its link-preview tags (ADR-0021).
+   New entries get theirs by the next morning; the Share button falls back to
+   the plain link until then.
+5. After the first deploy, submit `…/HisarCS-mastersite/sitemap.xml` in Google
+   Search Console. (`robots.txt` is only honored at a domain root, so it takes
+   effect once the site moves to one.)
 
 > **Schema changes ship with the frontend.** The site queries the database
 > directly, so a migration that renames or drops anything the deployed code
@@ -341,7 +355,9 @@ checks via `is_org_member()`.
 
 ## 8. Admin operations
 
-Use Studio (local: http://127.0.0.1:54323 · production: supabase.com dashboard).
+Day to day, use **`/admin`** (signed in as an allowlisted admin — the header
+shows an Admin link): publish profiles and research drafts, add/remove admins,
+and re-file tags into interest areas. For everything else, use Studio (local: http://127.0.0.1:54323 · production: supabase.com dashboard).
 **Studio runs as the service role — it bypasses RLS and guard triggers**;
 data-generating triggers (public_ids, github sync) still fire.
 
@@ -372,9 +388,9 @@ changes always go through a new migration file**, never Studio.
 
 ## 9. Roadmap
 
-1. A small **admin panel** (publish queue, allowlist management, edit anyone).
-2. Fill in **authors** for the curated write-ups in `lib/data/research.ts` —
-   then add an "Author" facet so the research graph links people to their
-   work (one entry in `lib/domain/directoryFacets.ts`, ADR-0020).
+1. An **"Author" facet** so the research graph links people to their work —
+   curated authors are filled in now (`lib/data/research.ts`); it's one entry
+   in `lib/domain/directoryFacets.ts` (ADR-0020).
+2. Admin panel, next steps: edit anyone's profile or research from `/admin`.
 3. Schema-anticipated extensions: cohort override for mentors/staff, awards,
    full-text bio search.

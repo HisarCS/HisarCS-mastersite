@@ -512,6 +512,20 @@ a pure, unit-tested parser. `tiles` reuses the stats grammar; `cards` and
 `> ` snippet lines). Colors stay out of authors' hands: card tones follow
 position, finding tones are a closed set (good · note · issue).
 
+**Amendment (2026-09-28) — curated write-ups use it too; three more fences.**
+The eight curated write-ups were preserved HTML (data-URI images, their own
+CSS) injected into a Shadow DOM — a second renderer, unsearchable, one large
+blob per page. They are now `public/research/<slug>.md` rendered by the same
+`MarkdownPage`, with images as `…-w{800,1600,2400}.jpg` ladders under
+`public/research/<slug>/` (a leading `/` in an image path means a site asset).
+`scripts/convert-writeups.mjs` did the conversion; each page was compared
+against its original side by side (desktop and mobile) and line by line, then
+the HTML was deleted. New fences: ` ```timeline ` (date | milestone),
+` ```video ` (YouTube/Vimeo only, embedded from youtube-nocookie / Vimeo dnt;
+any other host is a fence error, never an iframe), and ` ```compare `
+(before/after slider on a range input). ` ```stats ` lines without `|` are
+plain chips; card and finding bodies render inline markdown.
+
 One clarification to the append-only migration rule (ADR-0003) came out of this
 pivot: the applied migration that added the column
 (`20260728090000_research_page_blocks.sql`) described the v1 block format in
@@ -566,3 +580,50 @@ on unmount and survives rebuilds (`GpuGraphLayer.tsx` documents the three
 upstream quirks worked around). The mapping between the SVG frame and
 animoo's fixed 1920×1200 world is pure and tested against a replica of its
 shader (`lib/graph/gpuSpace.ts`).
+
+## ADR-0021 — Share pages for link previews
+
+**Status:** Accepted 2026-09-28
+
+**Context:** Research pages are one client-rendered file addressed by query
+string (`/research?id=…`, a static export). Link-preview bots (Slack,
+WhatsApp, iMessage, LinkedIn) don't run JavaScript, so every research link
+previewed as a bare "ideaLab".
+
+**Decision:** Every research entry gets a static share page, `/r/<slug>/`,
+generated at build (`app/r/[slug]`): its title, summary, and thumbnail as
+OpenGraph/Twitter tags, `og:url` pointing at the share page itself (crawlers
+that follow `og:url` must land on the tags), a visible summary, and a
+JavaScript redirect to the real page for people. Curated entries always get
+one; published member entries do when the build sets `SHARE_PAGES_FROM_DB=1`
+(the deploy does; it reads with the public anon key, so local and test builds
+stay offline). A nightly scheduled deploy picks up entries published since
+the last push. The Share button copies the share link, falling back to the
+page link while none exists. `sitemap.xml` lists pages and share pages.
+
+**Consequences:** Rich previews without a server. A new entry previews
+generically for up to a day. Profiles get no share pages (live data would go
+stale in static HTML). `robots.txt` is emitted but only honored once the site
+is at a domain root.
+
+## ADR-0022 — Admin panel; interest areas in the database
+
+**Status:** Accepted 2026-09-28
+
+**Context:** Publishing someone else's profile, managing admins, and re-filing
+tags into interest areas (ADR-0020) all needed Studio or a code change.
+
+**Decision:** `/admin`, shown to allowlisted admins (the header's Admin link
+asks `is_admin()`), with three tabs: publish queue, admin allowlist, interest
+areas. Interest areas move to a table, `interest_areas` (area, tag, sort;
+everyone reads, `is_admin()` writes), seeded from the code's table — a unit
+test keeps the two identical at migration time, and the code table remains
+the fallback when the database can't be read. The explorer and every tag link
+read the same table (`useInterestTable`), so a link always names an area the
+explorer knows. The panel guards against removing yourself or the last admin.
+
+**Consequences:** The database stays the only real gate — all of this was
+verified on the local stack by impersonating anon, a member, and an admin.
+Migration `20260928130000_interest_areas.sql` (and
+`20260928120000_people_anon_columns.sql`, which stops anon reading
+`people.user_id`) must be pushed with the deploy that ships this code.

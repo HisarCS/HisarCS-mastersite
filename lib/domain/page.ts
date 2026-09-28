@@ -6,7 +6,8 @@
  * The markdown dialect (rendered by components/markdown/MarkdownPage):
  * - GitHub-flavored markdown (headings, tables, task lists, strikethrough)
  * - math: $inline$ and $$block$$ (KaTeX)
- * - custom fences: ```chart, ```stats, ```tiles, ```findings, ```cards
+ * - custom fences: ```chart, ```stats, ```tiles, ```findings, ```cards,
+ *   ```timeline, ```video, ```compare
  *   (registry: components/markdown/fences.tsx)
  * - images: ![Caption](src "placement") — src is an uploaded-file storage path
  *   or an https URL; placement is left|right|inset|wide, optionally with a
