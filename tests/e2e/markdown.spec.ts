@@ -110,3 +110,19 @@ test('card and finding bodies render inline markdown, links sanitized', async ({
     /javascript/,
   );
 });
+
+test('video fence embeds YouTube in privacy mode; other hosts are refused', async ({ page }) => {
+  await page.route('https://www.youtube-nocookie.com/**', (r) => r.fulfill({ body: 'video' }));
+  await openPage(
+    page,
+    [
+      fence('video', 'https://youtu.be/dQw4w9WgXcQ\nThe growth time-lapse'),
+      fence('video', 'https://evil.example/watch?v=dQw4w9WgXcQ'),
+    ].join('\n\n'),
+  );
+  const frame = page.locator('article iframe');
+  await expect(frame).toHaveCount(1);
+  await expect(frame).toHaveAttribute('src', 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ');
+  await expect(frame).toHaveAttribute('title', 'The growth time-lapse');
+  await expect(page.getByText(/```video: only YouTube or Vimeo links/)).toBeVisible();
+});

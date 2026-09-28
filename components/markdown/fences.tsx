@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { parseChartSpec, parseStatsSpec, type ParseResult } from '@/lib/util/chartSpec';
+import { parseVideoSpec } from '@/lib/util/fenceSpecs';
 import { parseCardsSpec, parseFindingsSpec } from '@/lib/util/recordSpec';
 import { ChartSvg } from './ChartSvg';
 import { Inline } from './Inline';
@@ -177,6 +178,36 @@ Write shapes, params, and constraints directly.
 
 # 02 — Blocks | Snap together logic
 The same language as draggable blocks.
+\`\`\``,
+  }),
+
+  video: defineFence({
+    label: 'Video',
+    parse: parseVideoSpec,
+    render: (spec) => (
+      <figure className={`${styles.figure} ${styles.full}`}>
+        <div className={styles.video}>
+          <iframe
+            src={spec.embed}
+            title={spec.caption || 'Video'}
+            loading="lazy"
+            allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+            referrerPolicy="strict-origin-when-cross-origin"
+            sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"
+            allowFullScreen
+          />
+        </div>
+        {spec.caption && <figcaption className={styles.caption}>{spec.caption}</figcaption>}
+      </figure>
+    ),
+    snippet: `\`\`\`video
+https://youtu.be/…
+What the video shows
+\`\`\`
+`,
+    reference: `\`\`\`video              (YouTube or Vimeo; embedded in privacy mode)
+https://www.youtube.com/watch?v=…
+The growth time-lapse, 14 days in 40 seconds
 \`\`\``,
   }),
 };
