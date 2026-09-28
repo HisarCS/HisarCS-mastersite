@@ -1,0 +1,81 @@
+import { describe, it, expect } from 'vitest';
+import {
+  MEMBER_FACETS,
+  RESEARCH_FACETS,
+  researchYear,
+  type ResearchDirItem,
+} from '../../lib/domain/directoryFacets';
+import type { MemberCard } from '../../lib/domain/types';
+
+const facet = <T>(list: { key: string; values: (t: T) => string[] }[], key: string) =>
+  list.find((f) => f.key === key)!;
+
+const otto: ResearchDirItem = {
+  title: 'Otto',
+  summary: 'Parametric CAD',
+  venue: "SCF Adjunct '25",
+  date: '2025',
+  tags: ['Parametric CAD', 'Laser Cutting', "SCF '25"],
+};
+
+describe('researchYear', () => {
+  it('prefers the date (ISO or bare year)', () => {
+    expect(researchYear({ ...otto, date: '2026-06-15' })).toBe('2026');
+    expect(researchYear({ ...otto, date: '2019' })).toBe('2019');
+  });
+
+  it("falls back to the venue's two-digit year", () => {
+    expect(researchYear({ ...otto, date: null, venue: "HRI '19, Daegu" })).toBe('2019');
+    expect(researchYear({ ...otto, date: undefined, venue: 'HCI International ’25' })).toBe('2025');
+  });
+
+  it('is null when neither says', () => {
+    expect(researchYear({ ...otto, date: null, venue: 'ideaLab manuscript' })).toBeNull();
+  });
+});
+
+describe('RESEARCH_FACETS', () => {
+  it('interest is the tags minus venue-year tags', () => {
+    expect(facet(RESEARCH_FACETS, 'interest').values(otto)).toEqual([
+      'Parametric CAD',
+      'Laser Cutting',
+    ]);
+  });
+
+  it('conference is the normalized venue', () => {
+    expect(facet(RESEARCH_FACETS, 'conference').values(otto)).toEqual(['SCF']);
+    expect(facet(RESEARCH_FACETS, 'conference').values({ ...otto, venue: null })).toEqual([]);
+  });
+
+  it('year comes from researchYear', () => {
+    expect(facet(RESEARCH_FACETS, 'year').values(otto)).toEqual(['2025']);
+  });
+
+  it('keys are unique', () => {
+    const keys = RESEARCH_FACETS.map((f) => f.key);
+    expect(new Set(keys).size).toBe(keys.length);
+  });
+});
+
+describe('MEMBER_FACETS', () => {
+  const ada: MemberCard = {
+    id: '1',
+    publicId: 'ada',
+    name: 'Ada',
+    cohort: 'alumni',
+    gradYear: 2020,
+    avatarUrl: null,
+    avatarColor: null,
+    fields: ['Robotics', 'CS & AI'],
+  };
+
+  it('interest, class, and cohort', () => {
+    expect(facet(MEMBER_FACETS, 'interest').values(ada)).toEqual(['Robotics', 'CS & AI']);
+    expect(facet(MEMBER_FACETS, 'class').values(ada)).toEqual(['Class of 2020']);
+    expect(facet(MEMBER_FACETS, 'cohort').values(ada)).toEqual(['Alumni']);
+  });
+
+  it('a member without a year has no class', () => {
+    expect(facet(MEMBER_FACETS, 'class').values({ ...ada, gradYear: null })).toEqual([]);
+  });
+});

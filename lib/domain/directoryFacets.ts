@@ -1,0 +1,68 @@
+import { conferenceOf, isVenueTag, type Facet } from './facets';
+import type { MemberCard } from './types';
+
+/**
+ * The facet tables for the two directories. To add a way of slicing the lab
+ * (by author, by lab room, …) append an entry here — search, filter chips,
+ * "Group by", and the network graph pick it up.
+ */
+
+/** What the research directory knows about each entry (curated or member-made). */
+export interface ResearchDirItem {
+  title: string;
+  summary?: string;
+  venue?: string | null;
+  /** ISO date or bare year */
+  date?: string | null;
+  tags: string[];
+}
+
+/** "2026-06-15" / "2026" → "2026"; else the venue's '25 → "2025"; else null. */
+export function researchYear(item: ResearchDirItem): string | null {
+  const fromDate = item.date?.match(/^(\d{4})/)?.[1];
+  if (fromDate) return fromDate;
+  const yy = item.venue?.match(/['’](\d{2})\b/)?.[1];
+  return yy ? `20${yy}` : null;
+}
+
+export const RESEARCH_FACETS: Facet<ResearchDirItem>[] = [
+  {
+    key: 'interest',
+    label: 'Interest',
+    values: (r) => r.tags.filter((t) => !isVenueTag(t)),
+  },
+  {
+    key: 'conference',
+    label: 'Conference',
+    values: (r) => {
+      const c = conferenceOf(r.venue);
+      return c ? [c] : [];
+    },
+  },
+  {
+    key: 'year',
+    label: 'Year',
+    values: (r) => {
+      const y = researchYear(r);
+      return y ? [y] : [];
+    },
+  },
+];
+
+export const researchText = (r: ResearchDirItem) => `${r.title} ${r.summary ?? ''}`;
+
+export const MEMBER_FACETS: Facet<MemberCard>[] = [
+  { key: 'interest', label: 'Interest', values: (m) => m.fields },
+  {
+    key: 'class',
+    label: 'Class',
+    values: (m) => (m.gradYear ? [`Class of ${m.gradYear}`] : []),
+  },
+  {
+    key: 'cohort',
+    label: 'Cohort',
+    values: (m) => [m.cohort === 'alumni' ? 'Alumni' : 'Student'],
+  },
+];
+
+export const memberText = (m: MemberCard) => m.name;
