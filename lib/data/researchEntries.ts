@@ -2,6 +2,7 @@ import { getSupabase } from '../supabase';
 import { diffFieldIds } from '../domain/fields';
 import { normalizePage, type ResearchPage } from '../domain/page';
 import type { ResearchEntry, ResearchEntryCard, ResearchExternalAuthor } from '../domain/types';
+import { isUniqueViolation, readRows, write } from './write';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -10,20 +11,14 @@ import type { ResearchEntry, ResearchEntryCard, ResearchExternalAuthor } from '.
 
 /** All published research entries. Empty on no backend. */
 export async function listResearchEntries(): Promise<ResearchEntryCard[]> {
-  const sb = getSupabase();
-  if (!sb) return [];
-  let data: any, error: any;
-  try {
-    ({ data, error } = await sb
+  const data = await readRows((sb) =>
+    sb
       .from('research')
       .select(
         'id, public_id, title, description, avatar_url, venue, presented_on, research_fields(fields(name))',
       )
-      .eq('is_published', true));
-  } catch {
-    return [];
-  }
-  if (error || !data) return [];
+      .eq('is_published', true),
+  );
   return data.map((r: any) => ({
     id: r.id,
     publicId: r.public_id,
@@ -142,50 +137,30 @@ export async function createResearchEntry(
 }
 
 /** Save title + description. */
-export async function updateResearchEntry(
-  dbId: string,
-  patch: ResearchPatch,
-): Promise<string | null> {
-  const sb = getSupabase();
-  if (!sb) return 'no backend';
-  try {
-    const { error } = await sb
-      .from('research')
-      .update({
-        title: patch.title,
-        description: patch.description || null,
-        public_id: patch.publicId,
-        venue: patch.venue || null,
-        presented_on: patch.presentedOn || null,
-      })
-      .eq('id', dbId);
-    if (error) {
-      // unique violation on public_id — there is no availability RPC for
-      // research (is_public_id_available only covers people), so the constraint
-      // is the check and this is the friendly translation of it.
-      return /duplicate key|research_public_id_key|23505/.test(
-        `${error.message} ${(error as any).code ?? ''}`,
-      )
-        ? 'that URL is already taken'
-        : error.message;
-    }
-    return null;
-  } catch (e: any) {
-    return e?.message ?? 'save failed';
-  }
-}
+export const updateResearchEntry = (dbId: string, patch: ResearchPatch) =>
+  write(
+    (sb) =>
+      sb
+        .from('research')
+        .update({
+          title: patch.title,
+          description: patch.description || null,
+          public_id: patch.publicId,
+          venue: patch.venue || null,
+          presented_on: patch.presentedOn || null,
+        })
+        .eq('id', dbId),
+    {
+      fallback: 'save failed',
+      // unique violation on public_id — the constraint is the availability
+      // check, this is the friendly translation of it
+      mapError: (e) => (isUniqueViolation(e) ? 'that URL is already taken' : e.message),
+    },
+  );
 
 /** Publish / unpublish an entry. */
-export async function setResearchPublished(dbId: string, next: boolean): Promise<string | null> {
-  const sb = getSupabase();
-  if (!sb) return 'no backend';
-  try {
-    const { error } = await sb.from('research').update({ is_published: next }).eq('id', dbId);
-    return error?.message ?? null;
-  } catch (e: any) {
-    return e?.message ?? 'failed';
-  }
-}
+export const setResearchPublished = (dbId: string, next: boolean) =>
+  write((sb) => sb.from('research').update({ is_published: next }).eq('id', dbId));
 
 /** Reconcile research_fields to match `selected` (diff against `before`). */
 export async function syncResearchFields(
@@ -211,162 +186,81 @@ export async function syncResearchFields(
 }
 
 /** Add an external link. The DB CHECK requires an http(s) URL. */
-export async function addResearchLink(
-  dbId: string,
-  label: string,
-  url: string,
-  sortOrder = 0,
-): Promise<string | null> {
-  const sb = getSupabase();
-  if (!sb) return 'no backend';
-  try {
-    const { error } = await sb
-      .from('research_links')
-      .insert({ research_id: dbId, label, url, sort_order: sortOrder });
-    return error?.message ?? null;
-  } catch (e: any) {
-    return e?.message ?? 'could not add link';
-  }
-}
+export const addResearchLink = (dbId: string, label: string, url: string, sortOrder = 0) =>
+  write(
+    (sb) =>
+      sb.from('research_links').insert({ research_id: dbId, label, url, sort_order: sortOrder }),
+    { fallback: 'could not add link' },
+  );
 
-export async function deleteResearchLink(linkId: string): Promise<string | null> {
-  const sb = getSupabase();
-  if (!sb) return 'no backend';
-  try {
-    const { error } = await sb.from('research_links').delete().eq('id', linkId);
-    return error?.message ?? null;
-  } catch (e: any) {
-    return e?.message ?? 'could not remove link';
-  }
-}
+export const deleteResearchLink = (linkId: string) =>
+  write((sb) => sb.from('research_links').delete().eq('id', linkId), {
+    fallback: 'could not remove link',
+  });
 
 /** Delete the whole entry (cascades to members/fields/links/files). */
-export async function deleteResearchEntry(dbId: string): Promise<string | null> {
-  const sb = getSupabase();
-  if (!sb) return 'no backend';
-  try {
-    const { error } = await sb.from('research').delete().eq('id', dbId);
-    return error?.message ?? null;
-  } catch (e: any) {
-    return e?.message ?? 'could not delete';
-  }
-}
+export const deleteResearchEntry = (dbId: string) =>
+  write((sb) => sb.from('research').delete().eq('id', dbId), { fallback: 'could not delete' });
 
 /** Add a co-member (an editor) to a research entry. */
-export async function addResearchMember(
-  dbId: string,
-  personId: string,
-  role: string,
-  sortOrder = 0,
-): Promise<string | null> {
-  const sb = getSupabase();
-  if (!sb) return 'no backend';
-  try {
-    const { error } = await sb.from('research_members').insert({
-      research_id: dbId,
-      person_id: personId,
-      role: role || 'Member',
-      sort_order: sortOrder,
-    });
-    if (error) {
-      return String((error as any).code) === '23505' ? 'they are already a member' : error.message;
-    }
-    return null;
-  } catch (e: any) {
-    return e?.message ?? 'could not add member';
-  }
-}
+export const addResearchMember = (dbId: string, personId: string, role: string, sortOrder = 0) =>
+  write(
+    (sb) =>
+      sb.from('research_members').insert({
+        research_id: dbId,
+        person_id: personId,
+        role: role || 'Member',
+        sort_order: sortOrder,
+      }),
+    {
+      fallback: 'could not add member',
+      mapError: (e) => (isUniqueViolation(e) ? 'they are already a member' : e.message),
+    },
+  );
 
 /**
  * Remove a co-member. NOTE: a trigger deletes the whole entry when its last
  * member leaves — callers should refuse to remove the only one.
  */
-export async function removeResearchMember(dbId: string, personId: string): Promise<string | null> {
-  const sb = getSupabase();
-  if (!sb) return 'no backend';
-  try {
-    const { error } = await sb
-      .from('research_members')
-      .delete()
-      .eq('research_id', dbId)
-      .eq('person_id', personId);
-    return error?.message ?? null;
-  } catch (e: any) {
-    return e?.message ?? 'could not remove member';
-  }
-}
+export const removeResearchMember = (dbId: string, personId: string) =>
+  write(
+    (sb) => sb.from('research_members').delete().eq('research_id', dbId).eq('person_id', personId),
+    { fallback: 'could not remove member' },
+  );
 
 /** Replace the external-collaborator list (display-only credits). */
-export async function setExternalAuthors(
-  dbId: string,
-  authors: ResearchExternalAuthor[],
-): Promise<string | null> {
-  const sb = getSupabase();
-  if (!sb) return 'no backend';
-  try {
-    const { error } = await sb
-      .from('research')
-      .update({ external_authors: authors })
-      .eq('id', dbId);
-    return error?.message ?? null;
-  } catch (e: any) {
-    return e?.message ?? 'could not save collaborators';
-  }
-}
+export const setExternalAuthors = (dbId: string, authors: ResearchExternalAuthor[]) =>
+  write((sb) => sb.from('research').update({ external_authors: authors }).eq('id', dbId), {
+    fallback: 'could not save collaborators',
+  });
 
 /** Change a member's role. Any member may edit any other member's role. */
-export async function updateResearchMemberRole(
-  dbId: string,
-  personId: string,
-  role: string,
-): Promise<string | null> {
-  const sb = getSupabase();
-  if (!sb) return 'no backend';
-  try {
-    const { error } = await sb
-      .from('research_members')
-      .update({ role: role || 'Member' })
-      .eq('research_id', dbId)
-      .eq('person_id', personId);
-    return error?.message ?? null;
-  } catch (e: any) {
-    return e?.message ?? 'could not save role';
-  }
-}
+export const updateResearchMemberRole = (dbId: string, personId: string, role: string) =>
+  write(
+    (sb) =>
+      sb
+        .from('research_members')
+        .update({ role: role || 'Member' })
+        .eq('research_id', dbId)
+        .eq('person_id', personId),
+    { fallback: 'could not save role' },
+  );
 
-/** Save the composed block page (pass null to clear it). */
-export async function updateResearchPage(
-  dbId: string,
-  page: ResearchPage | null,
-): Promise<string | null> {
-  const sb = getSupabase();
-  if (!sb) return 'no backend';
-  try {
-    const { error } = await sb.from('research').update({ page }).eq('id', dbId);
-    return error?.message ?? null;
-  } catch (e: any) {
-    return e?.message ?? 'could not save the page';
-  }
-}
+/** Save the composed markdown page (pass null to clear it). */
+export const updateResearchPage = (dbId: string, page: ResearchPage | null) =>
+  write((sb) => sb.from('research').update({ page }).eq('id', dbId), {
+    fallback: 'could not save the page',
+  });
 
 /**
  * Set (or clear) the entry's card thumbnail. Stores the image's public URL in
  * research.avatar_url; ladder-named uploads (…-w2400.jpg) get a responsive
  * srcset on the index cards for free. RLS: any member of the entry.
  */
-export async function setResearchThumbnail(
-  dbId: string,
-  url: string | null,
-): Promise<string | null> {
-  const sb = getSupabase();
-  if (!sb) return 'no backend';
-  try {
-    const { error } = await sb.from('research').update({ avatar_url: url }).eq('id', dbId);
-    return error?.message ?? null;
-  } catch (e: any) {
-    return e?.message ?? 'could not set the thumbnail';
-  }
-}
+export const setResearchThumbnail = (dbId: string, url: string | null) =>
+  write((sb) => sb.from('research').update({ avatar_url: url }).eq('id', dbId), {
+    fallback: 'could not set the thumbnail',
+  });
 
 /** Persist a new member order: sort_order = position in `personIds`. */
 export async function setResearchMembersOrder(

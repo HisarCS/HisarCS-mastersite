@@ -1,6 +1,7 @@
 import { getSupabase } from '../supabase';
 import { setPublished } from './profile';
 import { setResearchPublished } from './researchEntries';
+import { write } from './write';
 
 /**
  * Admin-panel data. Every call is gated by the database (RLS + is_admin(),
@@ -87,19 +88,6 @@ export async function listAdmins(): Promise<string[] | null> {
     return null;
   }
 }
-
-const write = async (
-  op: (sb: NonNullable<ReturnType<typeof getSupabase>>) => PromiseLike<{ error: any }>,
-) => {
-  const sb = getSupabase();
-  if (!sb) return 'no backend';
-  try {
-    const { error } = await op(sb);
-    return error?.message ?? null;
-  } catch (e: any) {
-    return e?.message ?? 'failed';
-  }
-};
 
 export const addAdmin = (login: string) =>
   write((sb) => sb.from('admin_github_logins').insert({ github_login: login }));

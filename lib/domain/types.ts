@@ -67,6 +67,8 @@ export interface MemberResearchRef {
 
 /** Full member profile — the person page. */
 export interface Member {
+  /** people.id — the stable key for the member's fallback color */
+  id: string;
   publicId: string;
   name: string;
   gradYear: number;
@@ -132,7 +134,7 @@ export interface ResearchEntry {
   members: ResearchMemberRef[];
   /** collaborators without an account here — display-only credits */
   externalAuthors: ResearchExternalAuthor[];
-  /** composed block page (null = legacy: render `description`) */
+  /** composed markdown page (null = legacy: render `description`) */
   page: import('./page').ResearchPage | null;
   links: ResearchLink[];
   files: ResearchFile[];
@@ -141,7 +143,7 @@ export interface ResearchEntry {
 // ---------------------------------------------------------------------------
 // Research — curated, editorial write-ups (static, in-app). Distinct from the
 // member-created DB "research" entries (the renamed projects infra): these are
-// long-form articles rendered from preserved HTML, with a structured metadata
+// long-form markdown articles rendered by the site's renderer, with metadata
 // layer on top.
 // ---------------------------------------------------------------------------
 

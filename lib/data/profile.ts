@@ -1,6 +1,7 @@
 import { getSupabase } from '../supabase';
 import { mapProfile, PROFILE_SELECT } from './auth';
 import { diffFieldIds } from '../domain/fields';
+import { isUniqueViolation } from './write';
 import type { Field, MyProfile, MyResearchSummary } from '../domain/types';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -28,7 +29,7 @@ export async function createField(name: string): Promise<Field | null> {
       .insert({ name })
       .select('id, name, created_by')
       .single();
-    if (error && String((error as any).code) === '23505') {
+    if (error && isUniqueViolation(error)) {
       ({ data, error } = await sb
         .from('fields')
         .select('id, name, created_by')
@@ -39,18 +40,6 @@ export async function createField(name: string): Promise<Field | null> {
     return { id: (data as any).id, name: (data as any).name, createdBy: (data as any).created_by };
   } catch {
     return null;
-  }
-}
-
-/** Delete a field you own — RLS refuses if anyone else uses it (empty result). */
-export async function deleteField(id: number): Promise<boolean> {
-  const sb = getSupabase();
-  if (!sb) return false;
-  try {
-    const { data, error } = await sb.from('fields').delete().eq('id', id).select('id');
-    return !error && !!data?.length;
-  } catch {
-    return false;
   }
 }
 

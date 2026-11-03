@@ -1,5 +1,6 @@
 import { getSupabase } from '../supabase';
 import { purgeMyStorage } from './storage';
+import { isUniqueViolation } from './write';
 import type { MyProfile } from '../domain/types';
 import type { Verdict } from '../domain/memberState';
 
@@ -183,7 +184,7 @@ export async function createMinimalProfile(u: AuthUser): Promise<MyProfile | nul
       // Idempotent: onAuthChange fires INITIAL_SESSION *and* SIGNED_IN on login,
       // so two resolve() calls can race here — the loser gets 23505 on
       // people_user_id_key. That's not a failure; return the row the winner made.
-      if (error && String((error as { code?: string }).code) === '23505') {
+      if (error && isUniqueViolation(error)) {
         return getMyProfile(u.userId);
       }
       if (error) console.error('ideaLab: minimal profile insert failed', error);

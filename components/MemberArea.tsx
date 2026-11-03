@@ -20,8 +20,8 @@ import styles from './MemberArea.module.css';
 
 /**
  * Member area — auth + routing state machine (see lib/domain/memberState.ts for
- * the tested spec). Phase 4a: sign-in, org-membership gate, and the signed-out /
- * not-member / verify-fail screens. Onboarding (4b) and dashboard (4c) follow.
+ * the tested spec): sign-in, org-membership gate, the signed-out / not-member /
+ * verify-fail screens, then onboarding or the dashboard.
  */
 export function MemberArea() {
   const [screen, setScreen] = useState<MemberScreen>('loading');

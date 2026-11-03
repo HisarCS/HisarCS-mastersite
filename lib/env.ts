@@ -66,4 +66,3 @@ export function supabaseConfig(): SupabaseConfig {
 }
 
 /** Bump on deploys — proves which build a device is seeing. */
-export const BUILD = '20260724-next';

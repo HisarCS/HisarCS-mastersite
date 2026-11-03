@@ -1,11 +1,12 @@
 import type { Member, MemberCard, ResearchEntry, ResearchEntryCard } from '../domain/types';
 import { cohortFor } from '../util/date';
+import { hashStr } from '../util/hash';
 
 /**
  * Local-dev-only graceful fallback (ADR-0009). When the LOCAL backend is
  * unreachable, build a placeholder derived from the requested id so the page
  * still matches its URL — never a hard-coded person. Production NEVER fakes
- * content; callers only reach this when currentEnv() === 'local'.
+ * content; callers only reach this when mocksEnabled() (NEXT_PUBLIC_USE_MOCKS=1).
  */
 const DISCIPLINES = [
   'Robotics',
@@ -27,15 +28,6 @@ function titleize(s: string): string {
     .trim();
 }
 
-function hashStr(s: string): number {
-  let h = 2166136261 >>> 0;
-  for (let i = 0; i < s.length; i++) {
-    h ^= s.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return h >>> 0;
-}
-
 export function mockPerson(id: string): Member {
   const clean = String(id || '').replace(/^p\d+$/i, ''); // ignore legacy ?id=pN links
   const name = clean ? titleize(clean) : 'ideaLab Maker';
@@ -43,6 +35,7 @@ export function mockPerson(id: string): Member {
   const alumni = seed % 3 === 0;
   const gradYear = alumni ? 2020 + (seed % 6) : 2027 + (seed % 3);
   return {
+    id: clean || 'maker',
     publicId: clean || 'maker',
     name,
     gradYear,
@@ -76,18 +69,7 @@ function mockSlug(s: string): string {
 
 /** Local-dev mock directory for the homepage pixel mark. */
 export function mockMembers(): MemberCard[] {
-  const disciplines = [
-    'Robotics',
-    'Electronics',
-    'Woodworking',
-    'Textiles',
-    'Game Design',
-    'Ceramics',
-    'Biodesign',
-    'CS & AI',
-    'Product Design',
-    '3D Printing',
-  ];
+  const disciplines = DISCIPLINES;
   const names = [
     'Mert Karakaş',
     'Elif Demir',
