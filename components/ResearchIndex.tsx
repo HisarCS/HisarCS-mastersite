@@ -10,6 +10,7 @@ import { mocksEnabled } from '@/lib/env';
 import { markdownToText } from '@/lib/util/html';
 import { avatarSrcSet, researchImgSrcSet, thumbUrl } from '@/lib/util/media';
 import { initials, paletteColor as colorFor } from '@/lib/util/palette';
+import { monthYear } from '@/lib/util/date';
 import type { ResearchEntryCard } from '@/lib/domain/types';
 import {
   researchFacets,
@@ -24,11 +25,6 @@ import { SiteHeader } from './SiteHeader';
 import styles from './ResearchIndex.module.css';
 
 /** "2026-06-15" → "Jun 2026" (cards show month + year, not the full date). */
-const fmtDate = (iso: string | null): string =>
-  iso
-    ? new Date(`${iso}T00:00:00`).toLocaleDateString('en', { month: 'short', year: 'numeric' })
-    : '';
-
 interface Card extends ResearchDirItem {
   slug: string;
   subtitle: string;
@@ -148,7 +144,7 @@ function Grid({ cards, api, areas }: { cards: Card[]; api: ExplorerApi; areas: I
 }
 
 /** Research index — curated write-ups plus member-created (DB) research, each
- *  card linking to its own /research?id= page. Replaces public/research.html. */
+ *  card linking to its own /research?id= page. */
 export function ResearchIndex() {
   const router = useRouter();
   const curated = useMemo(() => listResearch(), []);
@@ -211,7 +207,7 @@ export function ResearchIndex() {
         subtitle: e.venue || 'ideaLab research',
         venue: e.venue,
         date: e.presentedOn,
-        dateLabel: fmtDate(e.presentedOn) || undefined,
+        dateLabel: monthYear(e.presentedOn) || undefined,
         summary: e.description || undefined,
         thumb: e.avatarUrl,
         color: colorFor(e.id),

@@ -8,6 +8,7 @@ import { listFields, createField } from '@/lib/data/profile';
 import { listMembers } from '@/lib/data/members';
 import { uploadResearchAvatar, uploadResearchFile, deleteResearchFile } from '@/lib/data/storage';
 import { researchImgSmall } from '@/lib/util/media';
+import { initials } from '@/lib/util/palette';
 import {
   addResearchLink,
   addResearchMember,
@@ -643,13 +644,7 @@ export function ResearchEditor({ id }: { id: string }) {
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={researchImgSmall(entry.avatarUrl)} alt="" />
               ) : (
-                (title || 'R')
-                  .trim()
-                  .split(/\s+/)
-                  .map((w) => w[0])
-                  .slice(0, 2)
-                  .join('')
-                  .toUpperCase()
+                initials(title || 'R')
               )}
             </div>
             <div>

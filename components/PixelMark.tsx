@@ -5,22 +5,11 @@ import Link from 'next/link';
 import { buildGrid, computeLayout, seededCellOrder } from '@/lib/homepage/mark';
 import { hashStr } from '@/lib/util/hash';
 import { thumbUrl } from '@/lib/util/media';
+import { initials, memberColor } from '@/lib/util/palette';
 import type { MemberCard } from '@/lib/domain/types';
 import styles from './PixelMark.module.css';
 
-const FALLBACK_COLORS = ['#e8542f', '#2f6fe8', '#28a06d', '#c4a11f', '#9048c8', '#d2447e'];
 const SHAPES = ['vSq', 'vCir', 'vC0', 'vC1', 'vC2', 'vC3'] as const;
-
-const initialsOf = (name: string) =>
-  name
-    .split(/\s+/)
-    .map((w) => w[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase();
-
-const colorFor = (m: MemberCard) =>
-  m.avatarColor || FALLBACK_COLORS[hashStr(m.id) % FALLBACK_COLORS.length]!;
 
 interface Hover {
   m: MemberCard;
@@ -91,12 +80,12 @@ export function PixelMark({ members }: { members: MemberCard[] }) {
             onFocus={(e) => showHover(person, e.currentTarget)}
             onBlur={hideSoon}
           >
-            <div className={styles.cell} style={{ background: colorFor(person) }}>
+            <div className={styles.cell} style={{ background: memberColor(person) }}>
               {person.avatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={thumbUrl(person.avatarUrl) ?? ''} alt="" decoding="async" />
               ) : (
-                <span className={styles.initials}>{initialsOf(person.name)}</span>
+                <span className={styles.initials}>{initials(person.name)}</span>
               )}
             </div>
           </Link>
@@ -154,12 +143,12 @@ function HoverCard({
       onMouseLeave={onLeave}
     >
       <div className={styles.cardRow}>
-        <div className={styles.cardAvatar} style={{ background: colorFor(member) }}>
+        <div className={styles.cardAvatar} style={{ background: memberColor(member) }}>
           {member.avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={thumbUrl(member.avatarUrl) ?? ''} alt="" decoding="async" />
           ) : (
-            initialsOf(member.name)
+            initials(member.name)
           )}
         </div>
         <div>

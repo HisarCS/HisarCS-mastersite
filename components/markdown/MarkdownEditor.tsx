@@ -180,8 +180,8 @@ Math: $\\alpha = 0.68$ inline, or a $$ block on its own lines.
 
 ${FENCE_REFERENCE}
 
-Video: host it on YouTube/Drive (unlisted is fine) and link it:
-[Watch the growth time-lapse](https://…)`}</pre>
+Video: use a \`\`\`video fence with a YouTube/Vimeo URL (unlisted is fine) —
+it embeds in privacy mode. A plain link works too.`}</pre>
       </details>
     </div>
   );

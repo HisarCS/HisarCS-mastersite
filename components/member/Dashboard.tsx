@@ -20,16 +20,8 @@ import { cleanYearInput, gradYearMax, GRAD_YEAR_MIN, isValidGradYear } from '@/l
 import { avatarSrcSet, thumbUrl } from '@/lib/util/media';
 import { safeUrl } from '@/lib/util/html';
 import type { Field, MyProfile, MyResearchSummary } from '@/lib/domain/types';
+import { initials as initialsOf, PALETTE } from '@/lib/util/palette';
 import styles from './Dashboard.module.css';
-
-const PALETTE = ['#e8542f', '#2f6fe8', '#28a06d', '#c4a11f', '#9048c8', '#d2447e'];
-const initialsOf = (s: string) =>
-  (s || 'M K')
-    .split(/\s+/)
-    .map((w) => w[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase();
 
 /**
  * Dashboard (4c/4d) — edit profile, publish toggle, interest fields, avatar

@@ -1,4 +1,5 @@
 import { getSupabase } from '../supabase';
+import { readRows } from './write';
 import { cohortFor } from '../util/date';
 import type { Member, MemberCard } from '../domain/types';
 
@@ -9,19 +10,13 @@ import type { Member, MemberCard } from '../domain/types';
 /** All published members for the directory / pixel grid (people_directory view
  *  already scopes to published and computes cohort). Empty array on no backend. */
 export async function listMembers(): Promise<MemberCard[]> {
-  const sb = getSupabase();
-  if (!sb) return [];
-  let data: any, error: any;
-  try {
-    ({ data, error } = await sb
+  const data = await readRows((sb) =>
+    sb
       .from('people_directory')
       .select(
         'id, public_id, full_name, cohort, graduation_year, avatar_url, avatar_color, fields',
-      ));
-  } catch {
-    return [];
-  }
-  if (error || !data) return [];
+      ),
+  );
   return data.map((r: any) => ({
     id: r.id,
     publicId: r.public_id,
@@ -43,7 +38,7 @@ export async function getMember(publicId: string): Promise<Member | null> {
     ({ data, error } = await sb
       .from('people')
       .select(
-        `public_id, full_name, graduation_year, bio, avatar_url, avatar_color,
+        `id, public_id, full_name, graduation_year, bio, avatar_url, avatar_color,
        resume_url, github_username, fields!person_fields(name),
        research_members(role, research(public_id, title, is_published))`,
       )
@@ -55,6 +50,7 @@ export async function getMember(publicId: string): Promise<Member | null> {
   if (error || !data) return null;
   const d = data as any;
   return {
+    id: d.id,
     publicId: d.public_id,
     name: d.full_name,
     gradYear: d.graduation_year,

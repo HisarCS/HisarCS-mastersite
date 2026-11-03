@@ -1,4 +1,5 @@
 import { getSupabase } from '../supabase';
+import { write } from './write';
 import {
   AVATAR_LADDER,
   checkFile,
@@ -88,16 +89,8 @@ export async function uploadResume(
  * Point people.avatar_url at an external image (the GitHub avatar). No upload —
  * the canonical source is the OAuth token's avatar_url, else github.com/<login>.png.
  */
-export async function setAvatarUrl(personId: string, url: string): Promise<string | null> {
-  const sb = getSupabase();
-  if (!sb) return 'no backend';
-  try {
-    const { error } = await sb.from('people').update({ avatar_url: url }).eq('id', personId);
-    return error?.message ?? null;
-  } catch (e: any) {
-    return e?.message ?? 'failed';
-  }
-}
+export const setAvatarUrl = (personId: string, url: string) =>
+  write((sb) => sb.from('people').update({ avatar_url: url }).eq('id', personId));
 
 /**
  * Delete everything under the user's storage prefix in both buckets. SQL can't

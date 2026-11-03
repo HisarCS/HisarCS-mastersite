@@ -7,7 +7,7 @@ import { listMembers } from '@/lib/data/members';
 import { mockMembers } from '@/lib/data/mock';
 import { mocksEnabled } from '@/lib/env';
 import { avatarSrcSet, thumbUrl } from '@/lib/util/media';
-import { initials, paletteColor as colorFor } from '@/lib/util/palette';
+import { initials, memberColor } from '@/lib/util/palette';
 import type { MemberCard } from '@/lib/domain/types';
 import { MEMBER_FACETS, memberText } from '@/lib/domain/directoryFacets';
 import { Explorer } from './explorer/Explorer';
@@ -28,7 +28,7 @@ function PortraitRow({ members }: { members: MemberCard[] }) {
           href={`/person?id=${encodeURIComponent(m.publicId)}`}
           className={styles.portrait}
         >
-          <span className={styles.photo} style={{ background: m.avatarColor || colorFor(m.id) }}>
+          <span className={styles.photo} style={{ background: memberColor(m) }}>
             {m.avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img

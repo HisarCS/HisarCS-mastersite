@@ -8,12 +8,11 @@ import { mockPerson } from '@/lib/data/mock';
 import { mocksEnabled } from '@/lib/env';
 import { safeUrl } from '@/lib/util/html';
 import { avatarSrcSet, thumbUrl } from '@/lib/util/media';
+import { initials, memberColor } from '@/lib/util/palette';
 import type { Member } from '@/lib/domain/types';
 import { SiteHeader } from './SiteHeader';
 import { Unavailable } from './Unavailable';
 import styles from './PersonView.module.css';
-
-const FALLBACK_COLORS = ['#e8542f', '#2f6fe8', '#28a06d', '#c4a11f', '#9048c8', '#d2447e'];
 
 type State =
   | { status: 'loading' }
@@ -66,13 +65,7 @@ export function PersonView({ id, embedded = false }: { id: string; embedded?: bo
   }
 
   const p = state.member;
-  const initials = p.name
-    .split(/\s+/)
-    .map((w) => w[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase();
-  const color = p.avatarColor || FALLBACK_COLORS[p.name.length % FALLBACK_COLORS.length];
+  const color = memberColor(p);
 
   return (
     <>
@@ -89,7 +82,7 @@ export function PersonView({ id, embedded = false }: { id: string; embedded?: bo
                 alt=""
               />
             ) : (
-              initials
+              initials(p.name)
             )}
           </div>
           <div>
@@ -150,13 +143,7 @@ export function PersonView({ id, embedded = false }: { id: string; embedded?: bo
                 className={styles.proj}
                 href={`/research?id=${encodeURIComponent(pr.publicId)}`}
               >
-                <div className={styles.pav}>
-                  {pr.title
-                    .split(/\s+/)
-                    .map((w) => w[0])
-                    .slice(0, 2)
-                    .join('')}
-                </div>
+                <div className={styles.pav}>{initials(pr.title)}</div>
                 <div>
                   <div className={styles.pt}>{pr.title}</div>
                   <div className={styles.pm}>ideaLab research</div>

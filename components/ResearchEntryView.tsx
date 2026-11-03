@@ -9,7 +9,8 @@ import { mockResearchEntry } from '@/lib/data/mock';
 import { mocksEnabled } from '@/lib/env';
 import { safeUrl } from '@/lib/util/html';
 import { avatarSrcSet, researchImgSrcSet, thumbUrl } from '@/lib/util/media';
-import { initials, PALETTE, paletteColor } from '@/lib/util/palette';
+import { initials, memberColor, paletteColor } from '@/lib/util/palette';
+import { monthYear } from '@/lib/util/date';
 import type { ResearchEntry } from '@/lib/domain/types';
 import { MarkdownPage } from './markdown/MarkdownPage';
 import { citationFromEntry } from '@/lib/domain/citation';
@@ -21,9 +22,6 @@ import { ShareButton } from './ShareButton';
 import { SiteHeader } from './SiteHeader';
 import { Unavailable } from './Unavailable';
 import styles from './ResearchEntryView.module.css';
-
-const colorFor = (s: string) =>
-  PALETTE[[...String(s)].reduce((a, c) => a + c.charCodeAt(0), 0) % PALETTE.length]!;
 
 type State = { status: 'loading' } | { status: 'ok'; entry: ResearchEntry } | { status: 'missing' };
 
@@ -130,17 +128,7 @@ export function ResearchEntryView({ id, embedded = false }: { id: string; embedd
             </h1>
             {(p.venue || p.presentedOn) && (
               <div className={styles.venueLine}>
-                {[
-                  p.venue,
-                  p.presentedOn
-                    ? new Date(`${p.presentedOn}T00:00:00`).toLocaleDateString('en', {
-                        month: 'long',
-                        year: 'numeric',
-                      })
-                    : '',
-                ]
-                  .filter(Boolean)
-                  .join(' · ')}
+                {[p.venue, monthYear(p.presentedOn, 'long')].filter(Boolean).join(' · ')}
               </div>
             )}
             {/* the description reads directly under the venue · date line */}
@@ -178,7 +166,10 @@ export function ResearchEntryView({ id, embedded = false }: { id: string; embedd
                   className={styles.member}
                   href={`/person?id=${encodeURIComponent(m.publicId)}`}
                 >
-                  <span className={styles.ma} style={{ background: m.color || colorFor(m.name) }}>
+                  <span
+                    className={styles.ma}
+                    style={{ background: memberColor({ id: m.id, avatarColor: m.color }) }}
+                  >
                     {initials(m.name)}
                   </span>
                   <span>
@@ -192,7 +183,7 @@ export function ResearchEntryView({ id, embedded = false }: { id: string; embedd
                   members, just not linked — there's no profile to open */}
               {p.externalAuthors.map((a, i) => (
                 <span key={`${a.name}-${i}`} className={styles.member}>
-                  <span className={styles.ma} style={{ background: colorFor(a.name) }}>
+                  <span className={styles.ma} style={{ background: paletteColor(a.name) }}>
                     {initials(a.name)}
                   </span>
                   <span>
@@ -240,7 +231,7 @@ export function ResearchEntryView({ id, embedded = false }: { id: string; embedd
                             />
                           </div>
                         ) : (
-                          <div className={styles.thumb} style={{ background: colorFor(label) }}>
+                          <div className={styles.thumb} style={{ background: paletteColor(label) }}>
                             {f.kind === 'pdf' ? 'PDF' : '📄'}
                           </div>
                         )}
