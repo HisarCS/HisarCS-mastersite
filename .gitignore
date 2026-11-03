@@ -14,6 +14,7 @@ next-env.d.ts
 coverage/
 test-results/
 playwright-report/
+screens/
 
 # Supabase Studio scratch SQL snippets (local only)
 supabase/snippets/
